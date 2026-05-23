@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         exit();
     } else {
-        $login_error = 'Tài khoản hoặc mật khẩu chưa đúng';
+        $login_error = 'Tên đăng nhập hoặc mật khẩu không đúng';
     }
 }
 ?>
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập | <?php echo htmlspecialchars(getStoreName()); ?></title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/nexus.css">
@@ -53,72 +53,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-base);
+            background: var(--bg-base);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            margin: 0;
         }
 
-        body::before {
-            content: '';
-            position: fixed;
-            top: -200px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 600px;
-            height: 500px;
-            background: radial-gradient(ellipse, rgba(110, 86, 207, 0.08) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        .login-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .login-container {
             width: 100%;
-            max-width: 960px;
+            max-width: 440px;
         }
 
-        .login-left {
-            flex: 1;
-            padding: 50px 60px;
-            background: var(--card-base);
-            border-radius: 24px 0 0 24px;
-            border: 1px solid var(--border);
-            border-right: none;
-            max-width: 480px;
-        }
-
-        .login-right {
-            flex: 1;
-            padding: 50px 60px;
-            background: linear-gradient(160deg, rgba(110, 86, 207, 0.08) 0%, rgba(56, 189, 248, 0.04) 100%);
-            border-radius: 0 24px 24px 0;
-            border: 1px solid var(--border);
-            border-left: none;
-            max-width: 480px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .brand {
-            display: flex;
+        .brand-link {
+            display: inline-flex;
             align-items: center;
             gap: 10px;
             text-decoration: none;
-            margin-bottom: 50px;
+            margin-bottom: 32px;
         }
 
         .brand-icon {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, var(--accent), #4F46E5);
-            border-radius: 12px;
+            background: linear-gradient(135deg, #6e56cf, #4F46E5);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -128,36 +89,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         .brand-text {
             font-weight: 800;
-            font-size: 1.4rem;
-            background: linear-gradient(135deg, #8B74E6, #38BDF8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
+            font-size: 1.3rem;
+            color: var(--text-primary);
         }
 
-        .login-heading {
+        .login-card {
+            background: var(--card-base);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 40px 32px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
             margin-bottom: 8px;
         }
 
-        .login-heading h2 {
-            font-weight: 700;
-            font-size: 1.75rem;
-            color: var(--text-primary);
-            margin-bottom: 6px;
-        }
-
-        .login-heading p {
+        .login-header p {
             color: var(--text-secondary);
-            font-size: 1rem;
-            margin: 0;
+            font-size: 0.95rem;
         }
 
         .alert-error {
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.15);
-            border-radius: 14px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 10px;
             color: #FCA5A5;
-            padding: 14px 18px;
+            padding: 12px 16px;
             font-size: 0.9rem;
             margin-bottom: 24px;
             display: flex;
@@ -165,113 +129,132 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             gap: 10px;
         }
 
-        .field-group {
-            margin-bottom: 22px;
+        .form-group {
+            margin-bottom: 20px;
         }
 
-        .field-label {
+        .form-label {
             display: block;
             color: var(--text-secondary);
             font-weight: 500;
             font-size: 0.9rem;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
-        .field-input-wrap {
+        .input-wrapper {
             position: relative;
-            display: flex;
-            align-items: center;
         }
 
-        .field-icon {
-            position: absolute;
-            left: 16px;
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            pointer-events: none;
-            transition: color 0.3s;
-            z-index: 2;
-        }
-
-        .field-input {
+        .form-input {
             width: 100%;
             background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            border-radius: 14px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
             color: var(--text-primary);
-            padding: 15px 16px 15px 48px;
-            font-size: 1rem;
-            font-family: inherit;
-            transition: 0.3s;
-        }
-
-        .field-input:focus {
-            background: rgba(255,255,255,0.05);
-            border-color: var(--accent);
-            box-shadow: 0 0 0 4px var(--accent-light);
+            padding: 12px 16px 12px 44px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
             outline: none;
         }
 
-        .field-input:focus ~ .field-icon,
-        .field-input:focus + .field-icon {
+        .form-input:focus {
+            background: rgba(255,255,255,0.05);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(250, 250, 250, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .form-input:focus ~ .input-icon {
             color: var(--accent);
         }
 
-        .field-input:focus ~ .eye-btn,
-        .field-input:focus + .eye-btn {
-            color: var(--accent);
-        }
-
-        .field-input::placeholder {
-            color: rgba(139, 143, 153, 0.4);
-        }
-
-        .eye-btn {
+        .toggle-password {
             position: absolute;
             right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
             background: none;
             border: none;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             cursor: pointer;
             padding: 4px 8px;
-            font-size: 0.9rem;
-            transition: color 0.3s;
+            transition: color 0.2s;
         }
 
-        .eye-btn:hover { color: var(--text-primary); }
+        .toggle-password:hover {
+            color: var(--text-primary);
+        }
 
-        .btn-submit {
+        .btn-login {
+            width: 100%;
             background: linear-gradient(135deg, var(--accent), #4F46E5);
             color: white;
             border: none;
-            border-radius: 14px;
+            border-radius: 10px;
             font-weight: 600;
-            font-size: 1.05rem;
-            padding: 16px 28px;
-            width: 100%;
-            font-family: inherit;
+            font-size: 1rem;
+            padding: 14px;
             cursor: pointer;
-            transition: 0.3s;
-            margin-top: 8px;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
+            margin-top: 8px;
         }
 
-        .btn-submit:hover {
+        .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 30px rgba(110, 86, 207, 0.3);
+            box-shadow: 0 8px 20px rgba(110, 86, 207, 0.3);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 24px 0;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: var(--border-subtle);
+        }
+
+        .divider span {
+            position: relative;
+            background: var(--card-base);
+            padding: 0 12px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
         }
 
         .link-group {
             text-align: center;
-            margin-top: 28px;
         }
 
         .link-register {
             color: var(--text-secondary);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
 
         .link-register a {
@@ -291,11 +274,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             gap: 6px;
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             margin-top: 16px;
             padding: 8px 16px;
             border-radius: 8px;
-            transition: 0.3s;
+            transition: all 0.2s;
         }
 
         .link-home:hover {
@@ -303,74 +286,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background: rgba(255,255,255,0.03);
         }
 
-        .welcome-text {
-            margin-bottom: 40px;
-        }
-
-        .welcome-text h3 {
-            font-weight: 700;
-            font-size: 1.4rem;
-            margin-bottom: 12px;
-            line-height: 1.4;
-        }
-
-        .welcome-text p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.7;
-        }
-
-        .feature-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .feature-list li {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-        }
-
-        .feature-list li i {
-            width: 28px;
-            height: 28px;
-            background: rgba(16, 185, 129, 0.1);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #10B981;
-            font-size: 0.75rem;
-        }
-
-        @media (max-width: 768px) {
-            .login-wrapper { flex-direction: column; max-width: 480px; }
-            .login-left, .login-right {
-                border-radius: 24px;
-                border: 1px solid var(--border);
-                max-width: 100%;
-                padding: 40px 30px;
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 32px 24px;
             }
-            .login-right { border-top: none; border-radius: 0 0 24px 24px; }
+            .login-header h1 {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="login-wrapper">
+    <div class="login-container">
+        <a href="../index.php" class="brand-link">
+            <div class="brand-icon">
+                <i class="<?php echo function_exists('getStoreIconClass') ? getStoreIconClass() : 'fa-solid fa-ghost'; ?>"></i>
+            </div>
+            <span class="brand-text"><?php echo htmlspecialchars(getStoreName()); ?></span>
+        </a>
 
-        <div class="login-left">
-            <a href="../index.php" class="brand">
-                <div class="brand-icon"><i class="<?php echo nexus_icon(); ?>"></i></div>
-                <span class="brand-text"><?php echo htmlspecialchars(getStoreName()); ?></span>
-            </a>
-
-            <div class="login-heading">
-                <h2>Đăng nhập tài khoản</h2>
+        <div class="login-card">
+            <div class="login-header">
+                <h1>Đăng nhập</h1>
                 <p>Chào mừng bạn quay trở lại!</p>
             </div>
 
@@ -382,72 +320,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <?php endif; ?>
 
             <form method="POST">
-                <div class="field-group">
-                    <label for="username" class="field-label">Tên đăng nhập</label>
-                    <div class="field-input-wrap">
-                        <input type="text" class="field-input" name="username" id="username"
-                            placeholder="Nhập tên đăng nhập" autocomplete="off" required>
-                        <i class="fa-regular fa-user field-icon"></i>
+                <div class="form-group">
+                    <label for="username" class="form-label">Tên đăng nhập</label>
+                    <div class="input-wrapper">
+                        <input type="text" class="form-input" name="username" id="username"
+                            placeholder="Nhập tên đăng nhập" required autofocus>
+                        <i class="fa-regular fa-user input-icon"></i>
                     </div>
                 </div>
 
-                <div class="field-group">
-                    <label for="password" class="field-label">Mật khẩu</label>
-                    <div class="field-input-wrap">
-                        <input type="password" class="field-input" name="password" id="password"
-                            placeholder="Nhập mật khẩu" autocomplete="off" required>
-                        <i class="fa-solid fa-lock field-icon"></i>
-                        <button type="button" class="eye-btn" onclick="togglePassword()">
+                <div class="form-group">
+                    <label for="password" class="form-label">Mật khẩu</label>
+                    <div class="input-wrapper">
+                        <input type="password" class="form-input" name="password" id="password"
+                            placeholder="Nhập mật khẩu" required>
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <button type="button" class="toggle-password" onclick="togglePassword()">
                             <i class="fa-regular fa-eye" id="eyeIcon"></i>
                         </button>
                     </div>
                 </div>
 
-                <button type="submit" class="btn-submit">
+                <button type="submit" class="btn-login">
                     <i class="fa-solid fa-right-to-bracket"></i>
-                    Đăng nhập ngay
+                    Đăng nhập
                 </button>
             </form>
 
+            <div class="divider">
+                <span>hoặc</span>
+            </div>
+
             <div class="link-group">
                 <p class="link-register">
-                    Chưa có tài khoản? <a href="register.php">Đăng ký miễn phí</a>
+                    Chưa có tài khoản? <a href="register.php">Đăng ký ngay</a>
                 </p>
                 <a href="../index.php" class="link-home">
                     <i class="fa-solid fa-arrow-left"></i> Quay về trang chủ
                 </a>
             </div>
         </div>
-
-        <div class="login-right">
-            <div class="welcome-text">
-                <h3>Mua sắm an toàn,<br>giao dịch nhanh chóng</h3>
-                <p>Cộng đồng người dùng đang tin tưởng <?php echo htmlspecialchars(getStoreName()); ?> cho các giao dịch của mình.</p>
-            </div>
-
-            <ul class="feature-list">
-                <li>
-                    <i class="fa-solid fa-check"></i>
-                    Tài khoản được xác minh & bảo mật
-                </li>
-                <li>
-                    <i class="fa-solid fa-check"></i>
-                    Hỗ trợ 24/7 từ đội ngũ chuyên nghiệp
-                </li>
-                <li>
-                    <i class="fa-solid fa-check"></i>
-                    Giao dịch nhanh chóng, đáng tin cậy
-                </li>
-                <li>
-                    <i class="fa-solid fa-check"></i>
-                    Hoàn tiền nếu có sự cố phát sinh
-                </li>
-            </ul>
-        </div>
-
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function togglePassword() {
             const input = document.getElementById('password');
