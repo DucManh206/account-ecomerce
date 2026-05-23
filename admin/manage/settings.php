@@ -41,8 +41,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'max_amount' => intval($_POST['max_amount'] ?? 500000000),
         'webhook_secret' => trim($_POST['webhook_secret'] ?? ''),
         'status' => isset($_POST['sepay_enabled']) ? 1 : 0,
+        'transfer_prefix' => trim($_POST['transfer_prefix'] ?? 'NT'),
+        'check_interval_minutes' => intval($_POST['check_interval_minutes'] ?? 5),
+        'cancel_after_minutes' => intval($_POST['cancel_after_minutes'] ?? 30),
     ];
-    
+
     sepay_saveConfig($sepayData);
     $success = true;
     $activeTab = 'sepay';
@@ -350,18 +353,25 @@ ob_start();
                 <i class="fa-solid fa-gear"></i> Tùy chọn xử lý
             </div>
 
-            <div class="toggle-wrapper mb-3">
-                <label class="toggle-switch">
-                    <input type="checkbox" name="auto_process" value="1" <?php echo ($sepayConfig && $sepayConfig['auto_process'] == 1) ? 'checked' : ''; ?>>
-                    <span class="nx-toggle-slider"></span>
-                </label>
-                <div>
-                    <div class="nx-label mb-0">Tự động xử lý nạp tiền</div>
-                    <div class="form-text mb-0">Khi bật, giao dịch khớp sẽ tự động được xử lý. Nội dung chuyển khoản phải có format: NapTien {user_id}</div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <label class="nx-label">Prefix nội dung CK</label>
+                    <input type="text" class="nx-input" name="transfer_prefix" value="<?php echo htmlspecialchars($sepayConfig['transfer_prefix'] ?? 'NT'); ?>" placeholder="VD: NT" maxlength="20">
+                    <div class="form-text">Tiền tố cho mã nạp tiền (2-20 ký tự)</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="nx-label">Kiểm tra mỗi (phút)</label>
+                    <input type="number" class="nx-input" name="check_interval_minutes" value="<?php echo intval($sepayConfig['check_interval_minutes'] ?? 5); ?>" min="1" max="60">
+                    <div class="form-text">Cron job chạy mỗi X phút</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="nx-label">Hủy sau (phút)</label>
+                    <input type="number" class="nx-input" name="cancel_after_minutes" value="<?php echo intval($sepayConfig['cancel_after_minutes'] ?? 30); ?>" min="5" max="1440">
+                    <div class="form-text">Tự động hủy yêu cầu pending</div>
                 </div>
             </div>
 
-            <div class="row g-4">
+            <div class="row g-4 mt-2">
                 <div class="col-md-6">
                     <label class="nx-label">Số tiền tối thiểu (đ)</label>
                     <input type="number" class="nx-input" name="min_amount" value="<?php echo intval($sepayConfig['min_amount'] ?? 10000); ?>" min="1000" step="1000">
@@ -375,22 +385,26 @@ ob_start();
             </div>
         </div>
 
-        <!-- Webhook Info -->
+        <!-- Cron Job Info -->
         <div class="nx-settings-card mb-4">
             <div class="nx-settings-section">
-                <i class="fa-solid fa-webhook"></i> Webhook URL
+                <i class="fa-solid fa-clock-rotate-left"></i> Cron Job
+            </div>
+            <div class="nx-alert nx-alert-info mb-3">
+                <i class="fa-solid fa-info-circle me-1"></i>
+                Thêm cron job bên dưới vào server để tự động kiểm tra giao dịch.
             </div>
             <div class="row">
                 <div class="col-md-12">
-                    <div class="nx-alert nx-alert-info mb-3">
-                        <i class="fa-solid fa-info-circle me-1"></i>
-                        Thêm URL webhook bên dưới vào SePay Dashboard để nhận thông báo giao dịch tự động.
-                    </div>
+                    <label class="nx-label">Cron URL</label>
                     <div class="input-group">
-                        <input type="text" class="nx-input" id="webhookUrl" value="<?php echo (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST']; ?>/api/sepay-webhook.php" readonly>
-                        <button type="button" class="nx-btn nx-btn-secondary" onclick="copyWebhookUrl()">
+                        <input type="text" class="nx-input" id="cronUrl" value="<?php echo (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST']; ?>/api/cron/sepay.php?key=nexus-sepay-cron-2024" readonly>
+                        <button type="button" class="nx-btn nx-btn-secondary" onclick="copyCronUrl()">
                             <i class="fa-solid fa-copy"></i> Copy
                         </button>
+                    </div>
+                    <div class="form-text mt-2">
+                        Ví dụ cron Linux: <code>*/<?php echo intval($sepayConfig['check_interval_minutes'] ?? 5); ?> * * * * curl -s <?php echo (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http'); ?>://domain.com/api/cron/sepay.php?key=nexus-sepay-cron-2024</code>
                     </div>
                 </div>
             </div>
@@ -436,6 +450,15 @@ function copyWebhookUrl() {
     const url = document.getElementById('webhookUrl').value;
     navigator.clipboard.writeText(url).then(function() {
         alert('Đã copy webhook URL!');
+    }, function(err) {
+        console.error('Lỗi copy: ', err);
+    });
+}
+
+function copyCronUrl() {
+    const url = document.getElementById('cronUrl').value;
+    navigator.clipboard.writeText(url).then(function() {
+        alert('Đã copy Cron URL!');
     }, function(err) {
         console.error('Lỗi copy: ', err);
     });

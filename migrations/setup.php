@@ -386,6 +386,17 @@ if (te("product_stock")) {
     echo "<p class=\"ok\">[OK] Dropped deprecated product_stock</p>";
 }
 
+// sepay_config extra columns (post-create migration)
+ac("sepay_config", "transfer_prefix", "webhook_secret", "VARCHAR(20) DEFAULT 'NT'");
+ac("sepay_config", "check_interval_minutes", "transfer_prefix", "INT DEFAULT 5");
+ac("sepay_config", "cancel_after_minutes", "check_interval_minutes", "INT DEFAULT 30");
+
+// deposit_requests extra columns for auto matching
+ac("deposit_requests", "unique_code", "amount", "VARCHAR(50) DEFAULT NULL");
+ac("deposit_requests", "expires_at", "unique_code", "TIMESTAMP NULL");
+ai("deposit_requests", "idx_dep_unique_code", "unique_code");
+ai("deposit_requests", "idx_dep_expires", "expires_at");
+
 /* ================================================================
    3. SEED DATA (insert only if empty)
    ================================================================ */

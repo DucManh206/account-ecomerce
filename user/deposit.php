@@ -73,7 +73,23 @@ $uniqueCode = $transferPrefix . '_' . $userId . '_' . $timestamp;
 
 // Xử lý form
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    if ($_POST['action'] === 'create_deposit_request') {
+    if ($_POST['action'] === 'cancel_deposit') {
+        $depositId = intval($_POST['deposit_id'] ?? 0);
+        if ($depositId > 0 && $depositTableExists) {
+            $stmt = mysqli_prepare($GLOBALS['conn'], "UPDATE deposit_requests SET status = 'cancelled' WHERE id = ? AND user_id = ? AND status = 'pending'");
+            mysqli_stmt_bind_param($stmt, "ii", $depositId, $userId);
+            mysqli_stmt_execute($stmt);
+            if (mysqli_stmt_affected_rows($stmt) > 0) {
+                $success = 'Đã hủy yêu cầu nạp tiền.';
+            }
+        }
+    } elseif ($_POST['action'] === 'sync_sepay') {
+        if (function_exists('sepay_syncAndProcess')) {
+            sepay_syncAndProcess();
+            sepay_expireOldRequests();
+            $success = 'Đã cập nhật giao dịch mới nhất.';
+        }
+    } elseif ($_POST['action'] === 'create_deposit_request') {
         if (!$depositTableExists) {
             $error = 'Hệ thống nạp tiền chưa được kích hoạt.';
         } else {
@@ -722,17 +738,35 @@ if ($depositTableExists) {
                             <?php echo date('d/m/Y H:i', strtotime($req['created_at'])); ?>
                         </div>
                     </div>
-                    <span class="status-badge status-<?php echo $req['status']; ?>">
-                        <?php
-                        switch($req['status']) {
-                            case 'pending': echo '<i class="fa-solid fa-clock"></i> Chờ duyệt'; break;
-                            case 'approved': echo '<i class="fa-solid fa-check"></i> Đã duyệt'; break;
-                            case 'rejected': echo '<i class="fa-solid fa-times"></i> Từ chối'; break;
-                        }
-                        ?>
-                    </span>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span class="status-badge status-<?php echo $req['status']; ?>">
+                            <?php
+                            switch($req['status']) {
+                                case 'pending': echo '<i class="fa-solid fa-clock"></i> Chờ duyệt'; break;
+                                case 'approved': echo '<i class="fa-solid fa-check"></i> Đã duyệt'; break;
+                                case 'rejected': echo '<i class="fa-solid fa-times"></i> Từ chối'; break;
+                            }
+                            ?>
+                        </span>
+                        <?php if ($req['status'] === 'pending'): ?>
+                            <form method="POST" style="margin:0;display:inline;">
+                                <input type="hidden" name="action" value="cancel_deposit">
+                                <input type="hidden" name="deposit_id" value="<?php echo $req['id']; ?>">
+                                <button type="submit" class="nx-copy-btn" style="background:var(--red);padding:2px 8px;font-size:0.75rem;">
+                                    <i class="fa-solid fa-times"></i> Hủy
+                                </button>
+                            </form>
+                            <form method="POST" style="margin:0;display:inline;">
+                                <input type="hidden" name="action" value="sync_sepay">
+                                <button type="submit" class="nx-copy-btn" style="background:var(--blue);padding:2px 8px;font-size:0.75rem;">
+                                    <i class="fa-solid fa-sync"></i> Kiểm tra
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
                 </div>
             <?php endwhile; ?>
+
             <?php else: ?>
                 <p style="text-align:center;color:rgba(255,255,255,0.4);padding:2rem 0;font-size:0.95rem;">
                     <i class="fa-solid fa-receipt" style="font-size:2rem;display:block;margin-bottom:0.75rem;opacity:0.5;"></i>
@@ -773,6 +807,7 @@ if ($depositTableExists) {
             amountDisplay.textContent = formatMoney(amount);
 
             if (amount >= sepayConfig.minAmount) {
+                // Sử dụng VietQR API để tạo mã QR nạp tiền tự động
                 const qrUrl = 'https://img.vietqr.io/image/' + sepayConfig.bankCode + '-' + sepayConfig.accountNumber + '-compact.png?amount=' + amount + '&addInfo=' + encodeURIComponent(sepayConfig.transferNote);
                 qrImage.src = qrUrl;
                 qrImage.style.display = 'block';
