@@ -1,0 +1,9 @@
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+vendor/
+node_modules/
+# Nếu bạn muốn bảo mật config db, hãy bỏ comment dòng dưới
+# config/database_config.php

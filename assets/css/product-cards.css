@@ -1,0 +1,817 @@
+/**
+ * NEXUS STORE - Unified Product Card System
+ * Dùng chung cho tất cả card trên toàn bộ site.
+ * Import trong nexus.css hoặc trong <head> các page.
+ */
+
+/* =====================================================
+   UNIFIED PRODUCT CARD
+   ===================================================== */
+.nx-card {
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.nx-card:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.nx-card-img {
+    position: relative;
+    overflow: hidden;
+    padding: 12px 12px 0;
+}
+
+.nx-card-img img {
+    width: 100%;
+    height: 170px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    display: block;
+    transition: transform 0.3s;
+}
+
+.nx-card:hover .nx-card-img img {
+    transform: scale(1.03);
+}
+
+.nx-card-badge {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(9, 9, 11, 0.85);
+    backdrop-filter: blur(8px);
+    color: #facc15;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.nx-card-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 8px;
+}
+
+.nx-card-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nx-card-category i {
+    font-size: 0.7rem;
+    color: var(--purple);
+}
+
+.nx-card-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.35;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.nx-card-title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.nx-card-title a:hover {
+    color: var(--purple);
+}
+
+.nx-card-details {
+    background: rgba(255, 255, 255, 0.025);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    flex: 1;
+}
+
+.nx-card-details ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.nx-card-details ul li {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nx-card-details ul li span {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+}
+
+.nx-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-subtle);
+    margin-top: auto;
+    gap: 8px;
+}
+
+.nx-card-price-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.nx-card-price {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.nx-card-price-old {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-decoration: line-through;
+}
+
+.nx-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.nx-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    text-decoration: none;
+    white-space: nowrap;
+    padding: 8px 14px;
+    line-height: 1;
+}
+
+.nx-btn-primary {
+    background: var(--text-primary);
+    color: var(--bg-base);
+}
+
+.nx-btn-primary:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    color: var(--bg-base);
+}
+
+.nx-btn-outline {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+    padding: 8px 12px;
+}
+
+.nx-btn-outline:hover {
+    background: var(--card-hover);
+    color: var(--text-primary);
+    border-color: var(--border-accent);
+}
+
+.nx-btn-icon {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    padding: 8px 10px;
+}
+
+.nx-btn-icon:hover {
+    background: var(--red-dim);
+    color: var(--red);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.nx-btn-sm {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+}
+
+.nx-btn-lg {
+    padding: 12px 24px;
+    font-size: 0.9rem;
+}
+
+/* Quick view overlay (hover on card) */
+.nx-card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(9, 9, 11, 0.92) 0%, transparent 100%);
+    padding: 36px 12px 12px;
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 2;
+}
+
+.nx-card:hover .nx-card-overlay {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* =====================================================
+   CART ITEM CARD
+   ===================================================== */
+.nx-cart-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    margin-bottom: 12px;
+    transition: border-color 0.15s;
+}
+
+.nx-cart-item:hover {
+    border-color: var(--border-accent);
+}
+
+.nx-cart-item:last-child {
+    margin-bottom: 0;
+}
+
+.nx-cart-img {
+    flex-shrink: 0;
+    width: 90px;
+    height: 70px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.nx-cart-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.nx-cart-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nx-cart-category {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.nx-cart-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nx-cart-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.nx-cart-title a:hover {
+    color: var(--purple);
+}
+
+.nx-cart-price {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--green);
+}
+
+.nx-cart-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.nx-qty {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.nx-qty-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.15s, color 0.15s;
+}
+
+.nx-qty-btn:hover {
+    background: var(--card-hover);
+    color: var(--text-primary);
+}
+
+.nx-qty-val {
+    width: 36px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    border-left: 1px solid var(--border-subtle);
+    border-right: 1px solid var(--border-subtle);
+    line-height: 32px;
+}
+
+.nx-cart-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.15s;
+}
+
+.nx-cart-remove:hover {
+    background: var(--red-dim);
+    color: var(--red);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* =====================================================
+   ORDER CARD
+   ===================================================== */
+.nx-order-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    margin-bottom: 12px;
+    transition: border-color 0.15s;
+    cursor: pointer;
+}
+
+.nx-order-card:hover {
+    border-color: var(--border-accent);
+    background: rgba(255, 255, 255, 0.015);
+}
+
+.nx-order-card:last-child {
+    margin-bottom: 0;
+}
+
+.nx-order-img {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--bg-secondary);
+}
+
+.nx-order-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.nx-order-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nx-order-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nx-order-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.nx-order-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.nx-order-account {
+    background: rgba(110, 86, 207, 0.08);
+    border: 1px solid rgba(110, 86, 207, 0.15);
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    margin-top: 4px;
+}
+
+.nx-order-account .label {
+    color: var(--purple);
+    font-weight: 600;
+}
+
+.nx-order-account .value {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.nx-order-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.nx-order-price {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.nx-order-date {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.nx-order-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.nx-order-status::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.nx-status-completed {
+    background: var(--green-dim);
+    color: var(--green);
+}
+
+.nx-status-pending {
+    background: var(--amber-dim);
+    color: var(--amber);
+}
+
+.nx-status-processing {
+    background: var(--blue-dim);
+    color: var(--blue);
+}
+
+.nx-status-cancelled,
+.nx-status-refunded {
+    background: var(--red-dim);
+    color: var(--red);
+}
+
+/* =====================================================
+   ACCOUNT CARD (purchase success)
+   ===================================================== */
+.nx-account-card {
+    background: var(--card-base);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.nx-account-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: rgba(16, 185, 129, 0.06);
+    border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+.nx-account-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: var(--green-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--green);
+    font-size: 0.9rem;
+}
+
+.nx-account-product {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--green);
+}
+
+.nx-account-fields {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 0;
+}
+
+.nx-account-field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.nx-account-field:last-child {
+    border-bottom: none;
+}
+
+.nx-account-field-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--green);
+    min-width: 80px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.nx-account-field-label i {
+    font-size: 0.68rem;
+}
+
+.nx-account-field-value {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nx-account-field-value span,
+.nx-account-field-value a {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    word-break: break-all;
+}
+
+.nx-account-field-value a {
+    color: var(--blue);
+    text-decoration: underline;
+}
+
+.nx-account-copy {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.nx-account-copy:hover {
+    background: var(--green-dim);
+    color: var(--green);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.nx-account-copy.copied {
+    background: var(--green-dim);
+    color: var(--green);
+}
+
+/* =====================================================
+   RELATED / SMALL PRODUCT CARD
+   ===================================================== */
+.nx-rel-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: border-color 0.15s, transform 0.15s;
+}
+
+.nx-rel-card:hover {
+    border-color: var(--border-accent);
+    transform: translateX(3px);
+    color: inherit;
+}
+
+.nx-rel-img {
+    flex-shrink: 0;
+    width: 64px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.nx-rel-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.nx-rel-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.nx-rel-category {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.nx-rel-category i {
+    font-size: 0.62rem;
+    color: var(--purple);
+}
+
+.nx-rel-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nx-rel-price {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* =====================================================
+   EMPTY STATE
+   ===================================================== */
+.nx-empty {
+    text-align: center;
+    padding: 60px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.nx-empty-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+.nx-empty-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.nx-empty-desc {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    max-width: 320px;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+@media (max-width: 576px) {
+    .nx-cart-item {
+        flex-wrap: wrap;
+    }
+
+    .nx-cart-actions {
+        width: 100%;
+        justify-content: space-between;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-subtle);
+    }
+
+    .nx-order-card {
+        flex-wrap: wrap;
+    }
+
+    .nx-order-right {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-subtle);
+    }
+
+    .nx-card-img img {
+        height: 140px;
+    }
+}

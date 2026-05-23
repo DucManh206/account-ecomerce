@@ -1,0 +1,1383 @@
+@import url('product-cards.css');
+
+/**
+ * NEXUS STORE
+ * CSS tổng hợp cho toàn bộ dự án
+ */
+
+/* =====================================================
+   1. CSS VARIABLES - Design Tokens
+   ===================================================== */
+:root {
+    /* --- Color Palette (Dark Theme) --- */
+    --bg-base: #09090b;
+    --bg-secondary: #121214;
+    --card-base: #18181b;
+    --card-hover: #27272a;
+    --accent: #fafafa;
+    --accent-hover: #e4e4e7;
+    --accent-glow: rgba(250, 250, 250, 0.05);
+
+    /* --- Text Colors --- */
+    --text-primary: #fafafa;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+
+    /* --- Borders --- */
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-accent: rgba(255, 255, 255, 0.15);
+
+    /* --- Semantic Colors --- */
+    --green: #10b981;
+    --green-dim: rgba(16, 185, 129, 0.1);
+    --green-light: rgba(16, 185, 129, 0.08);
+    --red: #ef4444;
+    --red-dim: rgba(239, 68, 68, 0.1);
+    --amber: #f59e0b;
+    --amber-dim: rgba(245, 158, 11, 0.1);
+    --blue: #3b82f6;
+    --blue-dim: rgba(59, 130, 246, 0.1);
+    --purple: #6e56cf;
+    --purple-dim: rgba(110, 86, 207, 0.1);
+    --purple-light: rgba(110, 86, 207, 0.12);
+
+    /* --- Typography --- */
+    --font-sans: 'Plus Jakarta Sans', 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'Geist Mono', 'Courier New', Consolas, monospace;
+
+    /* --- Spacing --- */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 24px;
+    --radius-full: 9999px;
+
+    /* --- Shadows --- */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.4);
+    --shadow-green: 0 8px 25px rgba(16, 185, 129, 0.25);
+    --shadow-purple: 0 12px 30px rgba(110, 86, 207, 0.3);
+
+    /* --- Transitions --- */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s ease;
+    --transition-slow: 0.4s ease;
+}
+
+/* Auth page variant (slightly warmer dark) */
+:root[data-theme="auth"] {
+    --bg-base: #0B0E14;
+    --card-base: #1a1d26;
+}
+
+/* User pages variant */
+:root[data-theme="user"] {
+    --bg-base: #0f0f1e;
+    --card-base: #1a1a2e;
+}
+
+/* =====================================================
+   2. BASE STYLES
+   ===================================================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+::selection {
+    background: var(--accent);
+    color: #fff;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--card-hover); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* =====================================================
+   3. TYPOGRAPHY
+   ===================================================== */
+.text-primary { color: var(--text-primary) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.text-muted { color: var(--text-muted) !important; }
+.text-success { color: var(--green) !important; }
+.text-danger { color: var(--red) !important; }
+.text-warning { color: var(--amber) !important; }
+.text-info { color: var(--blue) !important; }
+
+.font-mono { font-family: var(--font-mono) !important; }
+
+/* =====================================================
+   4. LAYOUT
+   ===================================================== */
+.container-main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.container-narrow {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* =====================================================
+   5. NAVBAR
+   ===================================================== */
+.nexus-navbar {
+    background: rgba(9, 9, 11, 0.92) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 14px 0;
+}
+
+.nexus-navbar .navbar-brand {
+    font-weight: 700;
+    color: var(--text-primary) !important;
+    font-size: 1.4rem;
+    letter-spacing: -0.5px;
+}
+
+.nexus-navbar .nav-btn {
+    background: var(--card-hover);
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    padding: 8px 18px;
+    font-size: 0.875rem;
+    transition: var(--transition-fast);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nexus-navbar .nav-btn:hover {
+    background: var(--accent);
+    color: var(--bg-base) !important;
+}
+
+.nexus-navbar .nav-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    transition: var(--transition-fast);
+    text-decoration: none;
+    position: relative;
+}
+
+.nexus-navbar .nav-icon-btn:hover {
+    border-color: var(--border-accent);
+    background: var(--card-hover);
+}
+
+/* =====================================================
+   6. CARDS
+   ===================================================== */
+.nexus-card {
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+}
+
+.nexus-card-sm {
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+}
+
+.nexus-card-lg {
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+}
+
+/* =====================================================
+   7. BUTTONS
+   ===================================================== */
+/* Primary - white on dark */
+.btn-nexus-primary {
+    background: var(--accent);
+    color: var(--bg-base);
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    padding: 10px 20px;
+    font-size: 0.875rem;
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-nexus-primary:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    color: var(--bg-base);
+}
+
+.btn-nexus-primary:active {
+    transform: scale(0.98);
+}
+
+/* Secondary - transparent with border */
+.btn-nexus-secondary {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    padding: 9px 20px;
+    font-size: 0.875rem;
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-nexus-secondary:hover {
+    background: var(--card-hover);
+    border-color: var(--border-accent);
+    color: var(--text-primary);
+}
+
+/* Success - green */
+.btn-nexus-success {
+    background: linear-gradient(135deg, var(--green), #059669);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    padding: 12px 24px;
+    font-size: 0.9rem;
+    transition: var(--transition-normal);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-nexus-success:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-green);
+    color: white;
+}
+
+.btn-nexus-success:active {
+    transform: scale(0.98);
+}
+
+.btn-nexus-success:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Purple accent */
+.btn-nexus-purple {
+    background: linear-gradient(135deg, var(--purple), #4F46E5);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    padding: 12px 24px;
+    font-size: 0.9rem;
+    transition: var(--transition-normal);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-nexus-purple:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-purple);
+    color: white;
+}
+
+/* Danger */
+.btn-nexus-danger {
+    background: transparent;
+    color: var(--red);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-nexus-danger:hover {
+    background: var(--red-dim);
+    border-color: var(--red);
+    color: var(--red);
+}
+
+/* Ghost - no background */
+.btn-nexus-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+}
+
+.btn-nexus-ghost:hover {
+    background: var(--card-hover);
+    color: var(--text-primary);
+}
+
+/* =====================================================
+   8. FORM INPUTS
+   ===================================================== */
+.nexus-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    font-family: var(--font-sans);
+    transition: var(--transition-normal);
+    outline: none;
+}
+
+.nexus-input:focus {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--purple);
+    box-shadow: 0 0 0 4px rgba(110, 86, 207, 0.12);
+}
+
+.nexus-input::placeholder {
+    color: rgba(139, 143, 153, 0.4);
+}
+
+.nexus-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Select */
+.nexus-select {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    font-family: var(--font-sans);
+    transition: var(--transition-normal);
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2371717a' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: calc(100% - 12px) center;
+    padding-right: 36px;
+}
+
+.nexus-select:focus {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--purple);
+    box-shadow: 0 0 0 4px rgba(110, 86, 207, 0.12);
+}
+
+/* Input with icon */
+.nexus-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.nexus-input-wrap .nexus-input {
+    padding-left: 44px;
+}
+
+.nexus-input-icon {
+    position: absolute;
+    left: 14px;
+    color: var(--text-muted);
+    font-size: 1rem;
+    pointer-events: none;
+    transition: color var(--transition-normal);
+    z-index: 1;
+}
+
+.nexus-input-wrap .nexus-input:focus ~ .nexus-input-icon,
+.nexus-input-wrap .nexus-input:focus + .nexus-input-icon {
+    color: var(--purple);
+}
+
+.nexus-input-wrap .nexus-input:focus ~ .nexus-input-icon {
+    color: var(--purple);
+}
+
+/* Form label */
+.nexus-label {
+    display: block;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.875rem;
+    margin-bottom: 8px;
+}
+
+/* Form group */
+.nexus-form-group {
+    margin-bottom: 1.25rem;
+}
+
+/* Checkbox / Radio */
+.nexus-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.nexus-check input[type="checkbox"],
+.nexus-check input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--purple);
+    cursor: pointer;
+}
+
+/* =====================================================
+   9. BADGES & TAGS
+   ===================================================== */
+.nexus-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+
+.nexus-badge-purple {
+    background: var(--purple-dim);
+    color: #A78BFA;
+    border-color: rgba(110, 86, 207, 0.2);
+}
+
+.nexus-badge-green {
+    background: var(--green-dim);
+    color: var(--green);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.nexus-badge-red {
+    background: var(--red-dim);
+    color: var(--red);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.nexus-badge-amber {
+    background: var(--amber-dim);
+    color: var(--amber);
+    border-color: rgba(245, 158, 11, 0.2);
+}
+
+.nexus-badge-blue {
+    background: var(--blue-dim);
+    color: var(--blue);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.nexus-badge-muted {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border-color: var(--border-subtle);
+}
+
+/* Pill badge (status) */
+.nexus-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.nexus-pill::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.nexus-pill-success {
+    background: var(--green-dim);
+    color: var(--green);
+}
+.nexus-pill-success::before { background: var(--green); }
+
+.nexus-pill-pending {
+    background: var(--amber-dim);
+    color: var(--amber);
+}
+.nexus-pill-pending::before { background: var(--amber); }
+
+.nexus-pill-danger {
+    background: var(--red-dim);
+    color: var(--red);
+}
+.nexus-pill-danger::before { background: var(--red); }
+
+/* Tag/Chip */
+.nexus-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-full);
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: var(--transition-fast);
+    text-decoration: none;
+}
+
+.nexus-tag:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+    border-color: var(--border-accent);
+}
+
+.nexus-tag.active {
+    background: var(--purple-dim);
+    color: #A78BFA;
+    border-color: var(--purple);
+}
+
+/* =====================================================
+   10. STAT CARDS
+   ===================================================== */
+.nexus-stat-card {
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    transition: var(--transition-normal);
+}
+
+.nexus-stat-card:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+}
+
+.nexus-stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+}
+
+.nexus-stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.nexus-stat-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+/* =====================================================
+   11. PRODUCT CARD
+   ===================================================== */
+.nexus-product-card {
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: var(--transition-normal);
+    height: 100%;
+    position: relative;
+}
+
+.nexus-product-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-accent);
+}
+
+.nexus-product-card .card-img-box {
+    position: relative;
+    padding: 12px 12px 0;
+    overflow: hidden;
+}
+
+.nexus-product-card .card-img-box img {
+    border-radius: var(--radius-md);
+    height: 185px;
+    width: 100%;
+    object-fit: cover;
+}
+
+.nexus-product-card .card-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.nexus-product-card .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-subtle);
+}
+
+/* =====================================================
+   12. LIST / ITEM ROWS
+   ===================================================== */
+.nexus-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    margin-bottom: 0.75rem;
+    transition: var(--transition-fast);
+    gap: 1rem;
+}
+
+.nexus-list-item:hover {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: var(--border-accent);
+}
+
+.nexus-list-item:last-child {
+    margin-bottom: 0;
+}
+
+/* =====================================================
+   13. TABS
+   ===================================================== */
+.nexus-tabs {
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 0;
+}
+
+.nexus-tab {
+    padding: 0.875rem 1.5rem;
+    color: var(--text-secondary);
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.nexus-tab:hover {
+    color: var(--text-primary);
+}
+
+.nexus-tab.active {
+    color: var(--purple);
+    border-bottom-color: var(--purple);
+    background: transparent;
+}
+
+/* =====================================================
+   14. ALERTS
+   ===================================================== */
+.nexus-alert {
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+}
+
+.nexus-alert-success {
+    background: var(--green-light);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    color: var(--green);
+}
+
+.nexus-alert-danger {
+    background: var(--red-dim);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #FCA5A5;
+}
+
+.nexus-alert-warning {
+    background: var(--amber-dim);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    color: var(--amber);
+}
+
+.nexus-alert-info {
+    background: var(--blue-dim);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    color: var(--blue);
+}
+
+/* =====================================================
+   15. TOAST NOTIFICATIONS
+   ===================================================== */
+#nexus-toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.nexus-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    border-radius: var(--radius-md);
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    color: white;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(120%);
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 280px;
+    max-width: 400px;
+    pointer-events: auto;
+}
+
+.nexus-toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.nexus-toast-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.nexus-toast-success .nexus-toast-icon { color: var(--green); }
+.nexus-toast-error .nexus-toast-icon { color: var(--red); }
+.nexus-toast-warning .nexus-toast-icon { color: var(--amber); }
+.nexus-toast-info .nexus-toast-icon { color: var(--blue); }
+
+/* =====================================================
+   16. EMPTY STATE
+   ===================================================== */
+.nexus-empty {
+    text-align: center;
+    padding: 4rem 1rem;
+}
+
+.nexus-empty-icon {
+    font-size: 4rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    opacity: 0.4;
+}
+
+.nexus-empty-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.nexus-empty-desc {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* =====================================================
+   17. PAGE LAYOUT HELPERS
+   ===================================================== */
+.page-header {
+    padding: 2.5rem 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+/* =====================================================
+   18. TABLE
+   ===================================================== */
+.nexus-table-wrap {
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.nexus-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.nexus-table th {
+    text-align: left;
+    padding: 0.875rem 1.25rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.nexus-table td {
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: middle;
+}
+
+.nexus-table tr:last-child td {
+    border-bottom: none;
+}
+
+.nexus-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* =====================================================
+   19. MODAL
+   ===================================================== */
+.nexus-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition-normal);
+}
+
+.nexus-modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.nexus-modal {
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.95) translateY(10px);
+    transition: var(--transition-normal);
+}
+
+.nexus-modal-overlay.show .nexus-modal {
+    transform: scale(1) translateY(0);
+}
+
+.nexus-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.nexus-modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.nexus-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-fast);
+}
+
+.nexus-modal-close:hover {
+    background: var(--card-hover);
+    color: var(--text-primary);
+}
+
+.nexus-modal-body {
+    padding: 1.5rem;
+}
+
+.nexus-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+/* =====================================================
+   20. INFO ROWS
+   ===================================================== */
+.nexus-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.875rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    gap: 1rem;
+}
+
+.nexus-info-row:last-child {
+    border-bottom: none;
+}
+
+.nexus-info-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.nexus-info-value {
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: right;
+}
+
+/* =====================================================
+   21. BALANCE DISPLAY
+   ===================================================== */
+.nexus-balance-card {
+    background: linear-gradient(135deg, var(--purple), #8b5cf6);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    color: white;
+}
+
+.nexus-balance-label {
+    font-size: 0.875rem;
+    opacity: 0.85;
+    margin-bottom: 0.5rem;
+}
+
+.nexus-balance-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* =====================================================
+   22. COPY / CLIPBOARD
+   ===================================================== */
+.nexus-copy-box {
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 0.875rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    word-break: break-all;
+    white-space: pre-wrap;
+    color: var(--text-primary);
+}
+
+.nexus-copy-btn {
+    background: var(--purple);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.8rem;
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nexus-copy-btn:hover {
+    background: #5a47b8;
+}
+
+/* =====================================================
+   23. BREADCRUMB
+   ===================================================== */
+.nexus-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    margin-bottom: 2rem;
+    color: var(--text-muted);
+}
+
+.nexus-breadcrumb a {
+    color: var(--text-muted);
+    transition: var(--transition-fast);
+}
+
+.nexus-breadcrumb a:hover {
+    color: var(--text-secondary);
+}
+
+.nexus-breadcrumb-sep {
+    font-size: 0.65rem;
+    opacity: 0.5;
+}
+
+/* =====================================================
+   24. GRID LAYOUTS
+   ===================================================== */
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 992px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 576px) {
+    .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+}
+
+/* =====================================================
+   25. MISC UTILITIES
+   ===================================================== */
+/* Dividers */
+.nexus-divider {
+    height: 1px;
+    background: var(--border-subtle);
+    margin: 1.5rem 0;
+}
+
+/* Sticky */
+.nexus-sticky {
+    position: sticky;
+    top: 90px;
+}
+
+/* Overlay panels */
+.nx-panel,
+.nexus-panel {
+    background: var(--card-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    position: sticky;
+    top: 90px;
+}
+
+/* Hero */
+.nexus-hero {
+    position: relative;
+    padding: 5rem 0;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+}
+
+/* Info boxes */
+.nexus-info-box {
+    background: var(--purple-dim);
+    border: 1px solid rgba(110, 86, 207, 0.2);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
+.nexus-info-box-amber {
+    background: var(--amber-dim);
+    border: 1px dashed rgba(245, 158, 11, 0.3);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
+/* Quantity control */
+.nexus-qty {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.nexus-qty-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: var(--transition-fast);
+}
+
+.nexus-qty-btn:hover {
+    background: var(--card-hover);
+    color: var(--text-primary);
+}
+
+.nexus-qty-val {
+    width: 40px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    border-left: 1px solid var(--border-subtle);
+    border-right: 1px solid var(--border-subtle);
+    line-height: 36px;
+}
+
+/* Loading spinner */
+.nexus-spin {
+    animation: nexus-spin-anim 0.8s linear infinite;
+    display: inline-block;
+}
+
+@keyframes nexus-spin-anim {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* =====================================================
+   26. ANIMATIONS
+   ===================================================== */
+@keyframes nexus-fade-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nexus-fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.nexus-anim-in {
+    animation: nexus-fade-in 0.4s ease forwards;
+    opacity: 0;
+}
+
+.nexus-anim-up {
+    animation: nexus-fade-up 0.45s ease forwards;
+    opacity: 0;
+}
+
+/* Staggered children */
+.stagger-children > *:nth-child(1) { animation-delay: 0s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.07s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.14s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.21s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.28s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.35s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.42s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.49s; }
+
+/* =====================================================
+   27. RESPONSIVE
+   ===================================================== */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .page-title {
+        font-size: 1.4rem;
+    }
+
+    .nexus-modal {
+        max-width: 100%;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-height: 80vh;
+    }
+
+    .nexus-modal-overlay {
+        align-items: flex-end;
+    }
+}
+
+/* =====================================================
+   28. FOOTER
+   ===================================================== */
+.nexus-footer {
+    margin-top: 80px;
+    border-top: 1px solid var(--border-subtle);
+    padding: 32px 0;
+    background: var(--bg-base);
+}
+
+.nexus-footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.nexus-footer-brand {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    letter-spacing: -0.5px;
+}
+
+.nexus-footer-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.nexus-footer-links {
+    display: flex;
+    gap: 20px;
+}
+
+.nexus-footer-links a {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    transition: var(--transition-fast);
+}
+
+.nexus-footer-links a:hover {
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .nexus-footer-inner {
+        flex-direction: column;
+        text-align: center;
+    }
+}
