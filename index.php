@@ -17,16 +17,20 @@ $sort_by = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
 $all_products = getProducts(false);
 
 $cat_counts = ['all' => count($all_products)];
-$type_counts = ['all' => count($all_products)];
+$type_counts = ['all' => 0];
 foreach ($all_products as $p) {
     $cat = $p['category'];
     if (!isset($cat_counts[$cat])) $cat_counts[$cat] = 0;
     $cat_counts[$cat]++;
 
-    $type = $p['type_name'] ?? '';
-    if (!empty($type)) {
-        if (!isset($type_counts[$type])) $type_counts[$type] = 0;
-        $type_counts[$type]++;
+    // Chỉ đếm các loại (types) thuộc danh mục đang chọn
+    if ($category_filter === 'all' || $cat === $category_filter) {
+        $type = $p['type_name'] ?? '';
+        if (!empty($type)) {
+            if (!isset($type_counts[$type])) $type_counts[$type] = 0;
+            $type_counts[$type]++;
+            $type_counts['all']++;
+        }
     }
 }
 
@@ -136,41 +140,105 @@ $total_count = count($products);
             border-radius: 50px;
             font-weight: 600;
         }
+        
+        /* Hide mobile toggle on desktop */
+        .cat-mobile-toggle {
+            display: none;
+        }
 
         /* Main Content */
         .main-content {
             min-width: 0;
         }
-        .hero-compact {
-            background: linear-gradient(135deg, rgba(110,86,207,0.15) 0%, rgba(56,189,248,0.08) 100%);
+        /* Hero Banner */
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(110,86,207,0.12) 0%, rgba(56,189,248,0.08) 100%);
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-lg);
-            padding: 40px 32px;
+            padding: 48px 40px;
             margin-bottom: 24px;
             position: relative;
             overflow: hidden;
         }
-        .hero-compact::before {
-            content: '';
+        .hero-glow {
             position: absolute;
             top: -50%;
             right: -10%;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(110,86,207,0.2) 0%, transparent 70%);
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(110,86,207,0.25) 0%, transparent 70%);
             pointer-events: none;
+            animation: pulse 8s ease-in-out infinite;
         }
-        .hero-compact h1 {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 8px;
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+        .hero-content-wrap {
             position: relative;
+            z-index: 1;
         }
-        .hero-compact p {
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--card-base);
+            border: 1px solid var(--border-subtle);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        .hero-badge i {
+            color: #fbbf24;
+        }
+        .hero-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #A78BFA 0%, #38BDF8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-desc {
             color: var(--text-secondary);
             font-size: 1rem;
-            margin: 0;
-            position: relative;
+            line-height: 1.6;
+            max-width: 680px;
+            margin-bottom: 24px;
+        }
+        .hero-stats {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        .hero-stat-item {
+            text-align: center;
+        }
+        .hero-stat-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        .hero-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .hero-stat-divider {
+            width: 1px;
+            height: 32px;
+            background: var(--border-subtle);
         }
 
         /* Controls */
@@ -350,13 +418,68 @@ $total_count = count($products);
                 max-height: none;
             }
             .sidebar-card {
-                padding: 16px;
+                padding: 0;
+                background: transparent;
+                border: none;
             }
-            .hero-compact {
-                padding: 28px 20px;
+            .sidebar-title {
+                display: none;
             }
-            .hero-compact h1 {
+            /* Mobile category dropdown */
+            .cat-mobile-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: var(--card-base);
+                border: 1px solid var(--border-subtle);
+                border-radius: var(--radius-md);
+                padding: 12px 16px;
+                cursor: pointer;
+                margin-bottom: 12px;
+            }
+            .cat-mobile-toggle-text {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.9rem;
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+            .cat-mobile-toggle i {
+                color: var(--text-muted);
+                transition: transform 0.2s;
+            }
+            .cat-mobile-list {
+                display: none;
+                background: var(--card-base);
+                border: 1px solid var(--border-subtle);
+                border-radius: var(--radius-md);
+                padding: 8px;
+                margin-bottom: 16px;
+            }
+            .cat-mobile-list.open {
+                display: block;
+            }
+            .cat-mobile-toggle.open i {
+                transform: rotate(180deg);
+            }
+            .hero-banner {
+                padding: 32px 24px;
+            }
+            .hero-title {
+                font-size: 1.75rem;
+            }
+            .hero-desc {
+                font-size: 0.9rem;
+            }
+            .hero-stats {
+                gap: 16px;
+            }
+            .hero-stat-value {
                 font-size: 1.5rem;
+            }
+            .hero-stat-label {
+                font-size: 0.7rem;
             }
             .controls-bar {
                 flex-direction: column;
@@ -375,28 +498,71 @@ $total_count = count($products);
         <!-- Left Sidebar: Categories -->
         <aside class="sidebar-left">
             <div class="sidebar-card">
+                <!-- Mobile toggle -->
+                <div class="cat-mobile-toggle" onclick="toggleCategoryMobile()">
+                    <div class="cat-mobile-toggle-text">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span>Danh mục sản phẩm</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </div>
+                
+                <!-- Desktop title -->
                 <div class="sidebar-title">Danh mục</div>
-                <a href="?category=all" class="cat-item <?php echo ($category_filter == 'all') ? 'active' : ''; ?>">
-                    <i class="fa-solid fa-layer-group"></i>
-                    <span class="cat-label">Tất cả</span>
-                    <span class="cat-count"><?php echo $cat_counts['all']; ?></span>
-                </a>
-                <?php foreach ($cat_counts as $cat => $cnt): if ($cat === 'all') continue; ?>
-                    <a href="?category=<?php echo urlencode($cat); ?>" class="cat-item <?php echo ($category_filter == $cat) ? 'active' : ''; ?>">
-                        <i class="fa-solid fa-tag"></i>
-                        <span class="cat-label"><?php echo htmlspecialchars($cat); ?></span>
-                        <span class="cat-count"><?php echo $cnt; ?></span>
+                
+                <!-- Category list (wrapped for mobile) -->
+                <div class="cat-mobile-list" id="catMobileList">
+                    <a href="?category=all" class="cat-item <?php echo ($category_filter == 'all') ? 'active' : ''; ?>">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span class="cat-label">Tất cả</span>
+                        <span class="cat-count"><?php echo $cat_counts['all']; ?></span>
                     </a>
-                <?php endforeach; ?>
+                    <?php foreach ($cat_counts as $cat => $cnt): if ($cat === 'all') continue; ?>
+                        <a href="?category=<?php echo urlencode($cat); ?>" class="cat-item <?php echo ($category_filter == $cat) ? 'active' : ''; ?>">
+                            <i class="fa-solid fa-tag"></i>
+                            <span class="cat-label"><?php echo htmlspecialchars($cat); ?></span>
+                            <span class="cat-count"><?php echo $cnt; ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </aside>
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Hero -->
-            <div class="hero-compact">
-                <h1>Chợ tài khoản chuyên nghiệp</h1>
-                <p>Hàng trăm tài khoản chất lượng cao, giao dịch nhanh chóng, bảo mật tuyệt đối.</p>
+            <!-- Hero Banner -->
+            <div class="hero-banner">
+                <div class="hero-glow"></div>
+                <div class="hero-content-wrap">
+                    <div class="hero-badge">
+                        <i class="fa-solid fa-sparkles"></i>
+                        <span>Nền tảng mua bán tài khoản uy tín #1 Việt Nam</span>
+                    </div>
+                    <h1 class="hero-title">
+                        Mua tài khoản <span class="gradient-text">chất lượng cao</span><br>
+                        Giao dịch <span class="gradient-text">an toàn</span> & nhanh chóng
+                    </h1>
+                    <p class="hero-desc">
+                        Hàng nghìn tài khoản Game, Netflix, Spotify, ChatGPT... được xác minh. 
+                        Thanh toán qua ví điện tử, nhận hàng tức thì, bảo hành 7 ngày.
+                    </p>
+                    <div class="hero-stats">
+                        <div class="hero-stat-item">
+                            <div class="hero-stat-value"><?php echo $cat_counts['all']; ?>+</div>
+                            <div class="hero-stat-label">Sản phẩm</div>
+                        </div>
+                        <div class="hero-stat-divider"></div>
+                        <div class="hero-stat-item">
+                            <div class="hero-stat-value">24/7</div>
+                            <div class="hero-stat-label">Hỗ trợ</div>
+                        </div>
+                        <div class="hero-stat-divider"></div>
+                        <div class="hero-stat-item">
+                            <div class="hero-stat-value">100%</div>
+                            <div class="hero-stat-label">Bảo mật</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Controls -->
@@ -578,6 +744,24 @@ $total_count = count($products);
             else params.delete('sort');
             window.location.search = params.toString();
         }
+
+        // Mobile category toggle
+        function toggleCategoryMobile() {
+            const list = document.getElementById('catMobileList');
+            const toggle = document.querySelector('.cat-mobile-toggle');
+            list.classList.toggle('open');
+            toggle.classList.toggle('open');
+        }
+
+        // Auto-open on desktop
+        function checkMobileView() {
+            const list = document.getElementById('catMobileList');
+            if (window.innerWidth > 768) {
+                list.classList.add('open');
+            }
+        }
+        checkMobileView();
+        window.addEventListener('resize', checkMobileView);
     </script>
 </body>
 </html>

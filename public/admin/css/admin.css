@@ -1,0 +1,1350 @@
+/**
+ * NEXUS ADMIN - Design System CSS
+ * Dedicated admin assets: public/admin/css/admin.css
+ * Import this file in admin_layout_modules.php
+ */
+
+/* =====================================================
+   1. CSS VARIABLES - Admin Design Tokens
+   ===================================================== */
+:root {
+    /* Layout */
+    --admin-sidebar-w: 260px;
+    --admin-topbar-h: 0px;
+
+    /* Sidebar */
+    --sidebar-bg: #0f1117;
+    --sidebar-item-hover: rgba(255, 255, 255, 0.06);
+    --sidebar-item-active-bg: linear-gradient(135deg, #6E56CF, #4F46E5);
+    --sidebar-text: #9CA3AF;
+    --sidebar-text-hover: #FFFFFF;
+    --sidebar-text-active: #FFFFFF;
+    --sidebar-border: rgba(255, 255, 255, 0.06);
+    --sidebar-section: #4B5563;
+    --sidebar-w: 260px;
+
+    /* Main Area */
+    --main-bg: #F4F6F9;
+    --card-bg: #FFFFFF;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --card-shadow-hover: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --card-border: rgba(0, 0, 0, 0.04);
+
+    /* Text */
+    --text-dark: #111827;
+    --text-secondary: #374151;
+    --text-muted: #9CA3AF;
+
+    /* Brand Colors */
+    --primary: #6E56CF;
+    --primary-dark: #5A47B8;
+    --primary-light: rgba(110, 86, 207, 0.08);
+    --primary-border: rgba(110, 86, 207, 0.2);
+
+    /* Semantic */
+    --success: #10B981;
+    --success-bg: rgba(16, 185, 129, 0.08);
+    --success-border: rgba(16, 185, 129, 0.2);
+    --success-light: #D1FAE5;
+
+    --danger: #EF4444;
+    --danger-bg: rgba(239, 68, 68, 0.08);
+    --danger-border: rgba(239, 68, 68, 0.2);
+    --danger-light: #FEE2E2;
+
+    --warning: #F59E0B;
+    --warning-bg: rgba(245, 158, 11, 0.08);
+    --warning-border: rgba(245, 158, 11, 0.2);
+    --warning-light: #FEF3C7;
+
+    --info: #3B82F6;
+    --info-bg: rgba(59, 130, 246, 0.08);
+    --info-border: rgba(59, 130, 246, 0.2);
+    --info-light: #DBEAFE;
+
+    /* Typography */
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'Geist Mono', 'Courier New', Consolas, monospace;
+
+    /* Spacing & Radius */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+
+    /* Transitions */
+    --t-fast: 0.15s ease;
+    --t-normal: 0.25s ease;
+}
+
+/* =====================================================
+   2. RESET & BASE
+   ===================================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--main-bg);
+    color: var(--text-dark);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+::selection { background: var(--primary); color: #fff; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+
+/* Text helpers */
+.text-muted { color: var(--text-muted) !important; }
+.text-success { color: var(--success) !important; }
+.text-danger { color: var(--danger) !important; }
+.text-warning { color: var(--warning) !important; }
+.text-primary { color: var(--primary) !important; }
+.font-mono { font-family: var(--font-mono) !important; }
+
+/* =====================================================
+   3. LAYOUT
+   ===================================================== */
+.admin-wrap {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ---- Sidebar ---- */
+.admin-sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--sidebar-bg);
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 100;
+    transition: transform var(--t-normal);
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-sidebar-brand {
+    padding: 24px 20px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--sidebar-border);
+    flex-shrink: 0;
+}
+
+.admin-sidebar-brand .brand-text {
+    font-size: 1.35rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #6E56CF, #38BDF8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.admin-sidebar-brand .brand-text i { -webkit-text-fill-color: initial; color: #6E56CF; }
+
+.admin-sidebar-nav { flex: 1; padding: 16px 0; }
+
+.sidebar-section-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--sidebar-section);
+    font-weight: 700;
+    padding: 12px 24px 4px;
+}
+
+.admin-sidebar a.sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: var(--radius-md);
+    margin: 2px 12px;
+    transition: background var(--t-fast), color var(--t-fast);
+    position: relative;
+}
+
+.admin-sidebar a.sidebar-item:hover {
+    background: var(--sidebar-item-hover);
+    color: var(--sidebar-text-hover);
+}
+
+.admin-sidebar a.sidebar-item.active {
+    background: var(--sidebar-item-active-bg);
+    color: var(--sidebar-text-active);
+    font-weight: 700;
+}
+
+.admin-sidebar a.sidebar-item i { font-size: 0.9rem; width: 18px; text-align: center; flex-shrink: 0; }
+
+.admin-sidebar hr.sidebar-divider {
+    border: none;
+    border-top: 1px solid var(--sidebar-border);
+    margin: 12px 20px;
+}
+
+.admin-sidebar .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--sidebar-border);
+    flex-shrink: 0;
+}
+
+/* ---- Main Content ---- */
+.admin-main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    padding: 32px;
+    min-height: 100vh;
+}
+
+/* ---- Mobile Toggle (hidden on desktop) ---- */
+.admin-mobile-toggle {
+    display: none;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 200;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: var(--sidebar-bg);
+    border: 1px solid var(--sidebar-border);
+    color: #fff;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.admin-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+}
+
+.admin-sidebar-overlay.show { display: block; }
+
+/* =====================================================
+   4. PAGE HEADER
+   ===================================================== */
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0;
+    letter-spacing: -0.3px;
+}
+
+.page-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* =====================================================
+   5. CARDS & PANELS
+   ===================================================== */
+.nx-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+}
+
+.nx-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--card-border);
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.nx-card-body { padding: 20px; }
+.nx-card-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Stat Cards */
+.nx-stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--card-shadow);
+    transition: transform var(--t-fast), box-shadow var(--t-fast);
+    position: relative;
+    overflow: hidden;
+}
+
+.nx-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow-hover);
+}
+
+.nx-stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    margin-bottom: 14px;
+}
+
+.nx-stat-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--text-dark);
+}
+
+.nx-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+}
+
+/* =====================================================
+   6. STATS ROW (Dashboard, Orders)
+   ===================================================== */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.stats-row .nx-stat-card {
+    padding: 18px;
+}
+
+.stats-row .nx-stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+/* =====================================================
+   7. TABLES
+   ===================================================== */
+.nx-table-wrap {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+}
+
+.nx-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.nx-table thead { background: #F9FAFB; border-bottom: 1px solid var(--card-border); }
+
+.nx-table thead th {
+    padding: 12px 16px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.nx-table tbody tr {
+    border-bottom: 1px solid #F3F4F6;
+    transition: background var(--t-fast);
+}
+
+.nx-table tbody tr:last-child { border-bottom: none; }
+.nx-table tbody tr:hover { background: #FAFBFF; }
+
+.nx-table tbody td {
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    vertical-align: middle;
+}
+
+.table-responsive { overflow-x: auto; }
+
+/* =====================================================
+   8. TABLE CELLS
+   ===================================================== */
+.cell-id {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 0.875rem;
+    font-family: var(--font-mono);
+}
+
+.cell-user { display: flex; align-items: center; gap: 10px; }
+
+.cell-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6E56CF, #38BDF8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+}
+
+.cell-avatar-red {
+    background: linear-gradient(135deg, #EF4444, #F97316);
+}
+
+.cell-username { font-weight: 600; color: var(--text-dark); font-size: 0.875rem; }
+
+.cell-product { display: flex; align-items: center; gap: 10px; }
+
+.cell-product-img {
+    width: 40px;
+    height: 30px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    background: #F3F4F6;
+    flex-shrink: 0;
+}
+
+.cell-product-name {
+    font-weight: 500;
+    color: var(--text-dark);
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cell-price { font-weight: 700; color: var(--success); }
+.cell-date { color: var(--text-muted); font-size: 0.8rem; white-space: nowrap; }
+.cell-actions { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+/* =====================================================
+   9. BADGES & PILLS
+   ===================================================== */
+.nx-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.nx-badge-pending { background: #F3F4F6; color: #6B7280; border: 1px solid #E5E7EB; }
+.nx-badge-processing { background: var(--warning-light); color: #B45309; border: 1px solid rgba(245, 158, 11, 0.25); }
+.nx-badge-completed { background: var(--success-light); color: #065F46; border: 1px solid rgba(16, 185, 129, 0.25); }
+.nx-badge-cancelled { background: var(--danger-light); color: #991B1B; border: 1px solid rgba(239, 68, 68, 0.25); }
+.nx-badge-refunded { background: var(--info-light); color: #1D4ED8; border: 1px solid rgba(59, 130, 246, 0.25); }
+
+.nx-badge-vip {
+    background: linear-gradient(135deg, #F6D365, #FDA085);
+    color: #000;
+    font-weight: 700;
+    border: 1px solid rgba(246, 211, 101, 0.4);
+}
+
+.nx-badge-primary { background: var(--primary-light); color: var(--primary); border: 1px solid var(--primary-border); }
+.nx-badge-success { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+.nx-badge-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+.nx-badge-warning { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
+.nx-badge-info { background: var(--info-bg); color: var(--info); border: 1px solid var(--info-border); }
+.nx-badge-muted { background: #F3F4F6; color: #6B7280; border: 1px solid #E5E7EB; }
+
+/* =====================================================
+   10. BUTTONS
+   ===================================================== */
+.nx-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--t-fast);
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1;
+    font-family: var(--font-sans);
+}
+
+.nx-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.nx-btn-sm { padding: 5px 10px; font-size: 0.78rem; border-radius: var(--radius-sm); }
+.nx-btn-lg { padding: 12px 24px; font-size: 0.9rem; border-radius: var(--radius-md); }
+
+.nx-btn-icon { width: 34px; height: 34px; padding: 0; border-radius: var(--radius-md); }
+.nx-btn-icon.nx-btn-sm { width: 30px; height: 30px; }
+
+/* Primary */
+.nx-btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.nx-btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
+
+/* Secondary */
+.nx-btn-secondary { background: transparent; color: var(--text-secondary); border-color: #E5E7EB; }
+.nx-btn-secondary:hover { background: #F9FAFB; color: var(--text-dark); }
+
+/* Success */
+.nx-btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+.nx-btn-success:hover { background: #059669; border-color: #059669; color: #fff; }
+
+/* Danger */
+.nx-btn-danger { background: transparent; color: var(--danger); border-color: var(--danger-border); }
+.nx-btn-danger:hover { background: var(--danger); color: #fff; }
+
+/* Ghost */
+.nx-btn-ghost { background: transparent; color: var(--text-muted); border-color: transparent; }
+.nx-btn-ghost:hover { background: #F3F4F6; color: var(--text-dark); }
+
+/* Dark */
+.nx-btn-dark { background: var(--sidebar-bg); color: #fff; border-color: var(--sidebar-border); }
+.nx-btn-dark:hover { background: #1F2937; }
+
+/* =====================================================
+   11. FORM ELEMENTS
+   ===================================================== */
+.nx-input {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: var(--radius-md);
+    color: var(--text-dark);
+    padding: 9px 14px;
+    font-size: 0.875rem;
+    font-family: var(--font-sans);
+    transition: border-color var(--t-fast), box-shadow var(--t-fast);
+    outline: none;
+}
+
+.nx-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(110, 86, 207, 0.1);
+}
+
+.nx-input::placeholder { color: #D1D5DB; }
+
+.nx-select {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: var(--radius-md);
+    color: var(--text-dark);
+    padding: 9px 36px 9px 14px;
+    font-size: 0.875rem;
+    font-family: var(--font-sans);
+    transition: border-color var(--t-fast), box-shadow var(--t-fast);
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: calc(100% - 12px) center;
+}
+
+.nx-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(110, 86, 207, 0.1);
+}
+
+.nx-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.nx-form-group { margin-bottom: 16px; }
+
+/* Toggle Switch */
+.nx-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.nx-toggle input { opacity: 0; width: 0; height: 0; }
+
+.nx-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #D1D5DB;
+    border-radius: 24px;
+    transition: var(--t-normal);
+}
+
+.nx-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: var(--t-normal);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.nx-toggle input:checked + .nx-toggle-slider { background-color: var(--primary); }
+.nx-toggle input:checked + .nx-toggle-slider:before { transform: translateX(20px); }
+
+/* =====================================================
+   12. FILTER BAR
+   ===================================================== */
+.nx-filter-bar {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--card-border);
+}
+
+.nx-filter-bar .search-wrap {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+}
+
+.nx-filter-bar .search-wrap i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.nx-filter-bar .search-wrap input {
+    width: 100%;
+    padding: 9px 14px 9px 36px;
+    border: 1px solid #E5E7EB;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    background: #F9FAFB;
+    transition: var(--t-fast);
+    outline: none;
+    font-family: var(--font-sans);
+    color: var(--text-dark);
+}
+
+.nx-filter-bar .search-wrap input:focus {
+    border-color: var(--primary);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(110, 86, 207, 0.1);
+}
+
+/* =====================================================
+   13. MODAL
+   ===================================================== */
+.nx-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.nx-modal.show { display: flex; }
+
+.nx-modal > .nx-modal-inner {
+    background: var(--card-bg);
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.nx-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.nx-modal-title {
+    font-size: 1rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nx-modal-title i { color: var(--primary); }
+
+.nx-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    border: 1px solid #E5E7EB;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 1rem;
+    transition: var(--t-fast);
+}
+
+.nx-modal-close:hover { background: #F3F4F6; color: var(--text-dark); }
+
+.nx-modal-body { padding: 24px; }
+
+.nx-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--card-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* =====================================================
+   14. DETAIL GRID (Order Detail)
+   ===================================================== */
+.nx-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.nx-detail-item {
+    padding: 12px;
+    background: #F9FAFB;
+    border-radius: var(--radius-md);
+}
+
+.nx-detail-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.nx-detail-value {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+}
+
+.nx-detail-value.success { color: var(--success); }
+.nx-detail-value.danger { color: var(--danger); }
+
+.nx-account-box {
+    background: #1A1A2E;
+    color: #E0E0E0;
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 8px 0;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* =====================================================
+   15. ALERTS
+   ===================================================== */
+.nx-alert {
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.875rem;
+    border: 1px solid transparent;
+}
+
+.nx-alert-success { background: var(--success-bg); color: #065F46; border-color: var(--success-border); }
+.nx-alert-danger { background: var(--danger-bg); color: #991B1B; border-color: var(--danger-border); }
+.nx-alert-warning { background: var(--warning-bg); color: #92400E; border-color: var(--warning-border); }
+.nx-alert-info { background: var(--info-bg); color: #1E40AF; border-color: var(--info-border); }
+
+.nx-alert-close {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: inherit;
+    opacity: 0.6;
+    padding: 0;
+    line-height: 1;
+}
+
+.nx-alert-close:hover { opacity: 1; }
+
+/* =====================================================
+   16. PAGINATION
+   ===================================================== */
+.nx-pagination-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-top: 1px solid #F3F4F6;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.nx-pagination-info { font-size: 0.8rem; color: var(--text-muted); }
+
+.nx-pagination {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.nx-pagination a, .nx-pagination button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 8px;
+    border-radius: var(--radius-md);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid #E5E7EB;
+    color: var(--text-muted);
+    background: transparent;
+    cursor: pointer;
+    transition: var(--t-fast);
+    font-family: var(--font-sans);
+}
+
+.nx-pagination a:hover, .nx-pagination button:hover {
+    background: #F3F4F6;
+    color: var(--text-dark);
+    border-color: #D1D5DB;
+}
+
+.nx-pagination .current {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.nx-pagination .current:hover { background: var(--primary-dark); }
+
+.nx-pagination .disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* =====================================================
+   17. EMPTY STATE
+   ===================================================== */
+.nx-empty {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.nx-empty-icon {
+    font-size: 3rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    opacity: 0.35;
+}
+
+.nx-empty-title {
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.nx-empty-desc { font-size: 0.875rem; color: var(--text-muted); }
+
+/* =====================================================
+   18. TABS
+   ===================================================== */
+.nx-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid var(--card-border);
+}
+
+.nx-tab {
+    padding: 10px 20px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color var(--t-fast), border-color var(--t-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nx-tab:hover { color: var(--text-dark); }
+
+.nx-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+/* =====================================================
+   19. SETTINGS PAGE
+   ===================================================== */
+.nx-settings-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--card-border);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--card-shadow);
+}
+
+.nx-settings-section {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #F3F4F6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nx-settings-section i { color: var(--primary); }
+
+.nx-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+    gap: 8px;
+}
+
+.nx-icon-option {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    border: 2px solid #E5E7EB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: var(--t-fast);
+    background: var(--card-bg);
+}
+
+.nx-icon-option:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.nx-icon-option.selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.nx-icon-option input { display: none; }
+
+/* =====================================================
+   20. COLOR SWATCHES
+   ===================================================== */
+.nx-swatch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: var(--t-fast);
+}
+
+.nx-swatch:hover { transform: scale(1.1); }
+.nx-swatch.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(110, 86, 207, 0.2); }
+.nx-swatch input { display: none; }
+
+/* =====================================================
+   21. CATEGORY CARDS
+   ===================================================== */
+.nx-cat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    transition: box-shadow var(--t-fast);
+}
+
+.nx-cat-card:hover { box-shadow: var(--card-shadow-hover); }
+
+.nx-cat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    gap: 12px;
+}
+
+.nx-cat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: var(--primary-light);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.nx-cat-actions { display: flex; gap: 4px; }
+
+.nx-type-list { list-style: none; padding: 0; margin: 0; }
+
+.nx-type-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-top: 1px solid var(--card-border);
+    gap: 12px;
+}
+
+.nx-type-item:hover { background: #FAFBFF; }
+
+.nx-type-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.nx-type-info i { color: var(--primary); font-size: 0.8rem; width: 16px; text-align: center; }
+.nx-type-name { font-weight: 600; font-size: 0.875rem; color: var(--text-dark); }
+
+/* =====================================================
+   22. FIELD CARDS (Account Fields Page)
+   ===================================================== */
+.nx-field-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--card-shadow);
+    transition: box-shadow var(--t-fast);
+}
+
+.nx-field-card:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
+
+.nx-field-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.nx-field-info { flex: 1; min-width: 0; }
+
+.nx-field-key {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    background: #F3F4F6;
+    padding: 2px 8px;
+    border-radius: var(--radius-xs);
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+.nx-field-label { font-weight: 700; font-size: 0.9rem; color: var(--text-dark); }
+.nx-field-placeholder { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+/* =====================================================
+   23. ADD / EDIT FORM
+   ===================================================== */
+.nx-add-form {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--card-border);
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: var(--card-shadow);
+}
+
+.nx-add-form-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nx-icon-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.nx-icon-picker label {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    border: 2px solid #E5E7EB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: var(--t-fast);
+    background: var(--card-bg);
+}
+
+.nx-icon-picker label:hover { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+.nx-icon-picker label.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+.nx-icon-picker input { display: none; }
+
+/* =====================================================
+   24. BULK SELECTION BAR
+   ===================================================== */
+.nx-bulk-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: var(--primary-light);
+    border-bottom: 1px solid var(--primary-border);
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.nx-bulk-bar.show { display: flex; }
+
+.nx-bulk-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* =====================================================
+   25. TOAST / NOTIFICATION
+   ===================================================== */
+#nexus-toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.nexus-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    border-radius: var(--radius-md);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text-dark);
+    font-weight: 500;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    transform: translateX(120%);
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 280px;
+    max-width: 400px;
+    pointer-events: auto;
+}
+
+.nexus-toast.show { transform: translateX(0); opacity: 1; }
+.nexus-toast-icon { font-size: 1.2rem; flex-shrink: 0; }
+.nexus-toast-success .nexus-toast-icon { color: var(--success); }
+.nexus-toast-error .nexus-toast-icon { color: var(--danger); }
+.nexus-toast-warning .nexus-toast-icon { color: var(--warning); }
+.nexus-toast-info .nexus-toast-icon { color: var(--info); }
+
+/* =====================================================
+   26. BREADCRUMB
+   ===================================================== */
+.nx-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    margin-bottom: 24px;
+    color: var(--text-muted);
+}
+
+.nx-breadcrumb a { color: var(--text-muted); transition: color var(--t-fast); text-decoration: none; }
+.nx-breadcrumb a:hover { color: var(--primary); }
+.nx-breadcrumb-sep { opacity: 0.4; }
+
+/* =====================================================
+   27. MISC
+   ===================================================== */
+.nx-divider { height: 1px; background: var(--card-border); margin: 20px 0; }
+
+.nx-saved-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 16px;
+    animation: nx-fadeDown 0.4s ease;
+}
+
+.nx-saved-badge.success { background: var(--success-bg); color: #065F46; border: 1px solid var(--success-border); }
+
+@keyframes nx-fadeDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =====================================================
+   28. GRID HELPERS
+   ===================================================== */
+.nx-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.nx-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.nx-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+/* =====================================================
+   29. RESPONSIVE
+   ===================================================== */
+@media (max-width: 992px) {
+    .admin-sidebar {
+        transform: translateX(-100%);
+    }
+    .admin-sidebar.open {
+        transform: translateX(0);
+    }
+    .admin-main {
+        margin-left: 0;
+        padding: 20px;
+        padding-top: 70px;
+    }
+    .admin-mobile-toggle {
+        display: flex;
+    }
+    .nx-grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .nx-grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .nx-detail-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 576px) {
+    .nx-grid-4, .nx-grid-3, .nx-grid-2 { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; }
+    .nx-modal { margin: 10px; max-height: calc(100vh - 40px); }
+    .nx-filter-bar { flex-direction: column; }
+    .nx-filter-bar .search-wrap { width: 100%; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+}

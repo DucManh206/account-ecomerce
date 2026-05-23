@@ -154,6 +154,42 @@ a {
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-subtle);
     padding: 14px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+/* Fix dropdown being cut off */
+.dropdown-menu {
+    z-index: 1050 !important;
+}
+
+/* Force account dropdown to always render above all content */
+.nexus-navbar,
+.nexus-navbar .container,
+.nexus-navbar .d-flex,
+.nexus-navbar .dropdown {
+    overflow: visible !important;
+}
+
+.nexus-navbar .dropdown {
+    position: relative !important;
+    z-index: 99999 !important;
+}
+
+.nexus-navbar .dropdown-menu {
+    position: absolute !important;
+    z-index: 999999 !important;
+    inset: auto 0 auto auto !important;
+    transform: translate3d(0, 48px, 0) !important;
+    will-change: transform;
+    overflow: visible !important;
+    clip: auto !important;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55) !important;
+}
+
+.nexus-navbar .dropdown-menu.show {
+    display: block !important;
 }
 
 .nexus-navbar .navbar-brand {

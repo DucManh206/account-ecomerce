@@ -30,62 +30,62 @@ $stats = admin_getDepositStats();
 ob_start();
 ?>
 
-<div id="alertBox" class="alert d-none mb-3" role="alert"></div>
+<div id="alertBox" class="nx-alert d-none mb-3"></div>
 
 <!-- Stats Cards -->
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="stat-card" style="background: linear-gradient(135deg, #6E56CF, #4F46E5); color: white;">
-            <div class="stat-icon" style="background: rgba(255,255,255,0.2); color: white;">
+        <div class="nx-stat-card" style="background: linear-gradient(135deg, #6E56CF, #4F46E5); color: white;">
+            <div class="nx-stat-icon" style="background: rgba(255,255,255,0.2); color: white;">
                 <i class="fa-solid fa-list"></i>
             </div>
-            <div class="stat-value"><?php echo number_format($stats['total']); ?></div>
-            <div class="stat-label">Tổng yêu cầu</div>
+            <div class="nx-stat-value"><?php echo number_format($stats['total']); ?></div>
+            <div class="nx-stat-label">Tổng yêu cầu</div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="stat-card" style="background: linear-gradient(135deg, #F59E0B, #D97706); color: white;">
-            <div class="stat-icon" style="background: rgba(255,255,255,0.2); color: white;">
+        <div class="nx-stat-card" style="background: linear-gradient(135deg, #F59E0B, #D97706); color: white;">
+            <div class="nx-stat-icon" style="background: rgba(255,255,255,0.2); color: white;">
                 <i class="fa-solid fa-clock"></i>
             </div>
-            <div class="stat-value"><?php echo number_format($stats['pending']); ?></div>
-            <div class="stat-label">Đang chờ duyệt</div>
+            <div class="nx-stat-value"><?php echo number_format($stats['pending']); ?></div>
+            <div class="nx-stat-label">Đang chờ duyệt</div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="stat-card" style="background: linear-gradient(135deg, #10B981, #059669); color: white;">
-            <div class="stat-icon" style="background: rgba(255,255,255,0.2); color: white;">
+        <div class="nx-stat-card" style="background: linear-gradient(135deg, #10B981, #059669); color: white;">
+            <div class="nx-stat-icon" style="background: rgba(255,255,255,0.2); color: white;">
                 <i class="fa-solid fa-check-circle"></i>
             </div>
-            <div class="stat-value"><?php echo number_format($stats['approved_today']); ?></div>
-            <div class="stat-label">Đã duyệt hôm nay</div>
+            <div class="nx-stat-value"><?php echo number_format($stats['approved_today']); ?></div>
+            <div class="nx-stat-label">Đã duyệt hôm nay</div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="stat-card" style="background: linear-gradient(135deg, #38BDF8, #0EA5E9); color: white;">
-            <div class="stat-icon" style="background: rgba(255,255,255,0.2); color: white;">
+        <div class="nx-stat-card" style="background: linear-gradient(135deg, #38BDF8, #0EA5E9); color: white;">
+            <div class="nx-stat-icon" style="background: rgba(255,255,255,0.2); color: white;">
                 <i class="fa-solid fa-coins"></i>
             </div>
-            <div class="stat-value"><?php echo number_format($stats['amount_today'], 0, ',', '.'); ?>đ</div>
-            <div class="stat-label">Nạp hôm nay</div>
+            <div class="nx-stat-value"><?php echo number_format($stats['amount_today'], 0, ',', '.'); ?>đ</div>
+            <div class="nx-stat-label">Nạp hôm nay</div>
         </div>
     </div>
 </div>
 
 <!-- Filter -->
-<div class="card mb-4">
-    <div class="card-body">
+<div class="nx-card mb-4">
+    <div class="nx-card-body">
         <div class="btn-group" role="group">
-            <a href="?status=all" class="btn btn-sm <?php echo $statusFilter === 'all' ? 'btn-primary' : 'btn-outline-secondary'; ?>">
+            <a href="?status=all" class="nx-btn nx-btn-sm <?php echo $statusFilter === 'all' ? 'nx-btn-primary' : 'nx-btn-secondary'; ?>">
                 Tất cả
             </a>
-            <a href="?status=pending" class="btn btn-sm <?php echo $statusFilter === 'pending' ? 'btn-warning' : 'btn-outline-secondary'; ?>">
+            <a href="?status=pending" class="nx-btn nx-btn-sm <?php echo $statusFilter === 'pending' ? 'nx-badge-warning' : 'nx-btn-secondary'; ?>">
                 <i class="fa-solid fa-clock me-1"></i>Chờ duyệt
             </a>
-            <a href="?status=approved" class="btn btn-sm <?php echo $statusFilter === 'approved' ? 'btn-success' : 'btn-outline-secondary'; ?>">
+            <a href="?status=approved" class="nx-btn nx-btn-sm <?php echo $statusFilter === 'approved' ? 'nx-btn-success' : 'nx-btn-secondary'; ?>">
                 <i class="fa-solid fa-check me-1"></i>Đã duyệt
             </a>
-            <a href="?status=rejected" class="btn btn-sm <?php echo $statusFilter === 'rejected' ? 'btn-danger' : 'btn-outline-secondary'; ?>">
+            <a href="?status=rejected" class="nx-btn nx-btn-sm <?php echo $statusFilter === 'rejected' ? 'nx-btn-danger' : 'nx-btn-secondary'; ?>">
                 <i class="fa-solid fa-times me-1"></i>Từ chối
             </a>
         </div>
@@ -93,15 +93,15 @@ ob_start();
 </div>
 
 <!-- Requests Table -->
-<div class="card">
-    <div class="card-header">
+<div class="nx-card">
+    <div class="nx-card-header">
         <h5 class="mb-0"><i class="fa-solid fa-list me-2"></i>Danh sách yêu cầu</h5>
     </div>
-    <div class="card-body p-0">
+    <div class="nx-card-body p-0">
         <?php if (count($requests) > 0): ?>
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+                <table class="nx-table table-hover align-middle mb-0">
+                    <thead>
                         <tr>
                             <th class="ps-4">ID</th>
                             <th>Người dùng</th>
@@ -132,9 +132,9 @@ ob_start();
                                 <td>
                                     <?php 
                                     $statusClass = [
-                                        'pending' => 'bg-warning text-dark',
-                                        'approved' => 'bg-success',
-                                        'rejected' => 'bg-danger'
+                                        'pending' => 'nx-badge nx-badge-warning',
+                                        'approved' => 'nx-badge nx-badge-success',
+                                        'rejected' => 'nx-badge nx-badge-danger'
                                     ];
                                     $statusText = [
                                         'pending' => 'Chờ duyệt',
@@ -142,7 +142,7 @@ ob_start();
                                         'rejected' => 'Từ chối'
                                     ];
                                     ?>
-                                    <span class="badge <?php echo $statusClass[$req['status']]; ?>">
+                                    <span class="<?php echo $statusClass[$req['status']]; ?>">
                                         <?php echo $statusText[$req['status']]; ?>
                                     </span>
                                 </td>
@@ -152,11 +152,11 @@ ob_start();
                                             <form method="POST" class="d-inline" onsubmit="return confirm('Duyệt yêu cầu nạp tiền này?');">
                                                 <input type="hidden" name="action" value="approve">
                                                 <input type="hidden" name="id" value="<?php echo $req['id']; ?>">
-                                                <button type="submit" class="btn btn-sm btn-success" title="Duyệt">
+                                                <button type="submit" class="nx-btn nx-btn-sm nx-btn-success" title="Duyệt">
                                                     <i class="fa-solid fa-check"></i>
                                                 </button>
                                             </form>
-                                            <button type="button" class="btn btn-sm btn-danger" onclick="openRejectModal(<?php echo $req['id']; ?>)" title="Từ chối">
+                                            <button type="button" class="nx-btn nx-btn-sm nx-btn-danger" onclick="openRejectModal(<?php echo $req['id']; ?>)" title="Từ chối">
                                                 <i class="fa-solid fa-times"></i>
                                             </button>
                                         </div>
@@ -179,48 +179,39 @@ ob_start();
 </div>
 
 <!-- Reject Modal -->
-<div class="modal fade" id="rejectModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form method="POST">
-                <div class="modal-header">
-                    <h5 class="modal-title text-danger"><i class="fa-solid fa-times-circle me-2"></i>Từ chối yêu cầu</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="action" value="reject">
-                    <input type="hidden" name="id" id="rejectId">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Lý do từ chối (tùy chọn)</label>
-                        <textarea name="reason" id="rejectReason" class="form-control" rows="3" placeholder="Nhập lý do từ chối..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
-                </div>
-            </form>
-        </div>
+<div class="nx-modal" id="rejectModal">
+    <div class="nx-modal-header">
+        <h5 class="nx-modal-title" style="color: var(--danger);"><i class="fa-solid fa-times-circle me-2"></i>Từ chối yêu cầu</h5>
+        <button type="button" class="nx-modal-close" onclick="closeRejectModal()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
     </div>
+    <form method="POST">
+        <div class="nx-modal-body">
+            <input type="hidden" name="action" value="reject">
+            <input type="hidden" name="id" id="rejectId">
+            <div class="nx-form-group">
+                <label class="nx-label">Lý do từ chối (tùy chọn)</label>
+                <textarea name="reason" id="rejectReason" class="nx-input" rows="3" placeholder="Nhập lý do từ chối..."></textarea>
+            </div>
+        </div>
+        <div class="nx-modal-footer">
+            <button type="button" class="nx-btn nx-btn-secondary" onclick="closeRejectModal()">Hủy</button>
+            <button type="submit" class="nx-btn nx-btn-danger">Xác nhận từ chối</button>
+        </div>
+    </form>
 </div>
 
 <script>
-let rejectModal;
-
-document.addEventListener('DOMContentLoaded', function() {
-    rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
-});
-
-function openRejectModal(id) {
-    document.getElementById('rejectId').value = id;
-    document.getElementById('rejectReason').value = '';
-    rejectModal.show();
+function closeRejectModal() {
+    document.getElementById('rejectModal').classList.remove('show');
 }
+</script>
 
 function showAlert(type, message) {
     const box = document.getElementById('alertBox');
-    box.className = 'alert alert-' + type + ' alert-dismissible fade show';
-    box.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    box.className = 'nx-alert nx-alert-' + type + ' fade show';
+    box.innerHTML = message;
     box.classList.remove('d-none');
     setTimeout(() => { if (!type.includes('danger')) box.classList.add('d-none'); }, 5000);
 }

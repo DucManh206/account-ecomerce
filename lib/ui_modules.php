@@ -83,14 +83,15 @@ function ui_renderNavbar($username = null, $cartCount = 0, $balance = 0, $varian
     $base = ui_getBasePath();
     $storeName = function_exists('getStoreName') ? getStoreName() : 'NEXUS STORE';
     $storeIcon = function_exists('getStoreIconClass') ? getStoreIconClass() : 'fa-solid fa-ghost';
-    $homeUrl = empty($base) ? 'index.php' : $base . '/index.php';
-    $cartUrl = empty($base) ? 'cart/' : $base . '/cart/';
-    $loginUrl = empty($base) ? 'auth/login.php' : $base . '/auth/login.php';
-    $logoutUrl = empty($base) ? 'auth/logout.php' : $base . '/auth/logout.php';
-    $ordersUrl = empty($base) ? 'user/orders.php' : $base . '/user/orders.php';
-    $depositUrl = empty($base) ? 'user/deposit.php' : $base . '/user/deposit.php';
+    // Use absolute paths from server root to avoid broken URLs
+    $homeUrl = '/';
+    $cartUrl = '/cart/';
+    $loginUrl = '/auth/login.php';
+    $logoutUrl = '/auth/logout.php';
+    $ordersUrl = '/user/orders.php';
+    $depositUrl = '/user/deposit.php';
     $isAdmin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true;
-    $adminUrl = empty($base) ? 'admin/' : $base . '/admin/';
+    $adminUrl = '/admin/';
     ?>
     <nav class="nexus-navbar">
         <div class="container">

@@ -15,18 +15,18 @@ ob_start();
             <?php echo admin_countUsersByRole(0); ?> client
         </p>
     </div>
-    <button class="btn btn-primary" onclick="openAddModal()">
+    <button class="nx-btn nx-btn-primary" onclick="openAddModal()">
         <i class="fa-solid fa-user-plus me-1"></i> Thêm người dùng
     </button>
 </div>
 
-<div id="alertBox" class="alert d-none mb-3" role="alert"></div>
+<div id="alertBox" class="nx-alert d-none mb-3"></div>
 
-<div class="card bg-white">
-    <div class="card-body p-0">
+<div class="nx-card">
+    <div class="nx-card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" id="usersTable">
-                <thead class="table-light">
+            <table class="nx-table" id="usersTable">
+                <thead>
                     <tr>
                         <th class="ps-4" style="width:60px;">ID</th>
                         <th>Tên đăng nhập</th>
@@ -53,7 +53,7 @@ ob_start();
                                         <div style="font-weight:700;font-size:0.9rem;">
                                             <?php echo htmlspecialchars($u['username']); ?>
                                             <?php if ($isCurrent): ?>
-                                                <span class="badge bg-primary ms-1" style="font-size:0.6rem;">Bạn</span>
+                                                <span class="nx-badge nx-badge-primary ms-1" style="font-size:0.6rem;">Bạn</span>
                                             <?php endif; ?>
                                         </div>
                                         <div style="font-size:0.7rem;color:#9ca3af;">ID: <?php echo $u['id']; ?></div>
@@ -62,9 +62,9 @@ ob_start();
                             </td>
                             <td>
                                 <?php if ($isAdmin): ?>
-                                    <span class="badge bg-danger"><i class="fa-solid fa-shield-halved me-1"></i>Admin</span>
+                                    <span class="nx-badge nx-badge-danger"><i class="fa-solid fa-shield-halved me-1"></i>Admin</span>
                                 <?php else: ?>
-                                    <span class="badge bg-secondary"><i class="fa-regular fa-user me-1"></i>Client</span>
+                                    <span class="nx-badge nx-badge-muted"><i class="fa-regular fa-user me-1"></i>Client</span>
                                 <?php endif; ?>
                             </td>
                             <td>
@@ -75,15 +75,15 @@ ob_start();
                             </td>
                             <td class="text-end pe-4">
                                 <?php if (!$isCurrent): ?>
-                                <button class="btn btn-sm btn-outline-success" onclick="openTopupModal(<?php echo $u['id']; ?>, '<?php echo htmlspecialchars($u['username']); ?>', <?php echo $u['balance']; ?>)" title="Nạp tiền">
+                                <button class="nx-btn nx-btn-sm nx-btn-secondary" onclick="openTopupModal(<?php echo $u['id']; ?>, '<?php echo htmlspecialchars($u['username']); ?>', <?php echo $u['balance']; ?>)" title="Nạp tiền">
                                     <i class="fa-solid fa-wallet"></i>
                                 </button>
                                 <?php endif; ?>
-                                <button class="btn btn-sm btn-outline-primary" onclick='editUser(<?php echo json_encode($u); ?>)'>
+                                <button class="nx-btn nx-btn-sm nx-btn-secondary" onclick='editUser(<?php echo json_encode($u); ?>)'>
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
                                 <?php if (!$isCurrent): ?>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(<?php echo $u['id']; ?>, '<?php echo htmlspecialchars(addslashes($u['username'])); ?>')">
+                                <button class="nx-btn nx-btn-sm nx-btn-danger" onclick="deleteUser(<?php echo $u['id']; ?>, '<?php echo htmlspecialchars(addslashes($u['username'])); ?>')">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                                 <?php endif; ?>
@@ -102,123 +102,118 @@ ob_start();
     </div>
 </div>
 
-<div class="modal fade" id="userModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalTitle"><i class="fa-solid fa-user-plus me-2"></i>Thêm người dùng</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="userForm" onsubmit="saveUser(event)">
-                <input type="hidden" id="editId" name="id" value="">
-                <input type="hidden" name="action" id="formAction" value="create">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Tên đăng nhập <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="fUsername" name="username" required placeholder="VD: nguyenvana" minlength="3">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Mật khẩu <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control" id="fPassword" name="password" placeholder="Ít nhất 6 ký tự">
-                        <div class="form-text" id="passwordHint">Bắt buộc khi tạo mới</div>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <label class="form-label fw-bold">Vai trò</label>
-                            <select class="form-select" id="fRole" name="role">
-                                <option value="0">Client</option>
-                                <option value="1">Admin</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label fw-bold">Số dư ban đầu</label>
-                            <input type="number" class="form-control" id="fBalance" name="balance" min="0" value="0" placeholder="0">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary" id="submitBtn">
-                        <i class="fa-solid fa-check me-1"></i>Lưu
-                    </button>
-                </div>
-            </form>
+<div class="nx-modal" id="userModal">
+    <div class="nx-modal-inner">
+        <div class="nx-modal-header">
+            <h5 class="nx-modal-title" id="modalTitle"><i class="fa-solid fa-user-plus me-2"></i>Thêm người dùng</h5>
+            <button type="button" class="nx-modal-close" onclick="hideModal('userModal')"></button>
         </div>
-    </div>
-</div>
-
-<div class="modal fade" id="topupModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-success"><i class="fa-solid fa-wallet me-2"></i>Nạp tiền</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="topupForm" onsubmit="submitTopup(event)">
-                <input type="hidden" name="action" value="topup">
-                <input type="hidden" id="topupUserId" name="id" value="">
-                <div class="modal-body">
-                    <p>Người dùng: <strong id="topupUsername"></strong></p>
-                    <p>Số dư hiện tại: <strong class="text-success" id="topupCurrentBalance"></strong></p>
-                    <hr>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Số tiền nạp (VNĐ) <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" id="topupAmount" name="amount" required min="1000" step="1000" placeholder="VD: 100000">
+        <form id="userForm" onsubmit="saveUser(event)">
+            <input type="hidden" id="editId" name="id" value="">
+            <input type="hidden" name="action" id="formAction" value="create">
+            <div class="nx-modal-body">
+                <div class="nx-form-group">
+                    <label class="nx-label">Tên đăng nhập <span class="text-danger">*</span></label>
+                    <input type="text" class="nx-input" id="fUsername" name="username" required placeholder="VD: nguyenvana" minlength="3">
+                </div>
+                <div class="nx-form-group">
+                    <label class="nx-label">Mật khẩu <span class="text-danger">*</span></label>
+                    <input type="password" class="nx-input" id="fPassword" name="password" placeholder="Ít nhất 6 ký tự">
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;" id="passwordHint">Bắt buộc khi tạo mới</div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="nx-label">Vai trò</label>
+                        <select class="nx-select" id="fRole" name="role">
+                            <option value="0">Client</option>
+                            <option value="1">Admin</option>
+                        </select>
                     </div>
-                    <div class="d-flex flex-wrap gap-2">
-                        <?php foreach ([10000, 50000, 100000, 200000, 500000, 1000000] as $amt): ?>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="document.getElementById('topupAmount').value=<?php echo $amt; ?>">
-                            <?php echo number_format($amt, 0, ',', '.'); ?>đ
-                        </button>
-                        <?php endforeach; ?>
+                    <div class="col-6">
+                        <label class="nx-label">Số dư ban đầu</label>
+                        <input type="number" class="nx-input" id="fBalance" name="balance" min="0" value="0" placeholder="0">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="fa-solid fa-check me-1"></i>Xác nhận nạp tiền
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Xác nhận xóa</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                Bạn có chắc muốn xóa người dùng <strong id="delUserName"></strong>?
-                <br><span class="text-muted" style="font-size:0.85rem;">Hành động này không thể hoàn tác.</span>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">
-                    <i class="fa-solid fa-trash me-1"></i>Xóa
+            <div class="nx-modal-footer">
+                <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('userModal')">Hủy</button>
+                <button type="submit" class="nx-btn nx-btn-primary" id="submitBtn">
+                    <i class="fa-solid fa-check me-1"></i>Lưu
                 </button>
             </div>
+        </form>
+    </div>
+</div>
+
+<div class="nx-modal" id="topupModal">
+    <div class="nx-modal-inner">
+        <div class="nx-modal-header">
+            <h5 class="nx-modal-title" style="color: var(--success);"><i class="fa-solid fa-wallet me-2"></i>Nạp tiền</h5>
+            <button type="button" class="nx-modal-close" onclick="hideModal('topupModal')"></button>
+        </div>
+        <form id="topupForm" onsubmit="submitTopup(event)">
+            <input type="hidden" name="action" value="topup">
+            <input type="hidden" id="topupUserId" name="id" value="">
+            <div class="nx-modal-body">
+                <p>Người dùng: <strong id="topupUsername"></strong></p>
+                <p>Số dư hiện tại: <strong class="text-success" id="topupCurrentBalance"></strong></p>
+                <hr class="nx-divider">
+                <div class="nx-form-group">
+                    <label class="nx-label">Số tiền nạp (VNĐ) <span class="text-danger">*</span></label>
+                    <input type="number" class="nx-input" id="topupAmount" name="amount" required min="1000" step="1000" placeholder="VD: 100000">
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <?php foreach ([10000, 50000, 100000, 200000, 500000, 1000000] as $amt): ?>
+                    <button type="button" class="nx-btn nx-btn-sm nx-btn-secondary" onclick="document.getElementById('topupAmount').value=<?php echo $amt; ?>">
+                        <?php echo number_format($amt, 0, ',', '.'); ?>đ
+                    </button>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <div class="nx-modal-footer">
+                <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('topupModal')">Hủy</button>
+                <button type="submit" class="nx-btn nx-btn-success">
+                    <i class="fa-solid fa-check me-1"></i>Xác nhận nạp tiền
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="nx-modal" id="deleteModal">
+    <div class="nx-modal-inner">
+        <div class="nx-modal-header">
+            <h5 class="nx-modal-title" style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation me-2"></i>Xác nhận xóa</h5>
+            <button type="button" class="nx-modal-close" onclick="hideModal('deleteModal')"></button>
+        </div>
+        <div class="nx-modal-body">
+            Bạn có chắc muốn xóa người dùng <strong id="delUserName"></strong>?
+            <br><span class="text-muted" style="font-size:0.85rem;">Hành động này không thể hoàn tác.</span>
+        </div>
+        <div class="nx-modal-footer">
+            <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('deleteModal')">Hủy</button>
+            <button type="button" class="nx-btn nx-btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">
+                <i class="fa-solid fa-trash me-1"></i>Xóa
+            </button>
         </div>
     </div>
 </div>
 
 <script>
-let userModal, topupModal, deleteModal;
 let deleteTarget = null;
 
-document.addEventListener('DOMContentLoaded', function() {
-    userModal = new bootstrap.Modal(document.getElementById('userModal'));
-    topupModal = new bootstrap.Modal(document.getElementById('topupModal'));
-    deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-});
+function showModal(id) {
+    document.getElementById(id).classList.add('show');
+}
+
+function hideModal(id) {
+    document.getElementById(id).classList.remove('show');
+}
 
 function showAlert(type, message) {
     const box = document.getElementById('alertBox');
-    box.className = 'alert alert-' + type + ' alert-dismissible fade show';
-    box.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    box.className = 'nx-alert nx-alert-' + type;
+    box.innerHTML = message;
     box.classList.remove('d-none');
     setTimeout(() => { if (!type.includes('danger')) box.classList.add('d-none'); }, 5000);
 }
@@ -232,7 +227,7 @@ function openAddModal() {
     document.getElementById('submitBtn').innerHTML = '<i class="fa-solid fa-check me-1"></i>Tạo';
     document.getElementById('passwordHint').textContent = 'Bắt buộc khi tạo mới';
     document.getElementById('fUsername').readOnly = false;
-    userModal.show();
+    showModal('userModal');
 }
 
 function editUser(data) {
@@ -247,7 +242,7 @@ function editUser(data) {
     document.getElementById('submitBtn').innerHTML = '<i class="fa-solid fa-check me-1"></i>Cập nhật';
     document.getElementById('passwordHint').textContent = 'Để trống nếu không đổi mật khẩu';
     document.getElementById('fUsername').readOnly = true;
-    userModal.show();
+    showModal('userModal');
 }
 
 function saveUser(e) {
@@ -262,7 +257,7 @@ function saveUser(e) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            userModal.hide();
+            hideModal('userModal');
             showAlert('success', '<i class="fa-solid fa-check-circle me-1"></i>' + data.message);
             location.reload();
         } else {
@@ -279,7 +274,7 @@ function openTopupModal(id, username, balance) {
     document.getElementById('topupUsername').textContent = username;
     document.getElementById('topupCurrentBalance').textContent = new Intl.NumberFormat('vi-VN').format(balance) + 'đ';
     document.getElementById('topupAmount').value = '';
-    topupModal.show();
+    showModal('topupModal');
 }
 
 function submitTopup(e) {
@@ -294,7 +289,7 @@ function submitTopup(e) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            topupModal.hide();
+            hideModal('topupModal');
             showAlert('success', '<i class="fa-solid fa-check-circle me-1"></i>' + data.message);
             location.reload();
         } else {
@@ -309,7 +304,7 @@ function submitTopup(e) {
 function deleteUser(id, name) {
     deleteTarget = id;
     document.getElementById('delUserName').textContent = '"' + name + '"';
-    deleteModal.show();
+    showModal('deleteModal');
 }
 
 function confirmDelete() {
@@ -324,7 +319,7 @@ function confirmDelete() {
     })
     .then(r => r.json())
     .then(data => {
-        deleteModal.hide();
+        hideModal('deleteModal');
         if (data.success) {
             const row = document.getElementById('row-' + deleteTarget);
             if (row) row.remove();
@@ -335,7 +330,7 @@ function confirmDelete() {
         deleteTarget = null;
     })
     .catch(() => {
-        deleteModal.hide();
+        hideModal('deleteModal');
         showAlert('danger', '<i class="fa-solid fa-xmark-circle me-1"></i>Đã xảy ra lỗi');
     });
 }

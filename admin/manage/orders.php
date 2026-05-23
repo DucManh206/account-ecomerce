@@ -31,69 +31,69 @@ ob_start();
 
 <!-- Stats -->
 <div class="stats-row">
-    <div class="stat-card">
-        <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;">
+    <div class="nx-stat-card">
+        <div class="nx-stat-icon" style="background:#ede9fe;color:#7c3aed;">
             <i class="fa-solid fa-receipt"></i>
         </div>
-        <div class="stat-value"><?php echo number_format($stats['total']); ?></div>
-        <div class="stat-label">Tổng đơn hàng</div>
+        <div class="nx-stat-value"><?php echo number_format($stats['total']); ?></div>
+        <div class="nx-stat-label">Tổng đơn hàng</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:#fef3c7;color:#d97706;">
+    <div class="nx-stat-card">
+        <div class="nx-stat-icon" style="background:#fef3c7;color:#d97706;">
             <i class="fa-solid fa-clock"></i>
         </div>
-        <div class="stat-value"><?php echo number_format($stats['pending']); ?></div>
-        <div class="stat-label">Chờ xử lý</div>
+        <div class="nx-stat-value"><?php echo number_format($stats['pending']); ?></div>
+        <div class="nx-stat-label">Chờ xử lý</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:#d1fae5;color:#059669;">
+    <div class="nx-stat-card">
+        <div class="nx-stat-icon" style="background:#d1fae5;color:#059669;">
             <i class="fa-solid fa-check-circle"></i>
         </div>
-        <div class="stat-value"><?php echo number_format($stats['completed']); ?></div>
-        <div class="stat-label">Hoàn tất</div>
+        <div class="nx-stat-value"><?php echo number_format($stats['completed']); ?></div>
+        <div class="nx-stat-label">Hoàn tất</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:#f3f4f6;color:#6b7280;">
+    <div class="nx-stat-card">
+        <div class="nx-stat-icon" style="background:#f3f4f6;color:#6b7280;">
             <i class="fa-solid fa-xmark-circle"></i>
         </div>
-        <div class="stat-value"><?php echo number_format($stats['cancelled']); ?></div>
-        <div class="stat-label">Đã hủy</div>
+        <div class="nx-stat-value"><?php echo number_format($stats['cancelled']); ?></div>
+        <div class="nx-stat-label">Đã hủy</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:#dbeafe;color:#2563eb;">
+    <div class="nx-stat-card">
+        <div class="nx-stat-icon" style="background:#dbeafe;color:#2563eb;">
             <i class="fa-solid fa-coins"></i>
         </div>
-        <div class="stat-value"><?php echo number_format($stats['revenue']); ?>đ</div>
-        <div class="stat-label">Doanh thu</div>
+        <div class="nx-stat-value"><?php echo number_format($stats['revenue']); ?>đ</div>
+        <div class="nx-stat-label">Doanh thu</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:#fce7f3;color:#db2777;">
+    <div class="nx-stat-card">
+        <div class="nx-stat-icon" style="background:#fce7f3;color:#db2777;">
             <i class="fa-solid fa-calendar-day"></i>
         </div>
-        <div class="stat-value"><?php echo number_format($stats['today']); ?></div>
-        <div class="stat-label">Hôm nay</div>
+        <div class="nx-stat-value"><?php echo number_format($stats['today']); ?></div>
+        <div class="nx-stat-label">Hôm nay</div>
     </div>
 </div>
 
 <!-- Filter Bar -->
-<form method="GET" class="filter-bar" id="filterForm">
-    <div class="search-box">
+<form method="GET" class="nx-filter-bar" id="filterForm">
+    <div class="search-wrap">
         <i class="fa-solid fa-magnifying-glass"></i>
         <input type="text" name="search" placeholder="Tìm đơn hàng, tên người dùng, sản phẩm..." value="<?php echo htmlspecialchars($search); ?>">
     </div>
-    <select name="status" class="form-select" style="width:auto;" onchange="document.getElementById('filterForm').submit()">
+    <select name="status" class="nx-select" style="width:auto;" onchange="document.getElementById('filterForm').submit()">
         <?php foreach ($statusOptions as $val => $label): ?>
             <option value="<?php echo $val; ?>" <?php echo $status === $val ? 'selected' : ''; ?>><?php echo $label; ?></option>
         <?php endforeach; ?>
     </select>
-    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter me-1"></i> Lọc</button>
-    <a href="orders.php" class="btn btn-outline"><i class="fa-solid fa-rotate-left me-1"></i> Reset</a>
+    <button type="submit" class="nx-btn nx-btn-primary"><i class="fa-solid fa-filter me-1"></i> Lọc</button>
+    <a href="orders.php" class="nx-btn nx-btn-secondary"><i class="fa-solid fa-rotate-left me-1"></i> Reset</a>
 </form>
 
 <!-- Orders Table -->
-<div class="orders-table-wrap">
+<div class="nx-table-wrap">
     <?php if (count($orders) > 0): ?>
-        <table class="orders-table">
+        <table class="nx-table">
             <thead>
                 <tr>
                     <th>Đơn hàng</th>
@@ -112,32 +112,32 @@ ob_start();
                         $sInfo = $statusMap[$s] ?? ['label' => ucfirst($s), 'class' => 'bg-secondary'];
                     ?>
                     <tr data-order-id="<?php echo $o['id']; ?>">
-                        <td><span class="order-id">#<?php echo str_pad($o['id'], 6, '0', STR_PAD_LEFT); ?></span></td>
+                        <td><span class="cell-id">#<?php echo str_pad($o['id'], 6, '0', STR_PAD_LEFT); ?></span></td>
                         <td>
-                            <div class="user-cell">
-                                <div class="user-avatar"><?php echo strtoupper(substr($o['username'] ?? 'U', 0, 1)); ?></div>
-                                <span class="user-name"><?php echo htmlspecialchars($o['username'] ?? 'N/A'); ?></span>
+                            <div class="cell-user">
+                                <div class="cell-avatar"><?php echo strtoupper(substr($o['username'] ?? 'U', 0, 1)); ?></div>
+                                <span class="cell-username"><?php echo htmlspecialchars($o['username'] ?? 'N/A'); ?></span>
                             </div>
                         </td>
                         <td>
-                            <div class="product-cell">
-                                <img src="<?php echo htmlspecialchars($o['image_url'] ?? ''); ?>" alt="" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=600&q=80'">
-                                <span class="product-name"><?php echo htmlspecialchars($o['product_title'] ?? 'N/A'); ?></span>
+                            <div class="cell-product">
+                                <img src="<?php echo htmlspecialchars($o['image_url'] ?? ''); ?>" alt="" class="cell-product-img" onerror="this.src='https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=600&q=80'">
+                                <span class="cell-product-name"><?php echo htmlspecialchars($o['product_title'] ?? 'N/A'); ?></span>
                             </div>
                         </td>
-                        <td><span class="price-cell"><?php echo number_format($o['price'] ?? 0); ?>đ</span></td>
+                        <td><span class="cell-price"><?php echo number_format($o['price'] ?? 0); ?>đ</span></td>
                         <td>
-                            <span class="badge-status badge-<?php echo $s; ?>">
+                            <span class="badge-status <?php echo 'nx-badge nx-badge-' . $s; ?>">
                                 <i class="fa-solid <?php echo $sInfo['icon'] ?? 'fa-circle'; ?>"></i>
                                 <?php echo $sInfo['label']; ?>
                             </span>
                         </td>
-                        <td><span class="date-cell"><?php echo date('d/m/Y H:i', strtotime($o['created_at'] ?? 'now')); ?></span></td>
-                        <td class="action-cell">
-                            <button class="btn-action btn-view" onclick="viewOrder(<?php echo $o['id']; ?>)">
+                        <td><span class="cell-date"><?php echo date('d/m/Y H:i', strtotime($o['created_at'] ?? 'now')); ?></span></td>
+                        <td class="cell-actions">
+                            <button class="nx-btn nx-btn-sm nx-btn-secondary" onclick="viewOrder(<?php echo $o['id']; ?>)">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
-                            <button class="btn-action btn-danger" onclick="deleteOrder(<?php echo $o['id']; ?>)" title="Xóa đơn">
+                            <button class="nx-btn nx-btn-sm nx-btn-danger" onclick="deleteOrder(<?php echo $o['id']; ?>)" title="Xóa đơn">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </td>
@@ -147,11 +147,11 @@ ob_start();
         </table>
 
         <!-- Pagination -->
-        <div class="pagination-wrap">
-            <div class="pagination-info">
+        <div class="nx-pagination-wrap">
+            <div class="nx-pagination-info">
                 Hiển thị <?php echo min($offset + 1, $total); ?>–<?php echo min($offset + $limit, $total); ?> của <?php echo number_format($total); ?> đơn hàng
             </div>
-            <div class="pagination">
+            <div class="nx-pagination">
                 <?php if ($page > 1): ?>
                     <a href="?page=<?php echo $page - 1; ?>&status=<?php echo urlencode($status); ?>&search=<?php echo urlencode($search); ?>">
                         <i class="fa-solid fa-chevron-left"></i>
@@ -186,7 +186,7 @@ ob_start();
             </div>
         </div>
     <?php else: ?>
-        <div class="empty-state">
+        <div class="nx-empty">
             <i class="fa-solid fa-receipt"></i>
             <h5>Không có đơn hàng nào</h5>
             <p>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
@@ -195,18 +195,18 @@ ob_start();
 </div>
 
 <!-- Order Detail Modal -->
-<div class="modal-overlay" id="orderModal">
-    <div class="modal-box">
-        <div class="modal-header">
+<div class="nx-modal-overlay" id="orderModal">
+    <div class="nx-modal">
+        <div class="nx-modal-header">
             <h3><i class="fa-solid fa-receipt me-2"></i>Chi tiết đơn hàng <span id="modalOrderId"></span></h3>
-            <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+            <button class="nx-modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="modal-body" id="modalBody">
+        <div class="nx-modal-body" id="modalBody">
             <div style="text-align:center;padding:40px 0;color:#9ca3af;">
                 <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
             </div>
         </div>
-        <div class="modal-footer" id="modalFooter"></div>
+        <div class="nx-modal-footer" id="modalFooter"></div>
     </div>
 </div>
 
@@ -236,44 +236,44 @@ function viewOrder(orderId) {
 }
 
 function renderOrderDetail(o) {
-    const statusClass = 'badge-' + (o.status || 'pending');
+    const statusClass = 'nx-badge nx-badge-' + (o.status || 'pending');
     const sInfo = statusMap[o.status] || { label: o.status, icon: 'fa-circle' };
 
     const accountData = o.account_data ? JSON.parse(o.account_data) : {};
     let accountHtml = '';
     if (o.account_data) {
         accountHtml = `
-            <div class="detail-item" style="grid-column:1/-1;">
-                <div class="detail-label">Thông tin tài khoản</div>
-                <div class="account-data-box">${escapeHtml(o.account_data)}</div>
+            <div class="nx-detail-item" style="grid-column:1/-1;">
+                <div class="nx-detail-label">Thông tin tài khoản</div>
+                <div class="nx-account-box">${escapeHtml(o.account_data)}</div>
             </div>
         `;
     }
 
     document.getElementById('modalBody').innerHTML = `
-        <div class="detail-grid">
-            <div class="detail-item">
-                <div class="detail-label">Người mua</div>
-                <div class="detail-value">${escapeHtml(o.username || 'N/A')}</div>
+        <div class="nx-detail-grid">
+            <div class="nx-detail-item">
+                <div class="nx-detail-label">Người mua</div>
+                <div class="nx-detail-value">${escapeHtml(o.username || 'N/A')}</div>
             </div>
-            <div class="detail-item">
-                <div class="detail-label">Sản phẩm</div>
-                <div class="detail-value">${escapeHtml(o.product_title || 'N/A')}</div>
+            <div class="nx-detail-item">
+                <div class="nx-detail-label">Sản phẩm</div>
+                <div class="nx-detail-value">${escapeHtml(o.product_title || 'N/A')}</div>
             </div>
-            <div class="detail-item">
-                <div class="detail-label">Giá</div>
-                <div class="detail-value success">${formatNumber(o.price)}đ</div>
+            <div class="nx-detail-item">
+                <div class="nx-detail-label">Giá</div>
+                <div class="nx-detail-value text-success">${formatNumber(o.price)}đ</div>
             </div>
-            <div class="detail-item">
-                <div class="detail-label">Ngày tạo</div>
-                <div class="detail-value">${o.created_at ? new Date(o.created_at).toLocaleString('vi-VN') : 'N/A'}</div>
+            <div class="nx-detail-item">
+                <div class="nx-detail-label">Ngày tạo</div>
+                <div class="nx-detail-value">${o.created_at ? new Date(o.created_at).toLocaleString('vi-VN') : 'N/A'}</div>
             </div>
             ${accountHtml}
         </div>
 
         <div style="margin-bottom:16px;">
-            <div class="detail-label" style="margin-bottom:8px;">Trạng thái</div>
-            <select class="status-select" id="orderStatusSelect">
+            <div class="nx-detail-label" style="margin-bottom:8px;">Trạng thái</div>
+            <select class="nx-select" id="orderStatusSelect">
                 ${Object.entries(statusMap).map(([k, v]) =>
                     `<option value="${k}" ${o.status === k ? 'selected' : ''}>${v.label}</option>`
                 ).join('')}
@@ -283,9 +283,9 @@ function renderOrderDetail(o) {
 
     const footer = document.getElementById('modalFooter');
     footer.innerHTML = `
-        <button class="btn-sm-modal btn-cancel" onclick="closeModal()">Đóng</button>
-        ${o.status === 'completed' ? `<button class="btn-sm-modal btn-refund" onclick="refundOrder(${o.id})"><i class="fa-solid fa-rotate-left me-1"></i>Hoàn tiền</button>` : ''}
-        <button class="btn-sm-modal btn-save" onclick="saveOrderStatus(${o.id})"><i class="fa-solid fa-check me-1"></i>Lưu trạng thái</button>
+        <button class="nx-btn nx-btn-sm nx-btn-secondary" onclick="closeModal()">Đóng</button>
+        ${o.status === 'completed' ? `<button class="nx-btn nx-btn-sm nx-btn-danger" onclick="refundOrder(${o.id})"><i class="fa-solid fa-rotate-left me-1"></i>Hoàn tiền</button>` : ''}
+        <button class="nx-btn nx-btn-sm nx-btn-primary" onclick="saveOrderStatus(${o.id})"><i class="fa-solid fa-check me-1"></i>Lưu trạng thái</button>
     `;
 }
 

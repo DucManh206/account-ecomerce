@@ -44,10 +44,10 @@ ob_start();
 <div class="d-flex align-items-center gap-3 mb-3">
     <h1 class="page-title mb-0" style="font-size:1.3rem;">Quản lý</h1>
     <div class="ms-auto d-flex gap-1">
-        <a href="?tab=products" class="btn btn-sm <?php echo $activeTab === 'products' ? 'btn-primary' : 'btn-outline-secondary'; ?>">
+        <a href="?tab=products" class="nx-btn nx-btn-sm <?php echo $activeTab === 'products' ? 'nx-btn-primary' : 'nx-btn-secondary'; ?>">
             <i class="fa-solid fa-box me-1"></i> Sản phẩm
         </a>
-        <a href="?tab=stock" class="btn btn-sm <?php echo $activeTab === 'stock' ? 'btn-primary' : 'btn-outline-secondary'; ?>">
+        <a href="?tab=stock" class="nx-btn nx-btn-sm <?php echo $activeTab === 'stock' ? 'nx-btn-primary' : 'nx-btn-secondary'; ?>">
             <i class="fa-solid fa-database me-1"></i> Kho tài khoản
         </a>
     </div>
@@ -63,27 +63,22 @@ ob_start();
             / <strong><?php echo $initialData['total']; ?></strong> sản phẩm
         </p>
     </div>
-    <button class="btn btn-primary" onclick="openAddModal()">
+    <button class="nx-btn nx-btn-primary" onclick="openAddModal()">
         <i class="fa-solid fa-plus me-1"></i> Thêm sản phẩm
     </button>
 </div>
 
 <!-- Search + Filter Bar -->
-<div class="card bg-white mb-3">
-    <div class="card-body py-2">
+<div class="nx-card mb-3">
+    <div class="nx-card-body py-2">
         <div class="row g-2 align-items-end">
             <div class="col-md-4">
-                <label class="form-label small fw-bold mb-1">Tìm kiếm</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0" style="border-radius:8px 0 0 8px;">
-                        <i class="fa-solid fa-magnifying-glass text-muted"></i>
-                    </span>
-                    <input type="text" class="form-control border-start-0" id="searchInput" placeholder="Tên sản phẩm, danh mục, loại..." style="border-radius:0 8px 8px 0;" value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
-                </div>
+                <label class="nx-label small fw-bold mb-1">Tìm kiếm</label>
+                <input type="text" class="nx-input border-start-0" id="searchInput" placeholder="Tên sản phẩm, danh mục, loại..." style="border-radius:0 8px 8px 0;" value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
             </div>
             <div class="col-md-3">
-                <label class="form-label small fw-bold mb-1">Loại sản phẩm</label>
-                <select class="form-select" id="filterCategory" style="border-radius:8px;">
+                <label class="nx-label small fw-bold mb-1">Loại sản phẩm</label>
+                <select class="nx-select" id="filterCategory" style="border-radius:8px;">
                     <option value="">Tất cả danh mục</option>
                     <?php foreach ($filterCategories as $c): ?>
                         <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></option>
@@ -91,13 +86,13 @@ ob_start();
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label small fw-bold mb-1">Loại</label>
-                <select class="form-select" id="filterType" style="border-radius:8px;">
+                <label class="nx-label small fw-bold mb-1">Loại</label>
+                <select class="nx-select" id="filterType" style="border-radius:8px;">
                     <option value="">Tất cả loại</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <button class="btn btn-primary w-100" onclick="applyFilter()" style="border-radius:8px;">
+                <button class="nx-btn nx-btn-primary w-100" onclick="applyFilter()" style="border-radius:8px;">
                     <i class="fa-solid fa-filter me-1"></i> Lọc
                 </button>
             </div>
@@ -109,28 +104,28 @@ ob_start();
 <div id="alertBox" class="alert d-none mb-3" role="alert"></div>
 
 <!-- Products Table -->
-<div class="card bg-white">
+<div class="nx-card">
     <!-- Bulk Action Bar -->
-    <div class="card-body py-2 border-bottom d-none" id="bulkBar">
+    <div class="nx-card-body py-2 border-bottom d-none" id="bulkBar">
         <div class="d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2">
-                <input type="checkbox" class="form-check-input" id="selectAllTop" onchange="toggleSelectAll()">
-                <label for="selectAllTop" class="form-check-label fw-bold text-muted small">Chọn tất cả trang</label>
-                <span class="badge bg-primary ms-1" id="selectedCount">0</span>
+                <input type="checkbox" id="selectAllTop" onchange="toggleSelectAll()">
+                <label for="selectAllTop" class="fw-bold text-muted small">Chọn tất cả trang</label>
+                <span class="nx-badge nx-badge-primary ms-1" id="selectedCount">0</span>
             </div>
-            <button class="btn btn-sm btn-outline-danger" onclick="bulkDelete()">
+            <button class="nx-btn nx-btn-sm nx-btn-danger" onclick="bulkDelete()">
                 <i class="fa-solid fa-trash me-1"></i>Xóa đã chọn
             </button>
         </div>
     </div>
 
-    <div class="card-body p-0">
+    <div class="nx-card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" id="productsTable">
-                <thead class="table-light">
+            <table class="nx-table table-hover align-middle mb-0" id="productsTable">
+                <thead>
                     <tr>
                         <th class="ps-4" style="width:40px;">
-                            <input type="checkbox" class="form-check-input" id="selectAll" onchange="toggleSelectAll()">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
                         </th>
                         <th style="width:60px;">ID</th>
                         <th style="width:80px;">Hình</th>
@@ -150,188 +145,176 @@ ob_start();
     </div>
 
     <!-- Pagination -->
-    <div class="card-footer bg-white border-0" id="paginationArea">
+    <div class="nx-card-footer" id="paginationArea">
         <!-- Rendered by JS -->
     </div>
 </div>
 
 <!-- Image Preview Modal -->
-<div class="modal fade" id="imgPreviewModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark">
-            <div class="modal-header border-dark">
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center p-0">
-                <img id="previewImg" src="" alt="" style="max-width:100%;border-radius:8px;">
-            </div>
-        </div>
+<div class="nx-modal" id="imgPreviewModal" style="background:rgba(0,0,0,0.85);">
+    <div class="nx-modal-header" style="background:#1F2937;border-color:#374151;">
+        <button type="button" class="nx-modal-close" onclick="closeImgPreview()" style="background:transparent;border:none;color:#fff;opacity:0.7;width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;"></button>
+    </div>
+    <div class="nx-modal-body text-center p-0" style="background:#1F2937;">
+        <img id="previewImg" src="" alt="" style="max-width:100%;border-radius:8px;">
     </div>
 </div>
 
 <!-- Add / Edit Modal -->
-<div class="modal fade" id="productModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered" style="max-height: 90vh; display: flex; flex-direction: column;">
-        <div class="modal-content" style="max-height: calc(90vh - 60px); display: flex; flex-direction: column; overflow: hidden;">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalTitle"><i class="fa-solid fa-plus me-2"></i>Thêm sản phẩm</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="productForm" onsubmit="saveProduct(event)" style="display: contents;">
-                <input type="hidden" id="editId" name="id" value="">
-                <input type="hidden" name="action" id="formAction" value="create">
-                <div class="modal-body" style="overflow-y: auto; flex: 1;">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label fw-bold">Tên sản phẩm <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="fTitle" name="title" required placeholder="VD: Tài khoản Netflix Premium 1 Tháng">
-                        </div>
+<div class="nx-modal" id="productModal">
+    <div class="nx-modal-header">
+        <h5 class="nx-modal-title" id="modalTitle"><i class="fa-solid fa-plus me-2"></i>Thêm sản phẩm</h5>
+        <button type="button" class="nx-modal-close" onclick="closeDeleteModal()"></button>
+    </div>
+    <form id="productForm" onsubmit="saveProduct(event)" style="display: contents;">
+        <input type="hidden" id="editId" name="id" value="">
+        <input type="hidden" name="action" id="formAction" value="create">
+        <div class="nx-modal-body" style="overflow-y: auto; flex: 1;">
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="nx-label fw-bold">Tên sản phẩm <span class="text-danger">*</span></label>
+                    <input type="text" class="nx-input" id="fTitle" name="title" required placeholder="VD: Tài khoản Netflix Premium 1 Tháng">
+                </div>
 
-                        <!-- Image URL with preview -->
-                        <div class="col-md-8">
-                            <label class="form-label fw-bold">URL Hình ảnh <span class="text-danger">*</span></label>
-                            <input type="url" class="form-control" id="fImageUrl" name="image_url" required placeholder="https://images.unsplash.com/..." oninput="updateImagePreview()">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Xem trước</label>
-                            <div class="border rounded overflow-hidden" style="height:42px;background:#f8f9fa;">
-                                <img id="imgPreviewThumb" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none;">
-                            </div>
-                        </div>
-
-                        <!-- Category + Type -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Danh mục <span class="text-danger">*</span></label>
-                            <select class="form-select" id="fCategory" name="category" required onchange="onCategoryChange()">
-                                <option value="">-- Chọn danh mục --</option>
-                                <?php foreach ($filterCategories as $c): ?>
-                                    <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Loại</label>
-                            <select class="form-select" id="fTypeId" name="type_id">
-                                <option value="">— Không chọn —</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Game / Dịch vụ</label>
-                            <input type="text" class="form-control" id="fGameType" name="game_type" placeholder="VD: Valorant, Netflix Premium">
-                            <div class="form-text">Tên dịch vụ (điền nếu cần)</div>
-                        </div>
-
-                        <!-- Prices + Badge -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Giá bán <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" id="fPrice" name="price" required min="0" placeholder="0">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Giá gốc</label>
-                            <input type="number" class="form-control" id="fOldPrice" name="old_price" min="0" placeholder="0">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Badge</label>
-                            <select class="form-select" id="fBadge" name="badge">
-                                <option value="">Không có</option>
-                                <option value="Hot">Hot</option>
-                                <option value="VIP">VIP</option>
-                                <option value="Deal">Deal</option>
-                                <option value="New">New</option>
-                            </select>
-                        </div>
-
-                        <!-- Icon + Color -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Icon</label>
-                            <div class="d-flex gap-1 flex-wrap">
-                                <?php
-                                $quickIcons = [
-                                    ['fa-n', 'Netflix'],
-                                    ['fa-youtube', 'YouTube'],
-                                    ['fa-spotify', 'Spotify'],
-                                    ['fa-play', 'Disney+'],
-                                    ['fa-robot', 'AI'],
-                                    ['fa-gamepad', 'Game'],
-                                    ['fa-fire', 'Fire'],
-                                    ['fa-cloud', 'Cloud'],
-                                    ['fa-crown', 'Crown'],
-                                    ['fa-box', 'Mặc định'],
-                                ];
-                                foreach ($quickIcons as $ic): ?>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary icon-btn" data-icon="<?php echo $ic[0]; ?>" onclick="selectIcon(this, '<?php echo $ic[0]; ?>')" title="<?php echo $ic[1]; ?>">
-                                        <i class="fa-solid <?php echo $ic[0]; ?>"></i>
-                                    </button>
-                                <?php endforeach; ?>
-                                <input type="hidden" id="fIconClass" name="icon_class" value="fa-box">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Màu nền badge</label>
-                            <div class="d-flex gap-2 align-items-center">
-                                <?php
-                                $colors = [
-                                    ['bg-danger', '#EF4444'],
-                                    ['bg-primary', '#3B82F6'],
-                                    ['bg-success', '#10B981'],
-                                    ['bg-warning', '#F59E0B'],
-                                    ['bg-info', '#06B6D4'],
-                                    ['bg-dark', '#1F2937'],
-                                    ['bg-secondary', '#6B7280'],
-                                    ['bg-light', '#F3F4F6'],
-                                ];
-                                foreach ($colors as $c): ?>
-                                    <label class="color-swatch" style="background:<?php echo $c[1]; ?>;" title="<?php echo $c[0]; ?>">
-                                        <input type="radio" name="color_class" value="<?php echo $c[0]; ?>" class="d-none">
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-
-                        <!-- Description -->
-                        <div class="col-12">
-                            <label class="form-label fw-bold">Mô tả</label>
-                            <textarea class="form-control" id="fDescription" name="description" rows="2" placeholder="Mô tả ngắn về sản phẩm..."></textarea>
-                        </div>
-
-                        <!-- Details JSON -->
-                        <div class="col-12">
-                            <label class="form-label fw-bold">Thông số chi tiết</label>
-                            <textarea class="form-control font-monospace" id="fDetails" name="details" rows="3" placeholder='{"Rank": "Vàng 1", "VP": "200 ACC VP"}' style="font-size:0.82rem;"></textarea>
-                            <div class="form-text">Nhập dạng JSON — mỗi key-value là một thông số hiển thị cho khách</div>
-                        </div>
+                <!-- Image URL with preview -->
+                <div class="col-md-8">
+                    <label class="nx-label fw-bold">URL Hình ảnh <span class="text-danger">*</span></label>
+                    <input type="url" class="nx-input" id="fImageUrl" name="image_url" required placeholder="https://images.unsplash.com/..." oninput="updateImagePreview()">
+                </div>
+                <div class="col-md-4">
+                    <label class="nx-label fw-bold">Xem trước</label>
+                    <div class="border rounded overflow-hidden" style="height:42px;background:#f8f9fa;">
+                        <img id="imgPreviewThumb" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none;">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary" id="submitBtn">
-                        <i class="fa-solid fa-check me-1"></i>Lưu
-                    </button>
+
+                <!-- Category + Type -->
+                <div class="col-md-4">
+                    <label class="nx-label fw-bold">Danh mục <span class="text-danger">*</span></label>
+                    <select class="nx-select" id="fCategory" name="category" required onchange="onCategoryChange()">
+                        <option value="">-- Chọn danh mục --</option>
+                        <?php foreach ($filterCategories as $c): ?>
+                            <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
-            </form>
+                <div class="col-md-4">
+                    <label class="nx-label fw-bold">Loại</label>
+                    <select class="nx-select" id="fTypeId" name="type_id">
+                        <option value="">— Không chọn —</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="nx-label fw-bold">Game / Dịch vụ</label>
+                    <input type="text" class="nx-input" id="fGameType" name="game_type" placeholder="VD: Valorant, Netflix Premium">
+                    <div class="form-text">Tên dịch vụ (điền nếu cần)</div>
+                </div>
+
+                <!-- Prices + Badge -->
+                <div class="col-md-4">
+                    <label class="nx-label fw-bold">Giá bán <span class="text-danger">*</span></label>
+                    <input type="number" class="nx-input" id="fPrice" name="price" required min="0" placeholder="0">
+                </div>
+                <div class="col-md-4">
+                    <label class="nx-label fw-bold">Giá gốc</label>
+                    <input type="number" class="nx-input" id="fOldPrice" name="old_price" min="0" placeholder="0">
+                </div>
+                <div class="col-md-4">
+                    <label class="nx-label fw-bold">Badge</label>
+                    <select class="nx-select" id="fBadge" name="badge">
+                        <option value="">Không có</option>
+                        <option value="Hot">Hot</option>
+                        <option value="VIP">VIP</option>
+                        <option value="Deal">Deal</option>
+                        <option value="New">New</option>
+                    </select>
+                </div>
+
+                <!-- Icon + Color -->
+                <div class="col-md-6">
+                    <label class="nx-label fw-bold">Icon</label>
+                    <div class="d-flex gap-1 flex-wrap">
+                        <?php
+                        $quickIcons = [
+                            ['fa-n', 'Netflix'],
+                            ['fa-youtube', 'YouTube'],
+                            ['fa-spotify', 'Spotify'],
+                            ['fa-play', 'Disney+'],
+                            ['fa-robot', 'AI'],
+                            ['fa-gamepad', 'Game'],
+                            ['fa-fire', 'Fire'],
+                            ['fa-cloud', 'Cloud'],
+                            ['fa-crown', 'Crown'],
+                            ['fa-box', 'Mặc định'],
+                        ];
+                        foreach ($quickIcons as $ic): ?>
+                            <button type="button" class="nx-btn nx-btn-sm nx-btn-secondary icon-btn" data-icon="<?php echo $ic[0]; ?>" onclick="selectIcon(this, '<?php echo $ic[0]; ?>')" title="<?php echo $ic[1]; ?>">
+                                <i class="fa-solid <?php echo $ic[0]; ?>"></i>
+                            </button>
+                        <?php endforeach; ?>
+                        <input type="hidden" id="fIconClass" name="icon_class" value="fa-box">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="nx-label fw-bold">Màu nền badge</label>
+                    <div class="d-flex gap-2 align-items-center">
+                        <?php
+                        $colors = [
+                            ['bg-danger', '#EF4444'],
+                            ['bg-primary', '#3B82F6'],
+                            ['bg-success', '#10B981'],
+                            ['bg-warning', '#F59E0B'],
+                            ['bg-info', '#06B6D4'],
+                            ['bg-dark', '#1F2937'],
+                            ['bg-secondary', '#6B7280'],
+                            ['bg-light', '#F3F4F6'],
+                        ];
+                        foreach ($colors as $c): ?>
+                            <label class="color-swatch" style="background:<?php echo $c[1]; ?>;" title="<?php echo $c[0]; ?>">
+                                <input type="radio" name="color_class" value="<?php echo $c[0]; ?>" class="d-none">
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="col-12">
+                    <label class="nx-label fw-bold">Mô tả</label>
+                    <textarea class="nx-input" id="fDescription" name="description" rows="2" placeholder="Mô tả ngắn về sản phẩm..."></textarea>
+                </div>
+
+                <!-- Details JSON -->
+                <div class="col-12">
+                    <label class="nx-label fw-bold">Thông số chi tiết</label>
+                    <textarea class="nx-input font-monospace" id="fDetails" name="details" rows="3" placeholder='{"Rank": "Vàng 1", "VP": "200 ACC VP"}' style="font-size:0.82rem;"></textarea>
+                    <div class="form-text">Nhập dạng JSON — mỗi key-value là một thông số hiển thị cho khách</div>
+                </div>
+            </div>
         </div>
-    </div>
+        <div class="nx-modal-footer">
+            <button type="button" class="nx-btn nx-btn-secondary" onclick="closeProductModal()">Hủy</button>
+            <button type="submit" class="nx-btn nx-btn-primary" id="submitBtn">
+                <i class="fa-solid fa-check me-1"></i>Lưu
+            </button>
+        </div>
+    </form>
 </div>
 
 <!-- Delete Confirm Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Xác nhận xóa</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Bạn có chắc muốn xóa sản phẩm <strong id="delProductName"></strong>?</p>
-                <span class="text-muted" style="font-size:0.85rem;">Hành động này không thể hoàn tác.</span>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">
-                    <i class="fa-solid fa-trash me-1"></i>Xóa
-                </button>
-            </div>
-        </div>
+<div class="nx-modal" id="deleteModal">
+    <div class="nx-modal-header">
+        <h5 class="nx-modal-title text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Xác nhận xóa</h5>
+        <button type="button" class="nx-modal-close" onclick="closeDeleteModal()"></button>
+    </div>
+    <div class="nx-modal-body">
+        <p>Bạn có chắc muốn xóa sản phẩm <strong id="delProductName"></strong>?</p>
+        <span class="text-muted" style="font-size:0.85rem;">Hành động này không thể hoàn tác.</span>
+    </div>
+            <div class="nx-modal-footer">
+                <button type="button" class="nx-btn nx-btn-secondary" onclick="closeDeleteModal()">Hủy</button>
+                <button type="button" class="nx-btn nx-btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">
+            <i class="fa-solid fa-trash me-1"></i>Xóa
+        </button>
     </div>
 </div>
 
@@ -400,7 +383,7 @@ ob_start();
             tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5">
  <i class="fa-solid fa-box-open fa-2x mb-3 d-block opacity-20 text-muted"></i>
  <p class="text-muted mb-2">Không tìm thấy sản phẩm nào</p>
- <button class="btn btn-sm btn-outline-primary" onclick="resetFilter()">Xóa bộ lọc</button>
+ <button class="nx-btn nx-btn-sm nx-btn-secondary" onclick="resetFilter()">Xóa bộ lọc</button>
  </td></tr>`;
             document.getElementById('paginationArea').innerHTML = '';
             document.getElementById('statsLine').innerHTML = `Hiển thị <strong id="showCount">0</strong> / <strong>0</strong> sản phẩm`;
@@ -416,7 +399,7 @@ ob_start();
 
             return `<tr id="row-${p.id}" class="${isRowSelected(p.id) ? 'table-active' : ''}">
  <td class="ps-4">
- <input type="checkbox" class="form-check-input row-check" value="${p.id}" ${isRowSelected(p.id) ? 'checked' : ''} onchange="onRowCheckChange(this)">
+ <input type="checkbox" class="row-check" value="${p.id}" ${isRowSelected(p.id) ? 'checked' : ''} onchange="onRowCheckChange(this)">
  </td>
  <td class="ps-4 fw-bold text-muted small">#${String(p.id).padStart(4,'0')}</td>
  <td>
@@ -426,8 +409,8 @@ ob_start();
  <div style="font-weight:700;font-size:0.88rem;max-width:280px;" class="text-truncate">${escapeHtml(p.title)}</div>
  ${p.game_type ? `<div style="font-size:0.72rem;color:#9ca3af;" class="text-truncate">${escapeHtml(p.game_type)}</div>` : ''}
  </td>
- <td><span class="badge bg-secondary">${escapeHtml(p.category)}</span></td>
- <td>${p.type_name ? `<span class="badge" style="background:rgba(110,86,207,0.12);color:#6E56CF;border:1px solid rgba(110,86,207,0.2);font-weight:600;">
+ <td><span class="nx-badge nx-badge-muted">${escapeHtml(p.category)}</span></td>
+ <td>${p.type_name ? `<span style="background:rgba(110,86,207,0.12);color:#6E56CF;border:1px solid rgba(110,86,207,0.2);font-weight:600;">
  <i class="fa-solid ${escapeHtml(p.type_icon || 'fa-tag')} me-1"></i>${escapeHtml(p.type_name)}
  </span>` : '<span class="text-muted small">—</span>'}</td>
  <td>
@@ -435,14 +418,14 @@ ob_start();
  ${p.old_price > 0 ? `<div class="small text-decoration-line-through text-muted">${formatNumber(p.old_price)}đ</div>` : ''}
  </td>
  <td>
- ${p.badge ? `<span class="badge ${badgeClass}" ${badgeStyle}>${escapeHtml(p.badge)}</span>` : ''}
- ${discount > 0 ? `<span class="badge bg-danger ms-1" style="font-size:0.65rem;">-${discount}%</span>` : ''}
+ ${p.badge ? `<span class="nx-badge ${badgeClass}" ${badgeStyle}>${escapeHtml(p.badge)}</span>` : ''}
+ ${discount > 0 ? `<span class="nx-badge nx-badge-danger ms-1" style="font-size:0.65rem;">-${discount}%</span>` : ''}
  </td>
  <td class="text-end pe-4">
- <button class="btn btn-sm btn-outline-primary" onclick='editProduct(${JSON.stringify(p)})' title="Sửa">
+ <button class="nx-btn nx-btn-sm nx-btn-secondary" onclick='editProduct(${JSON.stringify(p)})' title="Sửa">
  <i class="fa-solid fa-pen-to-square"></i>
  </button>
- <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${p.id}, '${escapeHtml(p.title.replace(/'/g,"\\'"))}')" title="Xóa">
+ <button class="nx-btn nx-btn-sm nx-btn-danger" onclick="deleteProduct(${p.id}, '${escapeHtml(p.title.replace(/'/g,"\\'"))}')" title="Xóa">
  <i class="fa-solid fa-trash"></i>
  </button>
  </td>
@@ -478,11 +461,11 @@ ob_start();
 
         // Prev
         if (page > 1) {
-            html += `<button class="btn btn-sm btn-outline-secondary" onclick="goPage(${page - 1})">
+            html += `<button class="nx-btn nx-btn-sm nx-btn-secondary" onclick="goPage(${page - 1})">
  <i class="fa-solid fa-chevron-left"></i>
  </button>`;
         } else {
-            html += `<button class="btn btn-sm btn-outline-secondary" disabled><i class="fa-solid fa-chevron-left"></i></button>`;
+            html += `<button class="nx-btn nx-btn-sm nx-btn-secondary" disabled><i class="fa-solid fa-chevron-left"></i></button>`;
         }
 
         // Page numbers
@@ -492,23 +475,23 @@ ob_start();
         if (end - start < maxVisible - 1) start = Math.max(1, end - maxVisible + 1);
         for (let i = start; i <= end; i++) {
             if (i === page) {
-                html += `<button class="btn btn-sm btn-primary">${i}</button>`;
+                html += `<button class="nx-btn nx-btn-sm nx-btn-primary">${i}</button>`;
             } else {
-                html += `<button class="btn btn-sm btn-outline-secondary" onclick="goPage(${i})">${i}</button>`;
+                html += `<button class="nx-btn nx-btn-sm nx-btn-secondary" onclick="goPage(${i})">${i}</button>`;
             }
         }
 
         // Next
         if (page < total_pages) {
-            html += `<button class="btn btn-sm btn-outline-secondary" onclick="goPage(${page + 1})">
+            html += `<button class="nx-btn nx-btn-sm nx-btn-secondary" onclick="goPage(${page + 1})">
  <i class="fa-solid fa-chevron-right"></i>
  </button>`;
         } else {
-            html += `<button class="btn btn-sm btn-outline-secondary" disabled><i class="fa-solid fa-chevron-right"></i></button>`;
+            html += `<button class="nx-btn nx-btn-sm nx-btn-secondary" disabled><i class="fa-solid fa-chevron-right"></i></button>`;
         }
 
         // Per page
-        html += `<select class="form-select form-select-sm" style="width:auto;" onchange="changePerPage(this.value)">
+        html += `<select class="nx-select" style="width:auto;" onchange="changePerPage(this.value)">
  <option value="10" ${per_page==10?'selected':''}>10 / trang</option>
  <option value="20" ${per_page==20?'selected':''}>20 / trang</option>
  <option value="50" ${per_page==50?'selected':''}>50 / trang</option>
@@ -632,10 +615,10 @@ ob_start();
         document.getElementById('fIconClass').value = 'fa-box';
         document.getElementById('imgPreviewThumb').style.display = 'none';
         document.getElementById('imgPreviewThumb').src = '';
-        document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('btn-primary'));
-        document.querySelectorAll('.icon-btn').forEach(b => b.classList.add('btn-outline-secondary'));
-        document.querySelector('.icon-btn[title="Mặc định"]').classList.remove('btn-outline-secondary');
-        document.querySelector('.icon-btn[title="Mặc định"]').classList.add('btn-primary');
+        document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('nx-btn-primary'));
+        document.querySelectorAll('.icon-btn').forEach(b => b.classList.add('nx-btn-secondary'));
+        document.querySelector('.icon-btn[title="Mặc định"]').classList.remove('nx-btn-secondary');
+        document.querySelector('.icon-btn[title="Mặc định"]').classList.add('nx-btn-primary');
         document.querySelectorAll('.color-swatch').forEach(s => s.style.outline = 'none');
         const firstColor = document.querySelector('.color-swatch');
         if (firstColor) {
@@ -644,7 +627,7 @@ ob_start();
         }
         document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-plus me-2"></i>Thêm sản phẩm';
         document.getElementById('submitBtn').innerHTML = '<i class="fa-solid fa-check me-1"></i>Lưu';
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('productModal')).show();
+        showModal('productModal');
     }
 
     function editProduct(data) {
@@ -665,11 +648,11 @@ ob_start();
         // Icon
         document.getElementById('fIconClass').value = data.icon_class || 'fa-box';
         document.querySelectorAll('.icon-btn').forEach(b => {
-            b.classList.remove('btn-primary');
-            b.classList.add('btn-outline-secondary');
+            b.classList.remove('nx-btn-primary');
+            b.classList.add('nx-btn-secondary');
             if (b.dataset.icon === (data.icon_class || 'fa-box')) {
-                b.classList.remove('btn-outline-secondary');
-                b.classList.add('btn-primary');
+                b.classList.remove('nx-btn-secondary');
+                b.classList.add('nx-btn-primary');
             }
         });
 
@@ -695,7 +678,7 @@ ob_start();
 
         document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-pen-to-square me-2"></i>Sửa sản phẩm';
         document.getElementById('submitBtn').innerHTML = '<i class="fa-solid fa-check me-1"></i>Cập nhật';
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('productModal')).show();
+        showModal('productModal');
     }
 
     function updateImagePreview() {
@@ -714,11 +697,11 @@ ob_start();
 
     function selectIcon(btn, icon) {
         document.querySelectorAll('.icon-btn').forEach(b => {
-            b.classList.remove('btn-primary');
-            b.classList.add('btn-outline-secondary');
+            b.classList.remove('nx-btn-primary');
+            b.classList.add('nx-btn-secondary');
         });
-        btn.classList.remove('btn-outline-secondary');
-        btn.classList.add('btn-primary');
+        btn.classList.remove('nx-btn-secondary');
+        btn.classList.add('nx-btn-primary');
         document.getElementById('fIconClass').value = icon;
     }
 
@@ -743,7 +726,7 @@ ob_start();
             })
             .then(data => {
                 if (data.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
+                    hideModal('productModal');
                     showAlert('success', '<i class="fa-solid fa-check-circle me-1"></i>' + data.message);
                     if (isUpdate) {
                         // Live update: reload current page data
@@ -764,7 +747,7 @@ ob_start();
     function deleteProduct(id, name) {
         deleteTarget = id;
         document.getElementById('delProductName').textContent = '"' + name + '"';
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteModal')).show();
+        showModal('deleteModal');
     }
 
     function confirmDelete() {
@@ -786,7 +769,7 @@ ob_start();
                 }
             })
             .then(data => {
-                bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                hideModal('deleteModal');
                 if (data.success) {
                     const row = document.getElementById('row-' + deleteTarget);
                     if (row) row.remove();
@@ -799,7 +782,7 @@ ob_start();
             })
             .catch(err => {
                 console.error(err);
-                bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                hideModal('deleteModal');
                 showAlert('danger', err.message);
             });
     }
@@ -881,14 +864,14 @@ ob_start();
     // ==================== IMAGE PREVIEW ====================
     function openImgPreview(url) {
         document.getElementById('previewImg').src = url;
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('imgPreviewModal')).show();
+        showModal('imgPreviewModal');
     }
 
     // ==================== HELPERS ====================
     function showAlert(type, message) {
         const box = document.getElementById('alertBox');
-        box.className = `alert alert-${type} alert-dismissible fade show`;
-        box.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+        box.className = `alert nx-alert-${type} show`;
+        box.innerHTML = message;
         box.classList.remove('d-none');
         setTimeout(() => {
             if (!type.includes('danger')) box.classList.add('d-none');
@@ -906,16 +889,28 @@ ob_start();
 
     function getBadgeClass(badge) {
         const map = {
-            'Hot': 'bg-danger',
-            'VIP': 'badge-vip',
-            'Deal': 'bg-success',
-            'New': 'bg-primary'
+            'Hot': 'nx-badge-danger',
+            'VIP': 'nx-badge-vip',
+            'Deal': 'nx-badge-success',
+            'New': 'nx-badge-primary'
         };
-        return map[badge] || 'bg-secondary';
+        return map[badge] || 'nx-badge-muted';
     }
 
     function getBadgeStyle(badge) {
         return badge === 'VIP' ? 'style="background:linear-gradient(135deg,#f6d365,#fda085);color:#000;font-weight:700;"' : '';
+    }
+
+    function closeProductModal() {
+        document.getElementById('productModal').classList.remove('show');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('show');
+    }
+
+    function closeImgPreview() {
+        document.getElementById('imgPreviewModal').classList.remove('show');
     }
 </script>
 
@@ -925,13 +920,13 @@ ob_start();
 <?php if ($activeTab === 'stock'): ?>
 
 <!-- Alert -->
-<div id="stockAlert" class="alert d-none mb-3" role="alert"></div>
+<div id="stockAlert" class="nx-alert d-none mb-3"></div>
 
 <!-- Stats -->
 <div class="row g-3 mb-3">
     <div class="col-sm-4">
-        <div class="card bg-white">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
+        <div class="nx-card">
+            <div class="nx-card-body d-flex align-items-center gap-3 py-3">
                 <div style="width:40px;height:40px;border-radius:10px;background:rgba(110,86,207,0.1);display:flex;align-items:center;justify-content:center;">
                     <i class="fa-solid fa-database" style="color:#6E56CF;"></i>
                 </div>
@@ -943,8 +938,8 @@ ob_start();
         </div>
     </div>
     <div class="col-sm-4">
-        <div class="card bg-white">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
+        <div class="nx-card">
+            <div class="nx-card-body d-flex align-items-center gap-3 py-3">
                 <div style="width:40px;height:40px;border-radius:10px;background:rgba(16,185,129,0.1);display:flex;align-items:center;justify-content:center;">
                     <i class="fa-solid fa-check-circle" style="color:#10B981;"></i>
                 </div>
@@ -956,8 +951,8 @@ ob_start();
         </div>
     </div>
     <div class="col-sm-4">
-        <div class="card bg-white">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
+        <div class="nx-card">
+            <div class="nx-card-body d-flex align-items-center gap-3 py-3">
                 <div style="width:40px;height:40px;border-radius:10px;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;">
                     <i class="fa-solid fa-cart-shopping" style="color:#EF4444;"></i>
                 </div>
@@ -971,15 +966,15 @@ ob_start();
 </div>
 
 <!-- Add Account Form (Manual) -->
-<div class="card bg-white mb-3">
-    <div class="card-header d-flex align-items-center justify-content-between">
+<div class="nx-card mb-3">
+    <div class="nx-card-header d-flex align-items-center justify-content-between">
         <span><i class="fa-solid fa-plus-circle me-2 text-primary"></i>Thêm tài khoản (thủ công)</span>
     </div>
-    <div class="card-body">
+    <div class="nx-card-body">
         <div class="row g-3 align-items-end">
             <div class="col-md-3">
-                <label class="form-label small fw-bold">Sản phẩm <span class="text-danger">*</span></label>
-                <select class="form-select" id="stockProduct">
+                <label class="nx-label small fw-bold">Sản phẩm <span class="text-danger">*</span></label>
+                <select class="nx-select" id="stockProduct">
                     <option value="">-- Chọn sản phẩm --</option>
                     <?php foreach ($stockProducts as $p): ?>
                         <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['title']); ?></option>
@@ -987,19 +982,19 @@ ob_start();
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label small fw-bold">User</label>
-                <input type="text" class="form-control" id="stockUser" placeholder="acc@gmail.com">
+                <label class="nx-label small fw-bold">User</label>
+                <input type="text" class="nx-input" id="stockUser" placeholder="acc@gmail.com">
             </div>
             <div class="col-md-2">
-                <label class="form-label small fw-bold">Pass</label>
-                <input type="text" class="form-control" id="stockPass" placeholder="Matkhau123">
+                <label class="nx-label small fw-bold">Pass</label>
+                <input type="text" class="nx-input" id="stockPass" placeholder="Matkhau123">
             </div>
             <div class="col-md-3">
-                <label class="form-label small fw-bold">Extra <span class="text-muted fw-normal">(key:value, mỗi dòng 1)</span></label>
-                <textarea class="form-control font-monospace" id="stockExtra" rows="2" placeholder="cookie:ABC123&#10;token:XYZ789" style="font-size:0.8rem;"></textarea>
+                <label class="nx-label small fw-bold">Extra <span class="text-muted fw-normal">(key:value, mỗi dòng 1)</span></label>
+                <textarea class="nx-input font-monospace" id="stockExtra" rows="2" placeholder="cookie:ABC123&#10;token:XYZ789" style="font-size:0.8rem;"></textarea>
             </div>
             <div class="col-md-2 d-flex align-items-end">
-                <button class="btn btn-primary w-100" onclick="stockAdd()">
+                <button class="nx-btn nx-btn-primary w-100" onclick="stockAdd()">
                     <i class="fa-solid fa-plus me-1"></i> Thêm
                 </button>
             </div>
@@ -1008,15 +1003,15 @@ ob_start();
 </div>
 
 <!-- Bulk Add -->
-<div class="card bg-white mb-3">
-    <div class="card-header d-flex align-items-center justify-content-between">
+<div class="nx-card mb-3">
+    <div class="nx-card-header d-flex align-items-center justify-content-between">
         <span><i class="fa-solid fa-upload me-2 text-primary"></i>Import hàng loạt</span>
     </div>
-    <div class="card-body">
+    <div class="nx-card-body">
         <div class="row g-3 align-items-end">
             <div class="col-md-3">
-                <label class="form-label small fw-bold">Sản phẩm <span class="text-danger">*</span></label>
-                <select class="form-select" id="bulkProduct">
+                <label class="nx-label small fw-bold">Sản phẩm <span class="text-danger">*</span></label>
+                <select class="nx-select" id="bulkProduct">
                     <option value="">-- Chọn sản phẩm --</option>
                     <?php foreach ($stockProducts as $p): ?>
                         <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['title']); ?></option>
@@ -1024,12 +1019,12 @@ ob_start();
                 </select>
             </div>
             <div class="col-md-9">
-                <label class="form-label small fw-bold">Danh sách <span class="text-muted fw-normal">(key:value, mỗi dòng 1)</span></label>
-                <textarea class="form-control font-monospace" id="bulkAccounts" rows="5" placeholder="account:acc1@gmail.com:Matkhau1&#10;cookie:ABC123DEF456&#10;key:XYZ789&#10;account:acc2@gmail.com:Matkhau2" style="font-size:0.8rem;"></textarea>
+                <label class="nx-label small fw-bold">Danh sách <span class="text-muted fw-normal">(key:value, mỗi dòng 1)</span></label>
+                <textarea class="nx-input font-monospace" id="bulkAccounts" rows="5" placeholder="account:acc1@gmail.com:Matkhau1&#10;cookie:ABC123DEF456&#10;key:XYZ789&#10;account:acc2@gmail.com:Matkhau2" style="font-size:0.8rem;"></textarea>
             </div>
         </div>
         <div class="mt-3">
-            <button class="btn btn-outline-primary" onclick="stockBulkAdd()">
+            <button class="nx-btn nx-btn-secondary" onclick="stockBulkAdd()">
                 <i class="fa-solid fa-upload me-1"></i> Import
             </button>
             <span class="text-muted ms-2" style="font-size:0.8rem;">
@@ -1040,11 +1035,11 @@ ob_start();
 </div>
 
 <!-- Accounts List -->
-<div class="card bg-white">
-    <div class="card-header d-flex align-items-center justify-content-between">
+<div class="nx-card">
+    <div class="nx-card-header d-flex align-items-center justify-content-between">
         <span><i class="fa-solid fa-list me-2 text-primary"></i>Danh sách tài khoản</span>
         <div class="d-flex gap-2">
-            <select class="form-select form-select-sm" id="stockFilterProduct" onchange="stockLoad()" style="width:auto;min-width:200px;">
+            <select class="nx-select" id="stockFilterProduct" onchange="stockLoad()" style="width:auto;min-width:200px;">
                 <option value="">-- Tất cả sản phẩm --</option>
                 <?php foreach ($stockProducts as $p): ?>
                     <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['title']); ?></option>
@@ -1052,10 +1047,10 @@ ob_start();
             </select>
         </div>
     </div>
-    <div class="card-body p-0">
+    <div class="nx-card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+            <table class="nx-table table-hover align-middle mb-0">
+                <thead>
                     <tr>
                         <th class="ps-4">ID</th>
                         <th>Sản phẩm</th>
@@ -1077,8 +1072,8 @@ ob_start();
     // ==================== ACCOUNT STOCK ====================
     function stockAlert(type, msg) {
         const box = document.getElementById('stockAlert');
-        box.className = `alert alert-${type} alert-dismissible fade show`;
-        box.innerHTML = msg + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+        box.className = `alert nx-alert-${type} show`;
+        box.innerHTML = msg;
         box.classList.remove('d-none');
         setTimeout(() => { if (!type.includes('danger')) box.classList.add('d-none'); }, 5000);
     }
@@ -1185,12 +1180,12 @@ ob_start();
                         : `<span class="text-muted small">${escapeHtml(a.account_data)}</span>`;
                     return `<tr>
                         <td class="ps-4 fw-bold text-muted small">#${a.id}</td>
-                        <td><span class="badge bg-secondary">${a.product_id}</span></td>
+                        <td><span class="nx-badge nx-badge-muted">${a.product_id}</span></td>
                         <td>${accInfo}</td>
-                        <td><span class="badge ${isAvail ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}">${isAvail ? 'Khả dụng' : 'Đã bán'}</span></td>
+                        <td><span class="${isAvail ? 'text-success' : 'text-danger'}">${isAvail ? 'Khả dụng' : 'Đã bán'}</span></td>
                         <td>${new Date(a.created_at).toLocaleDateString('vi-VN')}</td>
                         <td class="pe-4">
-                            ${isAvail ? `<button class="btn btn-sm btn-outline-danger" onclick="stockDel(${a.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
+                            ${isAvail ? `<button class="nx-btn nx-btn-sm nx-btn-danger" onclick="stockDel(${a.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
                         </td>
                     </tr>`;
                 }).join('');

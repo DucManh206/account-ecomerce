@@ -3,16 +3,12 @@ require_once __DIR__ . '/../lib/settings_modules.php';
 
 function admin_renderSidebar($currentPage = '')
 {
-    // Tự động detect base path - lấy path gốc không có /admin
     $scriptPath = $_SERVER['SCRIPT_NAME'];
-    $scriptDir = dirname($scriptPath); // /web_updated - Copy/admin hoặc /admin
-    
-    // Tìm vị trí /admin trong path
-    $adminPos = strpos($scriptDir, '/admin');
+    $adminPos = strrpos($scriptPath, '/admin');
     if ($adminPos !== false) {
-        $basePath = substr($scriptDir, 0, $adminPos); // /web_updated - Copy
+        $basePath = substr($scriptPath, 0, $adminPos);
     } else {
-        $basePath = $scriptDir; // fallback
+        $basePath = '';
     }
 
     $navItems = [
@@ -85,40 +81,42 @@ function admin_renderSidebar($currentPage = '')
 
     ob_start();
 ?>
-    <div class="sidebar" style="width: 260px; min-width: 260px;">
-        <div class="sidebar-brand">
-            <i class="<?php echo nexus_icon(); ?> me-2"></i><?php echo htmlspecialchars(getStoreName()); ?>
+<aside class="admin-sidebar" role="navigation">
+    <div class="admin-sidebar-brand">
+        <div class="brand-text">
+            <i class="<?php echo nexus_icon(); ?>"></i>
+            <?php echo htmlspecialchars(getStoreName()); ?>
         </div>
+    </div>
 
+    <nav class="admin-sidebar-nav">
         <div class="sidebar-section-label">QUẢN LÝ</div>
         <?php foreach ($navItems as $item): ?>
-            <?php if (!empty($item['divider'])): ?>
-                <hr class="mx-3 border-secondary">
-            <?php endif; ?>
             <a href="<?php echo $item['href']; ?>"
-                class="<?php echo ($currentPage === $item['key']) ? 'active' : ''; ?>"
+                class="sidebar-item <?php echo ($currentPage === $item['key']) ? 'active' : ''; ?>"
                 <?php echo (!empty($item['disabled'])) ? 'onclick="return false;" style="opacity:0.4;cursor:not-allowed;"' : ''; ?>>
-                <i class="fa-solid <?php echo $item['icon']; ?> me-2"></i>
+                <i class="fa-solid <?php echo $item['icon']; ?>"></i>
                 <?php echo htmlspecialchars($item['label']); ?>
                 <?php if (!empty($item['disabled'])): ?>
-                    <span class="badge bg-secondary ms-auto" style="font-size:0.6rem;">Sắp ra</span>
+                    <span class="nx-badge nx-badge-muted ms-auto" style="font-size:0.6rem;">Sắp ra</span>
                 <?php endif; ?>
             </a>
         <?php endforeach; ?>
 
-        <hr class="mx-3 border-secondary">
+        <hr class="sidebar-divider">
 
         <?php foreach ($bottomItems as $item): ?>
             <?php if (!empty($item['divider'])): ?>
-                <hr class="mx-3 border-secondary">
+                <hr class="sidebar-divider">
             <?php endif; ?>
             <a href="<?php echo $item['href']; ?>"
-                class="<?php echo htmlspecialchars($item['class'] ?? ''); ?>">
-                <i class="fa-solid <?php echo $item['icon']; ?> me-2"></i>
+                class="sidebar-item <?php echo htmlspecialchars($item['class'] ?? ''); ?>">
+                <i class="fa-solid <?php echo $item['icon']; ?>"></i>
                 <?php echo htmlspecialchars($item['label']); ?>
             </a>
         <?php endforeach; ?>
-    </div>
+    </nav>
+</aside>
 <?php
     return ob_get_clean();
 }

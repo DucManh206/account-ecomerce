@@ -31,36 +31,34 @@ ob_start();
 ?>
 
 <?php if ($success): ?>
-<div class="alert alert-success alert-dismissible fade show mb-3">
+<div class="nx-alert nx-alert-success mb-3" id="successAlert">
     <i class="fa-solid fa-check-circle me-1"></i> <?php echo htmlspecialchars($errorMsg ?: 'Thành công!'); ?>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 <?php elseif ($errorMsg): ?>
-<div class="alert alert-danger alert-dismissible fade show mb-3">
+<div class="nx-alert nx-alert-danger mb-3" id="errorAlert">
     <i class="fa-solid fa-xmark-circle me-1"></i> <?php echo htmlspecialchars($errorMsg); ?>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 <?php endif; ?>
 
 <!-- Add Form -->
-<div class="add-form">
-    <div class="add-form-title">
+<div class="nx-add-form">
+    <div class="nx-add-form-title">
         <i class="fa-solid fa-plus-circle" style="color:#6E56CF;"></i> Thêm loại field mới
     </div>
     <form method="POST" class="row g-3 align-items-end">
         <input type="hidden" name="field_action" value="create">
         <div class="col-md-2">
-            <label class="form-label small fw-bold">Key <span class="text-danger">*</span></label>
-            <input type="text" class="form-control font-monospace" name="key" required placeholder="VD: pin" pattern="[a-z0-9_]+" style="font-size:0.82rem;">
+            <label class="nx-label small fw-bold">Key <span class="text-danger">*</span></label>
+            <input type="text" class="nx-input font-mono" name="key" required placeholder="VD: pin" pattern="[a-z0-9_]+" style="font-size:0.82rem;">
             <div class="form-text" style="font-size:0.7rem;">a-z, 0-9, _</div>
         </div>
         <div class="col-md-2">
-            <label class="form-label small fw-bold">Nhãn hiển thị <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" name="label" required placeholder="VD: Mã PIN">
+            <label class="nx-label small fw-bold">Nhãn hiển thị <span class="text-danger">*</span></label>
+            <input type="text" class="nx-input" name="label" required placeholder="VD: Mã PIN">
         </div>
         <div class="col-md-3">
-            <label class="form-label small fw-bold">Icon</label>
-            <div class="icon-grid-sm" id="iconGridAdd">
+            <label class="nx-label small fw-bold">Icon</label>
+            <div class="nx-icon-picker" id="iconGridAdd">
                 <?php
                 $iconOptions = [
                     'fa-user','fa-lock','fa-envelope','fa-key','fa-cookie-bite',
@@ -78,15 +76,15 @@ ob_start();
             </div>
         </div>
         <div class="col-md-3">
-            <label class="form-label small fw-bold">Placeholder</label>
-            <input type="text" class="form-control" name="placeholder" placeholder="VD: 123456">
+            <label class="nx-label small fw-bold">Placeholder</label>
+            <input type="text" class="nx-input" name="placeholder" placeholder="VD: 123456">
         </div>
         <div class="col-md-1">
-            <label class="form-label small fw-bold">Thứ tự</label>
-            <input type="number" class="form-control" name="sort_order" value="99" min="1">
+            <label class="nx-label small fw-bold">Thứ tự</label>
+            <input type="number" class="nx-input" name="sort_order" value="99" min="1">
         </div>
         <div class="col-md-1">
-            <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-plus"></i></button>
+            <button type="submit" class="nx-btn nx-btn-primary w-100"><i class="fa-solid fa-plus"></i></button>
         </div>
     </form>
 </div>
@@ -95,24 +93,24 @@ ob_start();
 <div class="row g-3">
 <?php foreach ($fields as $f): ?>
     <div class="col-md-6 col-lg-4">
-        <div class="field-card">
-            <div class="field-icon-wrap">
+        <div class="nx-field-card">
+            <div class="nx-field-icon">
                 <i class="fa-solid <?php echo htmlspecialchars($f['icon_class']); ?>"></i>
             </div>
-            <div class="field-info">
-                <div class="field-key"><?php echo htmlspecialchars($f['key']); ?></div>
-                <div class="field-label"><?php echo htmlspecialchars($f['label']); ?></div>
+            <div class="nx-field-info">
+                <div class="nx-field-key"><?php echo htmlspecialchars($f['key']); ?></div>
+                <div class="nx-field-label"><?php echo htmlspecialchars($f['label']); ?></div>
                 <?php if ($f['placeholder']): ?>
-                <div class="field-placeholder"><i class="fa-solid fa-italic"></i> <?php echo htmlspecialchars($f['placeholder']); ?></div>
+                <div class="nx-field-placeholder"><i class="fa-solid fa-italic"></i> <?php echo htmlspecialchars($f['placeholder']); ?></div>
                 <?php endif; ?>
             </div>
             <?php if ($f['is_default']): ?>
-                <span class="field-default">Mặc định</span>
+                <span class="nx-badge nx-badge-warning">Mặc định</span>
             <?php else: ?>
                 <form method="POST" onsubmit="return confirm('Xóa field \'<?php echo htmlspecialchars($f['label']); ?>\'?')">
                     <input type="hidden" name="field_action" value="delete">
                     <input type="hidden" name="id" value="<?php echo $f['id']; ?>">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <button type="submit" class="nx-btn nx-btn-sm nx-btn-danger">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </form>

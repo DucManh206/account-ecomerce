@@ -37,7 +37,7 @@ $emailEnabled = $settings['email_notifications_enabled'] ?? false;
 ob_start();
 ?>
 <?php if ($success): ?>
-<div class="saved-badge success mb-3" id="savedBadge">
+<div class="nx-saved-badge success mb-3" id="savedBadge">
     <i class="fa-solid fa-check-circle"></i>
     Đã lưu cấu hình thành công!
 </div>
@@ -46,31 +46,31 @@ ob_start();
 
 <form method="POST" action="settings.php">
     <!-- Cấu hình chung -->
-    <div class="settings-card">
-        <div class="settings-section-title">
+    <div class="nx-settings-card">
+        <div class="nx-settings-section">
             <i class="fa-solid fa-gear"></i> Cấu hình chung
         </div>
         <div class="row g-4">
             <div class="col-md-6">
-                <label class="form-label">Tên cửa hàng</label>
-                <input type="text" class="form-control" name="store_name" value="<?php echo htmlspecialchars($storeName); ?>" placeholder="VD: NEXUS STORE" required>
+                <label class="nx-label">Tên cửa hàng</label>
+                <input type="text" class="nx-input" name="store_name" value="<?php echo htmlspecialchars($storeName); ?>" placeholder="VD: NEXUS STORE" required>
                 <div class="form-text">Tên hiển thị trên navbar và tiêu đề trình duyệt</div>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Email liên hệ</label>
-                <input type="email" class="form-control" name="store_email" value="<?php echo htmlspecialchars($storeEmail); ?>" placeholder="contact@example.com">
+                <label class="nx-label">Email liên hệ</label>
+                <input type="email" class="nx-input" name="store_email" value="<?php echo htmlspecialchars($storeEmail); ?>" placeholder="contact@example.com">
                 <div class="form-text">Email nhận thông báo đơn hàng (hiện tại: tắt)</div>
             </div>
         </div>
     </div>
 
     <!-- Icon & Giao diện -->
-    <div class="settings-card">
-        <div class="settings-section-title">
+    <div class="nx-settings-card">
+        <div class="nx-settings-section">
             <i class="fa-solid fa-palette"></i> Giao diện
         </div>
-        <label class="form-label mb-3">Icon cửa hàng (navbar)</label>
-        <div class="icon-grid mb-3" id="iconGrid">
+        <label class="nx-label mb-3">Icon cửa hàng (navbar)</label>
+        <div class="nx-icon-grid mb-3" id="iconGrid">
             <?php
             $icons = [
                 'fa-ghost' => 'Ghost',
@@ -99,7 +99,7 @@ ob_start();
                 'fa-play' => 'Play',
             ];
             foreach ($icons as $icon => $label): ?>
-                <label class="icon-option <?php echo $storeIcon === $icon ? 'selected' : ''; ?>" title="<?php echo $label; ?>" onclick="selectIconOption(this)">
+                <label class="nx-icon-option <?php echo $storeIcon === $icon ? 'selected' : ''; ?>" title="<?php echo $label; ?>" onclick="selectIconOption(this)">
                     <i class="fa-solid <?php echo $icon; ?>"></i>
                     <input type="radio" name="store_icon" value="<?php echo $icon; ?>" <?php echo $storeIcon === $icon ? 'checked' : ''; ?> required>
                 </label>
@@ -108,59 +108,59 @@ ob_start();
     </div>
 
     <!-- Tài chính -->
-    <div class="settings-card">
-        <div class="settings-section-title">
+    <div class="nx-settings-card">
+        <div class="nx-settings-section">
             <i class="fa-solid fa-coins"></i> Tài chính
         </div>
         <div class="row g-4">
             <div class="col-md-6">
-                <label class="form-label">Phí giao dịch (đ)</label>
-                <input type="number" class="form-control" name="transaction_fee" value="<?php echo intval($transactionFee); ?>" min="0" placeholder="0">
+                <label class="nx-label">Phí giao dịch (đ)</label>
+                <input type="number" class="nx-input" name="transaction_fee" value="<?php echo intval($transactionFee); ?>" min="0" placeholder="0">
                 <div class="form-text">Phí thêm vào mỗi giao dịch (VNĐ). Đặt 0 để tắt.</div>
             </div>
         </div>
     </div>
 
     <!-- Sản phẩm -->
-    <div class="settings-card">
-        <div class="settings-section-title">
+    <div class="nx-settings-card">
+        <div class="nx-settings-section">
             <i class="fa-solid fa-box"></i> Sản phẩm
         </div>
         <div class="toggle-wrapper mb-3">
             <label class="toggle-switch">
                 <input type="checkbox" name="auto_hide_out_of_stock" value="1" <?php echo $autoHide ? 'checked' : ''; ?>>
-                <span class="toggle-slider"></span>
+                <span class="nx-toggle-slider"></span>
             </label>
             <div>
-                <div class="form-label mb-0">Tự động ẩn sản phẩm hết hàng</div>
+                <div class="nx-label mb-0">Tự động ẩn sản phẩm hết hàng</div>
                 <div class="form-text mb-0">Khi bật, sản phẩm có 0 tài khoản trong kho sẽ không hiển thị ở trang chủ</div>
             </div>
         </div>
     </div>
 
     <!-- Thông báo -->
-    <div class="settings-card">
-        <div class="settings-section-title">
+    <div class="nx-settings-card">
+        <div class="nx-settings-section">
             <i class="fa-solid fa-bell"></i> Thông báo
         </div>
         <div class="toggle-wrapper mb-3">
             <label class="toggle-switch">
                 <input type="checkbox" name="email_notifications_enabled" value="1" <?php echo $emailEnabled ? 'checked' : ''; ?>>
-                <span class="toggle-slider"></span>
+                <span class="nx-toggle-slider"></span>
             </label>
             <div>
-                <div class="form-label mb-0">Bật thông báo email</div>
+                <div class="nx-label mb-0">Bật thông báo email</div>
                 <div class="form-text mb-0">Gửi email khi có đơn hàng mới hoặc yêu cầu nạp tiền</div>
             </div>
         </div>
-        <div class="alert alert-warning py-2 px-3" style="font-size:0.85rem;">
+        <div class="nx-alert nx-alert-warning py-2 px-3" style="font-size:0.85rem;">
             <i class="fa-solid fa-triangle-exclamation me-1"></i>
             Tính năng email đang tạm bỏ qua. Cấu hình SMTP chưa được thiết lập.
         </div>
     </div>
 
     <div class="d-flex justify-content-end">
-        <button type="submit" class="btn btn-primary px-4">
+        <button type="submit" class="nx-btn nx-btn-primary px-4">
             <i class="fa-solid fa-check me-1"></i> Lưu cấu hình
         </button>
     </div>
@@ -168,7 +168,7 @@ ob_start();
 
 <script>
 function selectIconOption(el) {
-    document.querySelectorAll('.icon-option').forEach(opt => opt.classList.remove('selected'));
+    document.querySelectorAll('.nx-icon-option').forEach(opt => opt.classList.remove('selected'));
     el.classList.add('selected');
     el.querySelector('input').checked = true;
 }
