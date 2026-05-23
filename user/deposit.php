@@ -55,8 +55,12 @@ if ($res && $row = mysqli_fetch_assoc($res)) {
     $current = $row;
 }
 
-// Lấy lịch sử
-$history = mysqli_query($conn, "SELECT * FROM deposit_requests WHERE user_id = $userId ORDER BY created_at DESC LIMIT 10");
+// Lấy lịch sử - Chỉ lấy 5 giao dịch gần nhất
+$history = mysqli_query($conn, "SELECT * FROM deposit_requests WHERE user_id = $userId ORDER BY created_at DESC LIMIT 5");
+
+$bankName = $sepayConfig['bank_code'] ?? 'Ngân hàng';
+$accountNumber = $sepayConfig['account_number'] ?? '';
+$accountHolder = $sepayConfig['account_holder'] ?? '';
 
 // Lấy số dư
 $userRes = mysqli_query($conn, "SELECT balance FROM users WHERE id = $userId");
@@ -167,15 +171,27 @@ $balance = ($u = mysqli_fetch_assoc($userRes)) ? intval($u['balance']) : 0;
                 <button class="btn-close" onclick="document.getElementById('qrModal').style.display='none'"></button>
             </div>
             <img id="m-qr" src="" class="qr-img">
-            <div class="info-row"><span class="info-label">Ngân hàng</span><span class="info-value"><?php echo $sepayConfig['bank_code']; ?></span></div>
-            <div class="info-row"><span class="info-label">Số TK</span><span class="info-value"><?php echo $sepayConfig['account_number']; ?></span></div>
+            <div class="info-row"><span class="info-label">Ngân hàng</span><span class="info-value"><?php echo $bankName; ?></span></div>
+            <div class="info-row"><span class="info-label">Số TK</span><span class="info-value"><?php echo $accountNumber; ?></span></div>
             <div class="info-row"><span class="info-label">Số tiền</span><span class="info-value text-success" id="m-amount"></span></div>
-            <div class="info-row border-0"><span class="info-label">Nội dung</span><span class="info-value text-primary" id="m-code"></span></div>
-            <button class="btn btn-dark w-100 mt-3" onclick="document.getElementById('qrModal').style.display='none'">Đóng</button>
+            <div class="info-row border-0 align-items-center">
+                <span class="info-label">Nội dung</span>
+                <div class="d-flex align-items-center">
+                    <span class="info-value text-primary me-2" id="m-code" style="word-break: break-all;"></span>
+                    <button class="btn btn-sm btn-outline-primary" onclick="copyModalCode()" style="padding: 2px 6px; font-size: 0.7rem;">Copy</button>
+                </div>
+            </div>
+            <button class="btn btn-dark w-100 mt-4 py-2 fw-bold" onclick="document.getElementById('qrModal').style.display='none'">Đóng</button>
         </div>
     </div>
 
     <script>
+        function copyModalCode() {
+            const code = document.getElementById('m-code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Đã copy nội dung!');
+            });
+        }
         function openQR(amount, code) {
             document.getElementById('m-qr').src = 'https://img.vietqr.io/image/<?php echo $sepayConfig['bank_code']; ?>-<?php echo $sepayConfig['account_number']; ?>-compact.png?amount=' + amount + '&addInfo=' + encodeURIComponent(code);
             document.getElementById('m-amount').innerText = new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
