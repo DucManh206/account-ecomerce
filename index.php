@@ -1,9 +1,9 @@
 <?php
 session_start();
-require_once __DIR__ . '/lib/products_modules.php';
-require_once __DIR__ . '/lib/user_modules.php';
-require_once __DIR__ . '/lib/cart_modules.php';
-require_once __DIR__ . '/lib/ui_modules.php';
+require_once __DIR__ . '/crud/products/products.php';
+require_once __DIR__ . '/crud/users/users.php';
+require_once __DIR__ . '/crud/cart/cart.php';
+require_once __DIR__ . '/crud/ui/ui_modules.php';
 
 $userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 $cartCount = getCartCount($userId);
@@ -637,7 +637,7 @@ $heroShowSecurity = (bool)getSetting('hero_show_security', true);
                                     <span class="nx-card-badge"><?php echo htmlspecialchars($row['badge']); ?></span>
                                     <?php endif; ?>
                                     <div class="nx-card-overlay">
-                                        <a href="products/index.php?id=<?php echo $row['id']; ?>" class="nx-btn nx-btn-primary" style="flex:1;justify-content:center;">
+                                        <a href="chitiet.php?id=<?php echo $row['id']; ?>" class="nx-btn nx-btn-primary" style="flex:1;justify-content:center;">
                                             <i class="fa-solid fa-eye"></i> Xem chi tiết
                                         </a>
                                         <button class="nx-btn nx-btn-outline add-to-cart-btn" data-product-id="<?php echo $row['id']; ?>"><i class="fa-solid fa-cart-plus"></i></button>
@@ -654,7 +654,7 @@ $heroShowSecurity = (bool)getSetting('hero_show_security', true);
                                         <?php endif; ?>
                                     </div>
                                     <h5 class="nx-card-title">
-                                        <a href="products/index.php?id=<?php echo $row['id']; ?>"><?php echo htmlspecialchars($row['title']); ?></a>
+                                        <a href="chitiet.php?id=<?php echo $row['id']; ?>"><?php echo htmlspecialchars($row['title']); ?></a>
                                     </h5>
                                     <?php if ($detailsHTML): ?>
                                     <div class="nx-card-details"><ul><?php echo $detailsHTML; ?></ul></div>
@@ -667,7 +667,7 @@ $heroShowSecurity = (bool)getSetting('hero_show_security', true);
                                             <div class="nx-card-price"><?php echo $priceStr; ?></div>
                                         </div>
                                         <?php if (!empty($row['in_stock'])): ?>
-                                            <a href="products/index.php?id=<?php echo $row['id']; ?>" class="nx-btn nx-btn-primary nx-btn-sm">
+                                            <a href="chitiet.php?id=<?php echo $row['id']; ?>" class="nx-btn nx-btn-primary nx-btn-sm">
                                                 <i class="fa-solid fa-bolt"></i> Mua
                                             </a>
                                         <?php else: ?>

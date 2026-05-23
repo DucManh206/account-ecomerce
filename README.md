@@ -104,7 +104,7 @@ $dbname = "mydb";           // Tên database (sẽ tự tạo nếu chưa có)
 Mở trình duyệt, truy cập:
 
 ```
-http://localhost/migrations/setup.php
+http://localhost/config/setup.php
 ```
 
 Script này sẽ tự động:
@@ -142,6 +142,151 @@ Sau khi setup xong:
 | Admin   | `admin`  | `admin123`| 1.000.000đ |
 
 > **Khuyến nghị:** Đổi mật khẩu admin ngay sau khi đăng nhập lần đầu (vào Admin → Settings hoặc đổi trực tiếp trong database).
+
+---
+
+
+## Hướng dẫn sử dụng nhanh
+
+### 1. Luồng sử dụng cho khách hàng
+
+1. Mở website: `http://localhost/`
+2. Xem sản phẩm ở trang chủ. Có thể lọc theo danh mục, tìm kiếm, sắp xếp theo giá/tên/mới nhất.
+3. Bấm tên sản phẩm hoặc `Xem chi tiết` để mở trang chi tiết.
+4. Đăng ký tài khoản tại `http://localhost/auth/register.php`.
+5. Đăng nhập tại `http://localhost/auth/login.php`.
+6. Nạp tiền tại `http://localhost/user/deposit.php`.
+7. Thêm sản phẩm vào giỏ hoặc bấm mua ngay.
+8. Vào giỏ hàng tại `http://localhost/cart/index.php`.
+9. Thanh toán bằng số dư tài khoản.
+10. Xem đơn hàng tại `http://localhost/user/orders.php`.
+11. Xem chi tiết đơn hàng tại `http://localhost/user/order-detail.php?id=ID_DON_HANG`.
+
+### 2. Luồng sử dụng cho Admin
+
+Đăng nhập admin:
+
+```
+http://localhost/admin/login.php
+Username: admin
+Password: admin123
+```
+
+Các trang quản trị chính:
+
+| Chức năng | URL |
+|----------|-----|
+| Dashboard | `http://localhost/admin/dashboard.php` |
+| Sản phẩm | `http://localhost/admin/crud/products/list.php` |
+| Kho tài khoản | `http://localhost/admin/crud/account_stock/list.php` |
+| Field tài khoản | `http://localhost/admin/crud/account_field_types/list.php` |
+| Người dùng | `http://localhost/admin/crud/users/list.php` |
+| Danh mục | `http://localhost/admin/crud/categories/list.php` |
+| Loại sản phẩm | `http://localhost/admin/crud/types/list.php` |
+| Đơn hàng | `http://localhost/admin/crud/orders/list.php` |
+| Yêu cầu nạp tiền | `http://localhost/admin/crud/deposit_requests/list.php` |
+| Cấu hình SePay | `http://localhost/admin/crud/sepay_config/list.php` |
+| Giao dịch SePay | `http://localhost/admin/crud/sepay_transactions/list.php` |
+| Cấu hình hệ thống | `http://localhost/admin/crud/settings/list.php` |
+| Đăng xuất | `http://localhost/admin/logout.php` |
+
+### 3. Cách thêm sản phẩm để bán được
+
+Làm theo thứ tự này để sản phẩm hiển thị và có thể bán thật:
+
+1. Vào Admin → Danh mục.
+2. Tạo danh mục nếu chưa có, ví dụ `Game`, `Netflix`, `GPT`.
+3. Vào Admin → Loại sản phẩm.
+4. Tạo loại sản phẩm thuộc danh mục đó, ví dụ `ChatGPT Plus`, `Netflix Premium`.
+5. Vào Admin → Sản phẩm.
+6. Bấm `Thêm sản phẩm`.
+7. Nhập tên, danh mục, loại, giá, mô tả, ảnh, badge nếu cần.
+8. Lưu sản phẩm.
+9. Vào Admin → Kho tài khoản.
+10. Thêm account stock cho sản phẩm đó.
+11. Ra trang chủ kiểm tra sản phẩm đã hiển thị.
+12. Test mua thử bằng user thường.
+
+Lưu ý: Nếu sản phẩm chưa có stock khả dụng, khách có thể thấy hết hàng hoặc không mua được.
+
+### 4. Cách quản lý kho tài khoản
+
+Vào:
+
+```
+http://localhost/admin/crud/account_stock/list.php
+```
+
+Mỗi dòng trong kho là một tài khoản có thể giao cho khách sau khi mua. Tùy loại sản phẩm, dữ liệu có thể gồm:
+
+- account/email/username
+- password
+- cookie
+- 2FA
+- recovery code
+- note
+
+Trạng thái thường dùng:
+
+- `available`: còn hàng, có thể bán.
+- `sold`: đã bán.
+- `reserved`: đang giữ/chờ xử lý.
+
+### 5. Cách xử lý nạp tiền
+
+User nạp tiền tại:
+
+```
+http://localhost/user/deposit.php
+```
+
+Admin xử lý tại:
+
+```
+http://localhost/admin/crud/deposit_requests/list.php
+```
+
+Quy trình:
+
+1. User tạo yêu cầu nạp tiền.
+2. User chuyển khoản theo thông tin ngân hàng hoặc VietQR.
+3. Admin kiểm tra giao dịch.
+4. Nếu đúng, admin duyệt yêu cầu.
+5. Hệ thống cộng số dư cho user.
+6. Nếu sai thông tin, admin từ chối và ghi chú lý do.
+
+Nếu đã cấu hình SePay webhook, hệ thống có thể tự động ghi nhận giao dịch phù hợp.
+
+### 6. Quy trình test nhanh sau khi sửa code
+
+Sau khi sửa code, nên kiểm tra các URL sau:
+
+```
+http://localhost/
+http://localhost/chitiet.php?id=36
+http://localhost/auth/login.php
+http://localhost/cart/index.php
+http://localhost/admin/login.php
+http://localhost/admin/dashboard.php
+http://localhost/admin/crud/products/list.php
+http://localhost/admin/crud/users/list.php
+http://localhost/admin/crud/categories/list.php
+http://localhost/admin/crud/orders/list.php
+http://localhost/admin/crud/deposit_requests/list.php
+http://localhost/admin/crud/settings/list.php
+```
+
+Kiểm tra syntax PHP bằng Git Bash trong thư mục source:
+
+```
+find . -name '*.php' -not -path './_backup*' -print0 | xargs -0 -n1 /g/xampp/php/php.exe -l
+```
+
+Nếu dùng Command Prompt/PowerShell, kiểm tra từng file bằng:
+
+```
+C:\xampp\php\php.exe -l ten_file.php
+```
 
 ---
 
@@ -229,8 +374,8 @@ Sau khi setup xong:
 
 1. Upload toàn bộ source lên hosting (trừ file `.git/` và `.gitignore`)
 2. Sửa `config/database_config.php` theo thông tin MySQL trên hosting
-3. Chạy `https://yourdomain.com/migrations/setup.php` một lần duy nhất
-4. **XÓA** hoặc **đổi tên** thư mục `migrations/` sau khi setup xong để tránh bị chạy lại
+3. Chạy `https://yourdomain.com/config/setup.php` một lần duy nhất
+4. **XÓA** hoặc **đổi tên** file `config/setup.php` sau khi setup xong để tránh bị chạy lại
 5. Đổi mật khẩu admin mặc định
 6. Bật HTTPS (Let's Encrypt hoặc SSL hosting)
 
@@ -239,3 +384,64 @@ Sau khi setup xong:
 ## License
 
 Dự án dành cho mục đích học tập và cá nhân.
+
+
+## Cập nhật chức năng mua nhiều tài khoản
+
+- Ở trang chi tiết sản phẩm, khách có thể tăng/giảm `Số lượng` trước khi bấm `Mua ngay`.
+- Hệ thống sẽ lấy đúng số lượng tài khoản khả dụng trong `account_stock`.
+- Tổng tiền = giá 1 tài khoản × số lượng.
+- Nếu kho không đủ số lượng yêu cầu, hệ thống báo số lượng còn lại và không trừ tiền.
+- Khi thanh toán giỏ hàng, mỗi sản phẩm trong giỏ có thể có quantity > 1; hệ thống tạo mỗi tài khoản thành một đơn hàng riêng để khách xem được từng credential.
+
+## Hướng dẫn quản lý kho tài khoản cho Admin
+
+Vào: `http://localhost/admin/crud/account_stock/list.php`
+
+Các thao tác chính:
+
+1. Xem thống kê kho
+   - Tổng tài khoản
+   - Còn hàng
+   - Đã bán
+   - Đã đặt
+
+2. Lọc và tìm kiếm
+   - Lọc theo sản phẩm
+   - Lọc theo trạng thái
+   - Tìm theo nội dung tài khoản hoặc tên sản phẩm
+
+3. Thêm 1 tài khoản
+   - Bấm `Thêm`
+   - Chọn sản phẩm
+   - Nhập JSON, ví dụ:
+     `{"account":"user@example.com","password":"Pass123!"}`
+
+4. Nhập hàng loạt
+   - Bấm `Nhập hàng loạt`
+   - Chọn sản phẩm
+   - Có 2 cách:
+     - Nhập số lượng để tạo tài khoản giả tự động
+     - Hoặc dán nhiều dòng JSON, mỗi dòng là 1 tài khoản:
+       `{"account":"user1@example.com","password":"Pass123!"}`
+       `{"account":"user2@example.com","password":"Pass456!"}`
+
+5. Quản lý nhiều tài khoản cùng lúc
+   - Tick checkbox ở từng dòng
+   - Có thể xóa hàng loạt
+   - Có thể đặt lại trạng thái thành `Còn hàng`
+
+
+## SePay auto-check nạp tiền
+
+- Trang nạp tiền tạo yêu cầu pending trong 1 phút.
+- Khi còn yêu cầu pending, trình duyệt tự gọi `/crud/api/deposit_poll.php` mỗi 3 giây.
+- Backend gọi `GET https://my.sepay.vn/userapi/transactions/list` với headers:
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <api_token>`
+- Để tránh lỗi SePay `HTTP 429 Too Many Requests`, backend có file lock rate-limit và frontend chỉ poll 3 giây/lần.
+- Giao dịch chỉ được cộng tiền khi khớp cả 2 điều kiện:
+  1. `amount_in` bằng đúng số tiền yêu cầu nạp.
+  2. `transaction_content` chứa đúng `unique_code`/nội dung chuyển khoản.
+- Các trường ngân hàng khác chỉ lưu tham khảo; logic không phụ thuộc format riêng của từng ngân hàng.
+- Nếu quá 1 phút chưa khớp giao dịch, yêu cầu nạp tự chuyển sang `cancelled`; user cần tạo mã QR mới.

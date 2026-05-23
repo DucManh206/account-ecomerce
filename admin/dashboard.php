@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . "/lib/admin_layout_modules.php";
-require_once __DIR__ . "/lib/admin_stats_modules.php";
+require_once __DIR__ . "/crud/layout/admin_layout_modules.php";
+require_once __DIR__ . "/crud/dashboard/admin_stats_modules.php";
 
 $stats = admin_getDashboardStats();
 $username = htmlspecialchars($_SESSION['username'] ?? 'Admin');
@@ -54,7 +54,7 @@ ob_start();
         <div class="nx-card">
             <div class="nx-card-header">
                 <h3 class="nx-card-title"><i class="fa-solid fa-clock me-2 text-primary"></i>Sản phẩm mới nhất</h3>
-                <a href="manage/products.php" class="btn btn-sm btn-light" style="font-size: 0.75rem; font-weight: 700;">Xem tất cả</a>
+                <a href="crud/products/list.php" class="btn btn-sm btn-light" style="font-size: 0.75rem; font-weight: 700;">Xem tất cả</a>
             </div>
             <div class="table-responsive">
                 <table class="nx-table">

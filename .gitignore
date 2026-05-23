@@ -1,81 +1,47 @@
-# ============================================
-# NEXUS STORE - Account Ecommerce .gitignore
-# ============================================
-
-# ----------------
-# Sensitive Files
-# ----------------
+# Local/private config
+config/config.php
+config/db.php
 config/database_config.php
+
+# Environment files
 .env
 .env.*
 !.env.example
 
-# ----------------
-# System Files
-# ----------------
-.DS_Store
-Thumbs.db
-desktop.ini
-*.log
-*.tmp
-*.temp
-
-# ----------------
-# IDE & Editors
-# ----------------
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-*.swp
-*.swo
-*~
-
-# ----------------
-# Dependencies
-# ----------------
+# Dependencies / package managers
 vendor/
 node_modules/
 composer.lock
 package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
-# ----------------
-# Build & Cache
-# ----------------
-*.cache
-cache/
+# Logs and runtime files
+*.log
+logs/
 tmp/
 temp/
-logs/
+cache/
+sessions/
 
-# ----------------
-# Uploads & User Content
-# ----------------
+# Uploads / generated assets
 uploads/
 storage/
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.pdf
-!assets/**/*.jpg
-!assets/**/*.jpeg
-!assets/**/*.png
-!assets/**/*.gif
+public/uploads/
 
-# ----------------
-# Backup Files
-# ----------------
-*.sql
-*.sql.gz
+# OS / editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# XAMPP/local debug files
 *.bak
 *.backup
-*_backup
-*.old
+config/debug_check_cols.php
 
-# ----------------
-# OS Generated
-# ----------------
-.Spotlight-V100
-.Trashes
-ehthumbs.db
+# Keep migration entrypoint tracked
+!migrations/setup.php

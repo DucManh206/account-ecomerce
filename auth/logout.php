@@ -1,5 +1,2 @@
 <?php
-    session_start();
-    session_destroy();
-    header('Location: ../index.php');
-?>
+require __DIR__ . '/../crud/auth/logout.php';
