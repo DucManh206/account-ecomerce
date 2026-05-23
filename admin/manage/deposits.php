@@ -9,7 +9,7 @@ $messageType = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $id = intval($_POST['id'] ?? 0);
-    
+
     if ($action === 'approve') {
         $result = admin_approveDeposit($id, $_SESSION['user_id']);
         $message = $result['message'];
@@ -75,7 +75,7 @@ ob_start();
 <!-- Filter -->
 <div class="nx-card mb-4">
     <div class="nx-card-body">
-        <div class="btn-group" role="group">
+        <div class="d-flex gap-2 flex-wrap">
             <a href="?status=all" class="nx-btn nx-btn-sm <?php echo $statusFilter === 'all' ? 'nx-btn-primary' : 'nx-btn-secondary'; ?>">
                 Tất cả
             </a>
@@ -130,7 +130,7 @@ ob_start();
                                 <td><?php echo htmlspecialchars($req['bank_name'] ?? 'N/A'); ?></td>
                                 <td><?php echo date('d/m/Y H:i', strtotime($req['created_at'])); ?></td>
                                 <td>
-                                    <?php 
+                                    <?php
                                     $statusClass = [
                                         'pending' => 'nx-badge nx-badge-warning',
                                         'approved' => 'nx-badge nx-badge-success',
@@ -148,7 +148,7 @@ ob_start();
                                 </td>
                                 <td class="text-end pe-4">
                                     <?php if ($req['status'] === 'pending'): ?>
-                                        <div class="btn-group">
+                                        <div class="d-flex gap-1 justify-content-end">
                                             <form method="POST" class="d-inline" onsubmit="return confirm('Duyệt yêu cầu nạp tiền này?');">
                                                 <input type="hidden" name="action" value="approve">
                                                 <input type="hidden" name="id" value="<?php echo $req['id']; ?>">
@@ -180,37 +180,43 @@ ob_start();
 
 <!-- Reject Modal -->
 <div class="nx-modal" id="rejectModal">
-    <div class="nx-modal-header">
-        <h5 class="nx-modal-title" style="color: var(--danger);"><i class="fa-solid fa-times-circle me-2"></i>Từ chối yêu cầu</h5>
-        <button type="button" class="nx-modal-close" onclick="closeRejectModal()">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-    </div>
-    <form method="POST">
-        <div class="nx-modal-body">
-            <input type="hidden" name="action" value="reject">
-            <input type="hidden" name="id" id="rejectId">
-            <div class="nx-form-group">
-                <label class="nx-label">Lý do từ chối (tùy chọn)</label>
-                <textarea name="reason" id="rejectReason" class="nx-input" rows="3" placeholder="Nhập lý do từ chối..."></textarea>
+    <div class="nx-modal-inner">
+        <div class="nx-modal-header">
+            <h5 class="nx-modal-title" style="color: var(--danger);"><i class="fa-solid fa-times-circle me-2"></i>Từ chối yêu cầu</h5>
+            <button type="button" class="nx-modal-close" onclick="closeRejectModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form method="POST">
+            <div class="nx-modal-body">
+                <input type="hidden" name="action" value="reject">
+                <input type="hidden" name="id" id="rejectId">
+                <div class="nx-form-group">
+                    <label class="nx-label">Lý do từ chối (tùy chọn)</label>
+                    <textarea name="reason" id="rejectReason" class="nx-input" rows="3" placeholder="Nhập lý do từ chối..."></textarea>
+                </div>
             </div>
-        </div>
-        <div class="nx-modal-footer">
-            <button type="button" class="nx-btn nx-btn-secondary" onclick="closeRejectModal()">Hủy</button>
-            <button type="submit" class="nx-btn nx-btn-danger">Xác nhận từ chối</button>
-        </div>
-    </form>
+            <div class="nx-modal-footer">
+                <button type="button" class="nx-btn nx-btn-secondary" onclick="closeRejectModal()">Hủy</button>
+                <button type="submit" class="nx-btn nx-btn-danger">Xác nhận từ chối</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
 function closeRejectModal() {
     document.getElementById('rejectModal').classList.remove('show');
 }
-</script>
+
+function openRejectModal(id) {
+    document.getElementById('rejectId').value = id;
+    document.getElementById('rejectModal').classList.add('show');
+}
 
 function showAlert(type, message) {
     const box = document.getElementById('alertBox');
-    box.className = 'nx-alert nx-alert-' + type + ' fade show';
+    box.className = 'nx-alert nx-alert-' + type;
     box.innerHTML = message;
     box.classList.remove('d-none');
     setTimeout(() => { if (!type.includes('danger')) box.classList.add('d-none'); }, 5000);

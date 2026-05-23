@@ -195,8 +195,8 @@ ob_start();
 </div>
 
 <!-- Order Detail Modal -->
-<div class="nx-modal-overlay" id="orderModal">
-    <div class="nx-modal">
+<div class="nx-modal" id="orderModal">
+    <div class="nx-modal-inner" style="max-width:700px;">
         <div class="nx-modal-header">
             <h3><i class="fa-solid fa-receipt me-2"></i>Chi tiết đơn hàng <span id="modalOrderId"></span></h3>
             <button class="nx-modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>

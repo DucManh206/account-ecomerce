@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . "/admin_verifier_modules.php";
+require_once __DIR__ . "/admin_sidebar_modules.php";
 
 function admin_renderLayout($title, $currentPage, $content = null)
 {

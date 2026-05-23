@@ -63,11 +63,17 @@ usort($products, function ($a, $b) use ($sort_by) {
 });
 
 $total_count = count($products);
+$storeName = getStoreName();
+$heroBadge = trim((string)getSetting('hero_badge', ''));
+$heroTitle = trim((string)getSetting('hero_title', ''));
+$heroSubtitle = trim((string)getSetting('hero_subtitle', ''));
+$heroShowSupport = (bool)getSetting('hero_show_support', true);
+$heroShowSecurity = (bool)getSetting('hero_show_security', true);
 ?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <?php $s = getStoreName(); ui_renderHead($s . ' | Chợ tài khoản chuyên nghiệp'); ?>
+    <?php ui_renderHead($storeName); ?>
     <style>
         body { background: var(--bg-base); }
         
@@ -534,33 +540,41 @@ $total_count = count($products);
             <div class="hero-banner">
                 <div class="hero-glow"></div>
                 <div class="hero-content-wrap">
-                    <div class="hero-badge">
-                        <i class="fa-solid fa-sparkles"></i>
-                        <span>Nền tảng mua bán tài khoản uy tín #1 Việt Nam</span>
-                    </div>
+                    <?php if ($heroBadge !== ''): ?>
+                        <div class="hero-badge">
+                            <i class="fa-solid fa-sparkles"></i>
+                            <span><?php echo htmlspecialchars($heroBadge); ?></span>
+                        </div>
+                    <?php endif; ?>
                     <h1 class="hero-title">
-                        Mua tài khoản <span class="gradient-text">chất lượng cao</span><br>
-                        Giao dịch <span class="gradient-text">an toàn</span> & nhanh chóng
+                        <?php if ($heroTitle !== ''): ?>
+                            <?php echo nl2br(htmlspecialchars($heroTitle)); ?>
+                        <?php else: ?>
+                            <?php echo htmlspecialchars($storeName); ?>
+                        <?php endif; ?>
                     </h1>
-                    <p class="hero-desc">
-                        Hàng nghìn tài khoản Game, Netflix, Spotify, ChatGPT... được xác minh. 
-                        Thanh toán qua ví điện tử, nhận hàng tức thì, bảo hành 7 ngày.
-                    </p>
+                    <?php if ($heroSubtitle !== ''): ?>
+                        <p class="hero-desc"><?php echo nl2br(htmlspecialchars($heroSubtitle)); ?></p>
+                    <?php endif; ?>
                     <div class="hero-stats">
                         <div class="hero-stat-item">
                             <div class="hero-stat-value"><?php echo $cat_counts['all']; ?>+</div>
                             <div class="hero-stat-label">Sản phẩm</div>
                         </div>
-                        <div class="hero-stat-divider"></div>
-                        <div class="hero-stat-item">
-                            <div class="hero-stat-value">24/7</div>
-                            <div class="hero-stat-label">Hỗ trợ</div>
-                        </div>
-                        <div class="hero-stat-divider"></div>
-                        <div class="hero-stat-item">
-                            <div class="hero-stat-value">100%</div>
-                            <div class="hero-stat-label">Bảo mật</div>
-                        </div>
+                        <?php if ($heroShowSupport): ?>
+                            <div class="hero-stat-divider"></div>
+                            <div class="hero-stat-item">
+                                <div class="hero-stat-value">24/7</div>
+                                <div class="hero-stat-label">Hỗ trợ</div>
+                            </div>
+                        <?php endif; ?>
+                        <?php if ($heroShowSecurity): ?>
+                            <div class="hero-stat-divider"></div>
+                            <div class="hero-stat-item">
+                                <div class="hero-stat-value">100%</div>
+                                <div class="hero-stat-label">Bảo mật</div>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

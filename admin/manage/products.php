@@ -152,169 +152,186 @@ ob_start();
 
 <!-- Image Preview Modal -->
 <div class="nx-modal" id="imgPreviewModal" style="background:rgba(0,0,0,0.85);">
-    <div class="nx-modal-header" style="background:#1F2937;border-color:#374151;">
-        <button type="button" class="nx-modal-close" onclick="closeImgPreview()" style="background:transparent;border:none;color:#fff;opacity:0.7;width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;"></button>
-    </div>
-    <div class="nx-modal-body text-center p-0" style="background:#1F2937;">
-        <img id="previewImg" src="" alt="" style="max-width:100%;border-radius:8px;">
+    <div class="nx-modal-inner" style="background:transparent;box-shadow:none;max-width:90vw;">
+        <button type="button" class="nx-modal-close" onclick="closeImgPreview()" style="background:transparent;border:none;color:#fff;opacity:0.7;width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-xmark"></i></button>
+        <div class="nx-modal-body text-center p-0" style="background:transparent;">
+            <img id="previewImg" src="" alt="" style="max-width:100%;border-radius:8px;">
+        </div>
     </div>
 </div>
 
 <!-- Add / Edit Modal -->
 <div class="nx-modal" id="productModal">
-    <div class="nx-modal-header">
-        <h5 class="nx-modal-title" id="modalTitle"><i class="fa-solid fa-plus me-2"></i>Thêm sản phẩm</h5>
-        <button type="button" class="nx-modal-close" onclick="closeDeleteModal()"></button>
-    </div>
-    <form id="productForm" onsubmit="saveProduct(event)" style="display: contents;">
-        <input type="hidden" id="editId" name="id" value="">
-        <input type="hidden" name="action" id="formAction" value="create">
-        <div class="nx-modal-body" style="overflow-y: auto; flex: 1;">
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="nx-label fw-bold">Tên sản phẩm <span class="text-danger">*</span></label>
-                    <input type="text" class="nx-input" id="fTitle" name="title" required placeholder="VD: Tài khoản Netflix Premium 1 Tháng">
-                </div>
+    <div class="nx-modal-inner">
+        <div class="nx-modal-header">
+            <h5 class="nx-modal-title" id="modalTitle"><i class="fa-solid fa-plus me-2"></i>Thêm sản phẩm</h5>
+            <button type="button" class="nx-modal-close" onclick="closeProductModal()"></button>
+        </div>
+        <form id="productForm" onsubmit="saveProduct(event)">
+            <input type="hidden" id="editId" name="id" value="">
+            <input type="hidden" name="action" id="formAction" value="create">
+            <div class="nx-modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <div class="nx-card p-3" style="background: #f8fafc; border-style: dashed;">
+                                    <label class="nx-label fw-bold small text-primary mb-2">Thông tin cơ bản</label>
+                                    <div class="row g-3">
+                                        <div class="col-md-8">
+                                            <label class="nx-label fw-bold">Tên sản phẩm <span class="text-danger">*</span></label>
+                                            <input type="text" class="nx-input" id="fTitle" name="title" required placeholder="VD: Tài khoản Netflix Premium">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="nx-label fw-bold">Badge</label>
+                                            <input type="text" class="nx-input" id="fBadge" name="badge" placeholder="Hot, VIP, -50%...">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                <!-- Image URL with preview -->
-                <div class="col-md-8">
-                    <label class="nx-label fw-bold">URL Hình ảnh <span class="text-danger">*</span></label>
-                    <input type="url" class="nx-input" id="fImageUrl" name="image_url" required placeholder="https://images.unsplash.com/..." oninput="updateImagePreview()">
-                </div>
-                <div class="col-md-4">
-                    <label class="nx-label fw-bold">Xem trước</label>
-                    <div class="border rounded overflow-hidden" style="height:42px;background:#f8f9fa;">
-                        <img id="imgPreviewThumb" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none;">
+                            <div class="col-md-6">
+                                <label class="nx-label fw-bold">Danh mục <span class="text-danger">*</span></label>
+                                <select class="nx-select" id="fCategory" name="category" required onchange="onCategoryChange()">
+                                    <option value="">-- Chọn --</option>
+                                    <?php foreach ($filterCategories as $c): ?>
+                                        <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="nx-label fw-bold">Loại sản phẩm</label>
+                                <select class="nx-select" id="fTypeId" name="type_id">
+                                    <option value="">-- Không phân loại --</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="nx-label fw-bold text-success">Giá bán hiện tại <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="number" class="nx-input" id="fPrice" name="price" required min="0" placeholder="0">
+                                    <span class="input-group-text">đ</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="nx-label fw-bold text-muted">Giá gốc (để gạch đi)</label>
+                                <div class="input-group">
+                                    <input type="number" class="nx-input" id="fOldPrice" name="old_price" min="0" placeholder="0">
+                                    <span class="input-group-text">đ</span>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="nx-label fw-bold">Link ảnh sản phẩm</label>
+                                <div class="d-flex gap-2">
+                                    <input type="url" class="nx-input" id="fImageUrl" name="image_url" placeholder="https://..." oninput="updateImagePreview()">
+                                    <div id="imgPreviewContainer" style="width: 42px; height: 42px; border-radius: 8px; border: 1px solid #ddd; overflow: hidden; flex-shrink: 0;">
+                                        <img id="imgPreviewThumb" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Icon + Color -->
+                    <div class="col-md-6">
+                        <label class="nx-label fw-bold">Icon</label>
+                        <div class="d-flex gap-1 flex-wrap">
+                            <?php
+                            $quickIcons = [
+                                ['fa-n', 'Netflix'],
+                                ['fa-youtube', 'YouTube'],
+                                ['fa-spotify', 'Spotify'],
+                                ['fa-play', 'Disney+'],
+                                ['fa-robot', 'AI'],
+                                ['fa-gamepad', 'Game'],
+                                ['fa-fire', 'Fire'],
+                                ['fa-cloud', 'Cloud'],
+                                ['fa-crown', 'Crown'],
+                                ['fa-box', 'Mặc định'],
+                            ];
+                            foreach ($quickIcons as $ic): ?>
+                                <button type="button" class="nx-btn nx-btn-sm nx-btn-secondary icon-btn" data-icon="<?php echo $ic[0]; ?>" onclick="selectIcon(this, '<?php echo $ic[0]; ?>')" title="<?php echo $ic[1]; ?>">
+                                    <i class="fa-solid <?php echo $ic[0]; ?>"></i>
+                                </button>
+                            <?php endforeach; ?>
+                            <input type="hidden" id="fIconClass" name="icon_class" value="fa-box">
+                        </div>
                     </div>
-                </div>
-
-                <!-- Category + Type -->
-                <div class="col-md-4">
-                    <label class="nx-label fw-bold">Danh mục <span class="text-danger">*</span></label>
-                    <select class="nx-select" id="fCategory" name="category" required onchange="onCategoryChange()">
-                        <option value="">-- Chọn danh mục --</option>
-                        <?php foreach ($filterCategories as $c): ?>
-                            <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="nx-label fw-bold">Loại</label>
-                    <select class="nx-select" id="fTypeId" name="type_id">
-                        <option value="">— Không chọn —</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="nx-label fw-bold">Game / Dịch vụ</label>
-                    <input type="text" class="nx-input" id="fGameType" name="game_type" placeholder="VD: Valorant, Netflix Premium">
-                    <div class="form-text">Tên dịch vụ (điền nếu cần)</div>
-                </div>
-
-                <!-- Prices + Badge -->
-                <div class="col-md-4">
-                    <label class="nx-label fw-bold">Giá bán <span class="text-danger">*</span></label>
-                    <input type="number" class="nx-input" id="fPrice" name="price" required min="0" placeholder="0">
-                </div>
-                <div class="col-md-4">
-                    <label class="nx-label fw-bold">Giá gốc</label>
-                    <input type="number" class="nx-input" id="fOldPrice" name="old_price" min="0" placeholder="0">
-                </div>
-                <div class="col-md-4">
-                    <label class="nx-label fw-bold">Badge</label>
-                    <select class="nx-select" id="fBadge" name="badge">
-                        <option value="">Không có</option>
-                        <option value="Hot">Hot</option>
-                        <option value="VIP">VIP</option>
-                        <option value="Deal">Deal</option>
-                        <option value="New">New</option>
-                    </select>
-                </div>
-
-                <!-- Icon + Color -->
-                <div class="col-md-6">
-                    <label class="nx-label fw-bold">Icon</label>
-                    <div class="d-flex gap-1 flex-wrap">
-                        <?php
-                        $quickIcons = [
-                            ['fa-n', 'Netflix'],
-                            ['fa-youtube', 'YouTube'],
-                            ['fa-spotify', 'Spotify'],
-                            ['fa-play', 'Disney+'],
-                            ['fa-robot', 'AI'],
-                            ['fa-gamepad', 'Game'],
-                            ['fa-fire', 'Fire'],
-                            ['fa-cloud', 'Cloud'],
-                            ['fa-crown', 'Crown'],
-                            ['fa-box', 'Mặc định'],
-                        ];
-                        foreach ($quickIcons as $ic): ?>
-                            <button type="button" class="nx-btn nx-btn-sm nx-btn-secondary icon-btn" data-icon="<?php echo $ic[0]; ?>" onclick="selectIcon(this, '<?php echo $ic[0]; ?>')" title="<?php echo $ic[1]; ?>">
-                                <i class="fa-solid <?php echo $ic[0]; ?>"></i>
-                            </button>
-                        <?php endforeach; ?>
-                        <input type="hidden" id="fIconClass" name="icon_class" value="fa-box">
+                    <div class="col-md-6">
+                        <label class="nx-label fw-bold">Màu nền badge</label>
+                        <div class="d-flex gap-2 align-items-center">
+                            <?php
+                            $colors = [
+                                ['bg-danger', '#EF4444'],
+                                ['bg-primary', '#3B82F6'],
+                                ['bg-success', '#10B981'],
+                                ['bg-warning', '#F59E0B'],
+                                ['bg-info', '#06B6D4'],
+                                ['bg-dark', '#1F2937'],
+                                ['bg-secondary', '#6B7280'],
+                                ['bg-light', '#F3F4F6'],
+                            ];
+                            foreach ($colors as $c): ?>
+                                <label class="color-swatch" style="background:<?php echo $c[1]; ?>;" title="<?php echo $c[0]; ?>">
+                                    <input type="radio" name="color_class" value="<?php echo $c[0]; ?>" class="d-none">
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <label class="nx-label fw-bold">Màu nền badge</label>
-                    <div class="d-flex gap-2 align-items-center">
-                        <?php
-                        $colors = [
-                            ['bg-danger', '#EF4444'],
-                            ['bg-primary', '#3B82F6'],
-                            ['bg-success', '#10B981'],
-                            ['bg-warning', '#F59E0B'],
-                            ['bg-info', '#06B6D4'],
-                            ['bg-dark', '#1F2937'],
-                            ['bg-secondary', '#6B7280'],
-                            ['bg-light', '#F3F4F6'],
-                        ];
-                        foreach ($colors as $c): ?>
-                            <label class="color-swatch" style="background:<?php echo $c[1]; ?>;" title="<?php echo $c[0]; ?>">
-                                <input type="radio" name="color_class" value="<?php echo $c[0]; ?>" class="d-none">
-                            </label>
-                        <?php endforeach; ?>
+
+                    <!-- Description & Details -->
+                    <div class="col-12">
+                        <div class="nx-card p-3" style="background: #fff;">
+                            <label class="nx-label fw-bold small text-primary mb-2">Chi tiết sản phẩm</label>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="nx-label fw-bold">Mô tả ngắn</label>
+                                    <textarea class="nx-input" id="fDescription" name="description" rows="2" placeholder="Hiển thị ở trang chủ..."></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="nx-label fw-bold d-flex justify-content-between">
+                                        <span>Thông số kỹ thuật (JSON)</span>
+                                        <a href="javascript:void(0)" onclick="fillDemoJson()" class="small text-decoration-none">Mẫu thử</a>
+                                    </label>
+                                    <textarea class="nx-input font-monospace" id="fDetails" name="details" rows="3" placeholder='{"Rank": "Vàng 1", "VP": "200 ACC VP"}' style="font-size:0.82rem; background: #fafafa;"></textarea>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Description -->
-                <div class="col-12">
-                    <label class="nx-label fw-bold">Mô tả</label>
-                    <textarea class="nx-input" id="fDescription" name="description" rows="2" placeholder="Mô tả ngắn về sản phẩm..."></textarea>
-                </div>
-
-                <!-- Details JSON -->
-                <div class="col-12">
-                    <label class="nx-label fw-bold">Thông số chi tiết</label>
-                    <textarea class="nx-input font-monospace" id="fDetails" name="details" rows="3" placeholder='{"Rank": "Vàng 1", "VP": "200 ACC VP"}' style="font-size:0.82rem;"></textarea>
-                    <div class="form-text">Nhập dạng JSON — mỗi key-value là một thông số hiển thị cho khách</div>
                 </div>
             </div>
-        </div>
-        <div class="nx-modal-footer">
-            <button type="button" class="nx-btn nx-btn-secondary" onclick="closeProductModal()">Hủy</button>
-            <button type="submit" class="nx-btn nx-btn-primary" id="submitBtn">
-                <i class="fa-solid fa-check me-1"></i>Lưu
-            </button>
-        </div>
-    </form>
+            <div class="nx-modal-footer" style="background: #f8fafc;">
+                <button type="button" class="btn btn-link text-muted text-decoration-none me-auto" onclick="closeProductModal()">Hủy bỏ</button>
+                <button type="submit" class="btn btn-primary px-4" id="submitBtn">
+                    <i class="fa-solid fa-cloud-arrow-up me-2"></i>Cập nhật sản phẩm
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
+
+<script>
+    function fillDemoJson() {
+        const demo = { "Nền tảng": "PC", "Bảo hành": "7 Ngày", "Chất lượng": "1080p" };
+        document.getElementById('fDetails').value = JSON.stringify(demo, null, 2);
+    }
+</script>
 
 <!-- Delete Confirm Modal -->
 <div class="nx-modal" id="deleteModal">
-    <div class="nx-modal-header">
-        <h5 class="nx-modal-title text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Xác nhận xóa</h5>
-        <button type="button" class="nx-modal-close" onclick="closeDeleteModal()"></button>
-    </div>
-    <div class="nx-modal-body">
-        <p>Bạn có chắc muốn xóa sản phẩm <strong id="delProductName"></strong>?</p>
-        <span class="text-muted" style="font-size:0.85rem;">Hành động này không thể hoàn tác.</span>
-    </div>
-            <div class="nx-modal-footer">
-                <button type="button" class="nx-btn nx-btn-secondary" onclick="closeDeleteModal()">Hủy</button>
-                <button type="button" class="nx-btn nx-btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">
-            <i class="fa-solid fa-trash me-1"></i>Xóa
-        </button>
+    <div class="nx-modal-inner">
+        <div class="nx-modal-header">
+            <h5 class="nx-modal-title text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Xác nhận xóa</h5>
+            <button type="button" class="nx-modal-close" onclick="closeDeleteModal()"></button>
+        </div>
+        <div class="nx-modal-body">
+            <p>Bạn có chắc muốn xóa sản phẩm <strong id="delProductName"></strong>?</p>
+            <span class="text-muted" style="font-size:0.85rem;">Hành động này không thể hoàn tác.</span>
+        </div>
+        <div class="nx-modal-footer">
+            <button type="button" class="nx-btn nx-btn-secondary" onclick="closeDeleteModal()">Hủy</button>
+            <button type="button" class="nx-btn nx-btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">
+                <i class="fa-solid fa-trash me-1"></i>Xóa
+            </button>
+        </div>
     </div>
 </div>
 

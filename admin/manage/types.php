@@ -117,71 +117,75 @@ ob_start();
 
 <!-- Add / Edit Modal -->
 <div class="nx-modal" id="typeModal">
-    <div class="nx-modal-header">
-        <h5 class="nx-modal-title" id="modalTitle"><i class="fa-solid fa-plus me-2"></i>Thêm loại</h5>
-        <button type="button" class="nx-modal-close" onclick="hideModal('typeModal')"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <form id="typeForm" onsubmit="saveType(event)">
-        <input type="hidden" id="editId" name="id" value="">
-        <input type="hidden" name="action" id="formAction" value="create">
-        <div class="nx-modal-body">
-            <div class="nx-form-group">
-                <label class="nx-label">Danh mục <span class="text-danger">*</span></label>
-                <select class="nx-select" id="fCategoryId" name="category_id" required>
-                    <option value="">-- Chọn danh mục --</option>
-                    <?php foreach ($categories as $c): ?>
-                        <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="nx-form-group">
-                <label class="nx-label">Tên loại <span class="text-danger">*</span></label>
-                <input type="text" class="nx-input" id="fName" name="name" required placeholder="VD: Valorant, Netflix Premium">
-            </div>
-            <div class="nx-form-group">
-                <label class="nx-label">Icon</label>
-                <div class="nx-icon-picker">
-                    <?php
-                    $quickIcons = admin_getTypeIconChoices();
-                    foreach ($quickIcons as $qi): ?>
-                        <label data-icon="<?php echo htmlspecialchars($qi[0]); ?>" onclick="selectIcon(this, '<?php echo htmlspecialchars($qi[0]); ?>')" title="<?php echo htmlspecialchars($qi[1]); ?>">
-                            <i class="fa-solid <?php echo htmlspecialchars($qi[0]); ?>"></i>
-                            <input type="radio" name="_icon_radio" value="<?php echo htmlspecialchars($qi[0]); ?>">
-                        </label>
-                    <?php endforeach; ?>
-                    <input type="hidden" id="fIcon" name="icon_class" value="fa-tag">
+    <div class="nx-modal-inner">
+        <div class="nx-modal-header">
+            <h5 class="nx-modal-title" id="modalTitle"><i class="fa-solid fa-plus me-2"></i>Thêm loại</h5>
+            <button type="button" class="nx-modal-close" onclick="hideModal('typeModal')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="typeForm" onsubmit="saveType(event)">
+            <input type="hidden" id="editId" name="id" value="">
+            <input type="hidden" name="action" id="formAction" value="create">
+            <div class="nx-modal-body">
+                <div class="nx-form-group">
+                    <label class="nx-label">Danh mục <span class="text-danger">*</span></label>
+                    <select class="nx-select" id="fCategoryId" name="category_id" required>
+                        <option value="">-- Chọn danh mục --</option>
+                        <?php foreach ($categories as $c): ?>
+                            <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="nx-form-group">
+                    <label class="nx-label">Tên loại <span class="text-danger">*</span></label>
+                    <input type="text" class="nx-input" id="fName" name="name" required placeholder="VD: Valorant, Netflix Premium">
+                </div>
+                <div class="nx-form-group">
+                    <label class="nx-label">Icon</label>
+                    <div class="nx-icon-picker">
+                        <?php
+                        $quickIcons = admin_getTypeIconChoices();
+                        foreach ($quickIcons as $qi): ?>
+                            <label data-icon="<?php echo htmlspecialchars($qi[0]); ?>" onclick="selectIcon(this, '<?php echo htmlspecialchars($qi[0]); ?>')" title="<?php echo htmlspecialchars($qi[1]); ?>">
+                                <i class="fa-solid <?php echo htmlspecialchars($qi[0]); ?>"></i>
+                                <input type="radio" name="_icon_radio" value="<?php echo htmlspecialchars($qi[0]); ?>">
+                            </label>
+                        <?php endforeach; ?>
+                        <input type="hidden" id="fIcon" name="icon_class" value="fa-tag">
+                    </div>
+                </div>
+                <div class="nx-form-group">
+                    <label class="nx-label">Thứ tự</label>
+                    <input type="number" class="nx-input" id="fSort" name="sort_order" value="0" min="0">
                 </div>
             </div>
-            <div class="nx-form-group">
-                <label class="nx-label">Thứ tự</label>
-                <input type="number" class="nx-input" id="fSort" name="sort_order" value="0" min="0">
+            <div class="nx-modal-footer">
+                <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('typeModal')">Hủy</button>
+                <button type="submit" class="nx-btn nx-btn-primary" id="submitBtn">
+                    <i class="fa-solid fa-check me-1"></i>Lưu
+                </button>
             </div>
-        </div>
-        <div class="nx-modal-footer">
-            <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('typeModal')">Hủy</button>
-            <button type="submit" class="nx-btn nx-btn-primary" id="submitBtn">
-                <i class="fa-solid fa-check me-1"></i>Lưu
-            </button>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 
 <!-- Delete Confirm Modal -->
 <div class="nx-modal" id="deleteModal">
-    <div class="nx-modal-header">
-        <h5 class="nx-modal-title" style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation me-2"></i>Xác nhận xóa</h5>
-        <button type="button" class="nx-modal-close" onclick="hideModal('deleteModal')"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="nx-modal-body">
-        <p>Xóa loại <strong id="delTypeName"></strong>?</p>
-        <p id="delWarning" class="text-danger small" style="display:none;"></p>
-        <span class="text-muted" style="font-size:0.85rem;">Hành động này không thể hoàn tác.</span>
-    </div>
-    <div class="nx-modal-footer">
-        <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('deleteModal')">Hủy</button>
-        <button type="button" class="nx-btn nx-btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">
-            <i class="fa-solid fa-trash me-1"></i>Xóa
-        </button>
+    <div class="nx-modal-inner">
+        <div class="nx-modal-header">
+            <h5 class="nx-modal-title" style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation me-2"></i>Xác nhận xóa</h5>
+            <button type="button" class="nx-modal-close" onclick="hideModal('deleteModal')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="nx-modal-body">
+            <p>Xóa loại <strong id="delTypeName"></strong>?</p>
+            <p id="delWarning" class="text-danger small" style="display:none;"></p>
+            <span class="text-muted" style="font-size:0.85rem;">Hành động này không thể hoàn tác.</span>
+        </div>
+        <div class="nx-modal-footer">
+            <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('deleteModal')">Hủy</button>
+            <button type="button" class="nx-btn nx-btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">
+                <i class="fa-solid fa-trash me-1"></i>Xóa
+            </button>
+        </div>
     </div>
 </div>
 

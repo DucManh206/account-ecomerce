@@ -138,132 +138,140 @@ ob_start();
 
 <!-- Category Add/Edit Modal -->
 <div class="nx-modal" id="catModal">
-    <div class="nx-modal-header">
-        <h5 class="nx-modal-title" id="catModalTitle"><i class="fa-solid fa-folder-plus me-2"></i>Thêm Danh mục</h5>
-        <button type="button" class="nx-modal-close" onclick="hideModal('catModal')"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <form id="catForm" onsubmit="saveCategory(event)">
-        <input type="hidden" id="catEditId" name="id" value="">
-        <input type="hidden" name="action" id="catFormAction" value="create">
-        <div class="nx-modal-body">
-            <div class="nx-form-group">
-                <label class="nx-label">Tên danh mục <span class="text-danger">*</span></label>
-                <input type="text" class="nx-input" id="catName" name="name" required placeholder="VD: Game, Netflix, GPT">
-            </div>
-            <div class="nx-form-group">
-                <label class="nx-label">Icon</label>
-                <div class="d-flex gap-1 flex-wrap">
-                    <?php foreach ($catIconChoices as $ic): ?>
-                        <button type="button" class="icon-btn-cat" data-icon="<?php echo $ic[0]; ?>" onclick="selectCatIcon(this, '<?php echo $ic[0]; ?>')" title="<?php echo $ic[1]; ?>">
-                            <i class="fa-solid <?php echo $ic[0]; ?>"></i>
-                        </button>
-                    <?php endforeach; ?>
-                    <input type="hidden" id="catIconClass" name="icon_class" value="fa-folder">
+    <div class="nx-modal-inner">
+        <div class="nx-modal-header">
+            <h5 class="nx-modal-title" id="catModalTitle"><i class="fa-solid fa-folder-plus me-2"></i>Thêm Danh mục</h5>
+            <button type="button" class="nx-modal-close" onclick="hideModal('catModal')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="catForm" onsubmit="saveCategory(event)">
+            <input type="hidden" id="catEditId" name="id" value="">
+            <input type="hidden" name="action" id="catFormAction" value="create">
+            <div class="nx-modal-body">
+                <div class="nx-form-group">
+                    <label class="nx-label">Tên danh mục <span class="text-danger">*</span></label>
+                    <input type="text" class="nx-input" id="catName" name="name" required placeholder="VD: Game, Netflix, GPT">
+                </div>
+                <div class="nx-form-group">
+                    <label class="nx-label">Icon</label>
+                    <div class="d-flex gap-1 flex-wrap">
+                        <?php foreach ($catIconChoices as $ic): ?>
+                            <button type="button" class="icon-btn-cat" data-icon="<?php echo $ic[0]; ?>" onclick="selectCatIcon(this, '<?php echo $ic[0]; ?>')" title="<?php echo $ic[1]; ?>">
+                                <i class="fa-solid <?php echo $ic[0]; ?>"></i>
+                            </button>
+                        <?php endforeach; ?>
+                        <input type="hidden" id="catIconClass" name="icon_class" value="fa-folder">
+                    </div>
+                </div>
+                <div class="nx-form-group">
+                    <label class="nx-label">Mô tả</label>
+                    <input type="text" class="nx-input" id="catDescription" name="description" placeholder="Mô tả ngắn (tùy chọn)">
+                </div>
+                <div class="nx-form-group">
+                    <label class="nx-label">Thứ tự</label>
+                    <input type="number" class="nx-input" id="catSortOrder" name="sort_order" value="0" min="0">
+                    <div class="form-text">Số càng nhỏ thì xếp trên đầu</div>
                 </div>
             </div>
-            <div class="nx-form-group">
-                <label class="nx-label">Mô tả</label>
-                <input type="text" class="nx-input" id="catDescription" name="description" placeholder="Mô tả ngắn (tùy chọn)">
+            <div class="nx-modal-footer">
+                <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('catModal')">Hủy</button>
+                <button type="submit" class="nx-btn nx-btn-primary" id="catSubmitBtn">
+                    <i class="fa-solid fa-check me-1"></i>Lưu
+                </button>
             </div>
-            <div class="nx-form-group">
-                <label class="nx-label">Thứ tự</label>
-                <input type="number" class="nx-input" id="catSortOrder" name="sort_order" value="0" min="0">
-                <div class="form-text">Số càng nhỏ thì xếp trên đầu</div>
-            </div>
-        </div>
-        <div class="nx-modal-footer">
-            <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('catModal')">Hủy</button>
-            <button type="submit" class="nx-btn nx-btn-primary" id="catSubmitBtn">
-                <i class="fa-solid fa-check me-1"></i>Lưu
-            </button>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 
 <!-- Type Add/Edit Modal -->
 <div class="nx-modal" id="typeModal">
-    <div class="nx-modal-header">
-        <h5 class="nx-modal-title" id="typeModalTitle"><i class="fa-solid fa-tag me-2"></i>Thêm Loại</h5>
-        <button type="button" class="nx-modal-close" onclick="hideModal('typeModal')"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <form id="typeForm" onsubmit="saveType(event)">
-        <input type="hidden" id="typeEditId" name="id" value="">
-        <input type="hidden" name="action" id="typeFormAction" value="create">
-        <input type="hidden" id="typeCategoryId" name="category_id" value="">
-        <div class="nx-modal-body">
-            <div class="nx-form-group">
-                <label class="nx-label">Danh mục <span class="text-danger">*</span></label>
-                <select class="nx-select" id="typeCategorySelect" name="category_select" required onchange="document.getElementById('typeCategoryId').value=this.value">
-                    <option value="">-- Chọn danh mục --</option>
-                    <?php foreach ($categories as $c): ?>
-                        <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="nx-form-group">
-                <label class="nx-label">Tên loại <span class="text-danger">*</span></label>
-                <input type="text" class="nx-input" id="typeName" name="name" required placeholder="VD: Valorant, Netflix Premium">
-            </div>
-            <div class="nx-form-group">
-                <label class="nx-label">Icon</label>
-                <div class="d-flex gap-1 flex-wrap">
-                    <?php foreach ($typeIconChoices as $ic): ?>
-                        <button type="button" class="icon-btn-type" data-icon="<?php echo $ic[0]; ?>" onclick="selectTypeIcon(this, '<?php echo $ic[0]; ?>')" title="<?php echo $ic[1]; ?>">
-                            <i class="fa-solid <?php echo $ic[0]; ?>"></i>
-                        </button>
-                    <?php endforeach; ?>
-                    <input type="hidden" id="typeIconClass" name="icon_class" value="fa-tag">
+    <div class="nx-modal-inner">
+        <div class="nx-modal-header">
+            <h5 class="nx-modal-title" id="typeModalTitle"><i class="fa-solid fa-tag me-2"></i>Thêm Loại</h5>
+            <button type="button" class="nx-modal-close" onclick="hideModal('typeModal')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="typeForm" onsubmit="saveType(event)">
+            <input type="hidden" id="typeEditId" name="id" value="">
+            <input type="hidden" name="action" id="typeFormAction" value="create">
+            <input type="hidden" id="typeCategoryId" name="category_id" value="">
+            <div class="nx-modal-body">
+                <div class="nx-form-group">
+                    <label class="nx-label">Danh mục <span class="text-danger">*</span></label>
+                    <select class="nx-select" id="typeCategorySelect" name="category_select" required onchange="document.getElementById('typeCategoryId').value=this.value">
+                        <option value="">-- Chọn danh mục --</option>
+                        <?php foreach ($categories as $c): ?>
+                            <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="nx-form-group">
+                    <label class="nx-label">Tên loại <span class="text-danger">*</span></label>
+                    <input type="text" class="nx-input" id="typeName" name="name" required placeholder="VD: Valorant, Netflix Premium">
+                </div>
+                <div class="nx-form-group">
+                    <label class="nx-label">Icon</label>
+                    <div class="d-flex gap-1 flex-wrap">
+                        <?php foreach ($typeIconChoices as $ic): ?>
+                            <button type="button" class="icon-btn-type" data-icon="<?php echo $ic[0]; ?>" onclick="selectTypeIcon(this, '<?php echo $ic[0]; ?>')" title="<?php echo $ic[1]; ?>">
+                                <i class="fa-solid <?php echo $ic[0]; ?>"></i>
+                            </button>
+                        <?php endforeach; ?>
+                        <input type="hidden" id="typeIconClass" name="icon_class" value="fa-tag">
+                    </div>
+                </div>
+                <div class="nx-form-group">
+                    <label class="nx-label">Thứ tự</label>
+                    <input type="number" class="nx-input" id="typeSortOrder" name="sort_order" value="0" min="0">
                 </div>
             </div>
-            <div class="nx-form-group">
-                <label class="nx-label">Thứ tự</label>
-                <input type="number" class="nx-input" id="typeSortOrder" name="sort_order" value="0" min="0">
+            <div class="nx-modal-footer">
+                <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('typeModal')">Hủy</button>
+                <button type="submit" class="nx-btn nx-btn-primary" id="typeSubmitBtn">
+                    <i class="fa-solid fa-check me-1"></i>Lưu
+                </button>
             </div>
-        </div>
-        <div class="nx-modal-footer">
-            <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('typeModal')">Hủy</button>
-            <button type="submit" class="nx-btn nx-btn-primary" id="typeSubmitBtn">
-                <i class="fa-solid fa-check me-1"></i>Lưu
-            </button>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 
 <!-- Delete Category Confirm -->
 <div class="nx-modal" id="deleteCatModal">
-    <div class="nx-modal-header">
-        <h5 class="nx-modal-title text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Xóa Danh mục</h5>
-        <button type="button" class="nx-modal-close" onclick="hideModal('deleteCatModal')"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="nx-modal-body">
-        <p>Xóa danh mục <strong id="delCatName"></strong>?</p>
-        <p id="delCatWarning" class="text-danger small"></p>
-        <span class="text-muted" style="font-size:0.85rem;">Hành động này không thể hoàn tác.</span>
-    </div>
-    <div class="nx-modal-footer">
-        <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('deleteCatModal')">Hủy</button>
-        <button type="button" class="nx-btn nx-btn-danger" id="confirmDeleteCatBtn" onclick="confirmDeleteCategory()">
-            <i class="fa-solid fa-trash me-1"></i>Xóa
-        </button>
+    <div class="nx-modal-inner">
+        <div class="nx-modal-header">
+            <h5 class="nx-modal-title text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Xóa Danh mục</h5>
+            <button type="button" class="nx-modal-close" onclick="hideModal('deleteCatModal')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="nx-modal-body">
+            <p>Xóa danh mục <strong id="delCatName"></strong>?</p>
+            <p id="delCatWarning" class="text-danger small"></p>
+            <span class="text-muted" style="font-size:0.85rem;">Hành động này không thể hoàn tác.</span>
+        </div>
+        <div class="nx-modal-footer">
+            <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('deleteCatModal')">Hủy</button>
+            <button type="button" class="nx-btn nx-btn-danger" id="confirmDeleteCatBtn" onclick="confirmDeleteCategory()">
+                <i class="fa-solid fa-trash me-1"></i>Xóa
+            </button>
+        </div>
     </div>
 </div>
 
 <!-- Delete Type Confirm -->
 <div class="nx-modal" id="deleteTypeModal">
-    <div class="nx-modal-header">
-        <h5 class="nx-modal-title text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Xóa Loại</h5>
-        <button type="button" class="nx-modal-close" onclick="hideModal('deleteTypeModal')"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="nx-modal-body">
-        <p>Xóa loại <strong id="delTypeName"></strong>?</p>
-        <p id="delTypeWarning" class="text-danger small"></p>
-        <span class="text-muted" style="font-size:0.85rem;">Hành động này không thể hoàn tác.</span>
-    </div>
-    <div class="nx-modal-footer">
-        <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('deleteTypeModal')">Hủy</button>
-        <button type="button" class="nx-btn nx-btn-danger" id="confirmDeleteTypeBtn" onclick="confirmDeleteType()">
-            <i class="fa-solid fa-trash me-1"></i>Xóa
-        </button>
+    <div class="nx-modal-inner">
+        <div class="nx-modal-header">
+            <h5 class="nx-modal-title text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Xóa Loại</h5>
+            <button type="button" class="nx-modal-close" onclick="hideModal('deleteTypeModal')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="nx-modal-body">
+            <p>Xóa loại <strong id="delTypeName"></strong>?</p>
+            <p id="delTypeWarning" class="text-danger small"></p>
+            <span class="text-muted" style="font-size:0.85rem;">Hành động này không thể hoàn tác.</span>
+        </div>
+        <div class="nx-modal-footer">
+            <button type="button" class="nx-btn nx-btn-secondary" onclick="hideModal('deleteTypeModal')">Hủy</button>
+            <button type="button" class="nx-btn nx-btn-danger" id="confirmDeleteTypeBtn" onclick="confirmDeleteType()">
+                <i class="fa-solid fa-trash me-1"></i>Xóa
+            </button>
+        </div>
     </div>
 </div>
 
