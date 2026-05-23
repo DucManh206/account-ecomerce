@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . "/../../admin_lib/admin_layout_modules.php";
-require_once __DIR__ . "/../../admin_lib/admin_category_modules.php";
-require_once __DIR__ . "/../../admin_lib/admin_types_modules.php";
+require_once __DIR__ . "/../lib/admin_layout_modules.php";
+require_once __DIR__ . "/../lib/admin_category_modules.php";
+require_once __DIR__ . "/../lib/admin_types_modules.php";
 
 // Load data
 $categories = admin_getCategories();
@@ -372,7 +372,7 @@ ob_start();
         e.preventDefault();
         const form = document.getElementById('catForm');
         const formData = new FormData(form);
-        fetch('../admin_lib/admin_category_modules.php', {
+        fetch('../lib/admin_category_modules.php', {
                 method: 'POST',
                 body: formData
             })
@@ -407,7 +407,7 @@ ob_start();
         const formData = new FormData();
         formData.append('action', 'delete');
         formData.append('id', deleteCatTarget);
-        fetch('../admin_lib/admin_category_modules.php', {
+        fetch('../lib/admin_category_modules.php', {
                 method: 'POST',
                 body: formData
             })
@@ -493,9 +493,7 @@ ob_start();
         const form = document.getElementById('typeForm');
         const formData = new FormData(form);
 
-        const url = '/admin_lib/admin_types_modules.php';
-
-        fetch(url, {
+        fetch('../lib/admin_types_modules.php', {
                 method: 'POST',
                 body: formData
             })
@@ -531,7 +529,7 @@ ob_start();
         formData.append('action', 'delete');
         formData.append('id', deleteTypeTarget);
 
-        fetch('../admin_lib/admin_types_modules.php', {
+        fetch('../lib/admin_types_modules.php', {
                 method: 'POST',
                 body: formData
             })

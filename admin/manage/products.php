@@ -1,8 +1,8 @@
 <?php
-require_once __DIR__ . "/../../admin_lib/admin_layout_modules.php";
-require_once __DIR__ . "/../../admin_lib/admin_product_modules.php";
-require_once __DIR__ . "/../../admin_lib/admin_types_modules.php";
-require_once __DIR__ . "/../../admin_lib/admin_transaction_modules.php";
+require_once __DIR__ . "/../lib/admin_layout_modules.php";
+require_once __DIR__ . "/../lib/admin_product_modules.php";
+require_once __DIR__ . "/../lib/admin_types_modules.php";
+require_once __DIR__ . "/../lib/admin_transaction_modules.php";
 
 // Dữ liệu ban đầu - Sản phẩm
 $initialData = admin_getProductsPaginated([
@@ -590,7 +590,7 @@ ob_start();
         if (currentCategory) body.set('category', currentCategory);
         if (currentTypeId) body.set('type_id', currentTypeId);
 
-        fetch('admin_lib/admin_product_modules.php', {
+        fetch('../lib/admin_product_modules.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -728,7 +728,7 @@ ob_start();
         const formData = new FormData(form);
         const isUpdate = formData.get('action') === 'update';
 
-        fetch('admin_lib/admin_product_modules.php', {
+        fetch('../lib/admin_product_modules.php', {
                 method: 'POST',
                 body: formData
             })
@@ -772,7 +772,7 @@ ob_start();
         const formData = new FormData();
         formData.append('action', 'delete');
         formData.append('id', deleteTarget);
-        fetch('admin_lib/admin_product_modules.php', {
+        fetch('../lib/admin_product_modules.php', {
                 method: 'POST',
                 body: formData
             })
@@ -861,7 +861,7 @@ ob_start();
         formData.append('action', 'bulk_delete');
         selectedIds.forEach(id => formData.append('ids[]', id));
 
-        fetch('admin_lib/admin_product_modules.php', {
+        fetch('../lib/admin_product_modules.php', {
                 method: 'POST',
                 body: formData
             })
@@ -1119,7 +1119,7 @@ ob_start();
         }
 
         const body = new URLSearchParams({action:'add', product_id:pid, account_data:JSON.stringify(accountData)});
-        fetch('../admin_lib/admin_account_stock_modules.php', {method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'}})
+        fetch('../lib/admin_account_stock_modules.php', {method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'}})
             .then(r => r.json())
             .then(d => {
                 if (d.success) {
@@ -1142,7 +1142,7 @@ ob_start();
         if (!text) return stockAlert('danger', 'Nhập danh sách tài khoản');
 
         const body = new URLSearchParams({action:'bulk_add', product_id:pid, accounts_text:text});
-        fetch('../admin_lib/admin_account_stock_modules.php', {method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'}})
+        fetch('../lib/admin_account_stock_modules.php', {method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'}})
             .then(r => r.json())
             .then(d => {
                 if (d.success) {
@@ -1172,7 +1172,7 @@ ob_start();
         }
 
         // Load stats
-        fetch('../admin_lib/admin_account_stock_modules.php?action=stats')
+        fetch('../lib/admin_account_stock_modules.php?action=stats')
             .then(r => r.json())
             .then(d => {
                 if (d.success) {
@@ -1183,7 +1183,7 @@ ob_start();
             });
 
         // Load accounts by product
-        fetch('../admin_lib/admin_account_stock_modules.php?action=get_by_product&product_id=' + pid)
+        fetch('../lib/admin_account_stock_modules.php?action=get_by_product&product_id=' + pid)
             .then(r => r.json())
             .then(d => {
                 if (!d.success || !d.data.length) {
@@ -1215,7 +1215,7 @@ ob_start();
     function stockDel(id) {
         if (!confirm('Xóa tài khoản này?')) return;
         const body = new URLSearchParams({action:'delete', account_id:id});
-        fetch('../admin_lib/admin_account_stock_modules.php', {method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'}})
+        fetch('../lib/admin_account_stock_modules.php', {method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'}})
             .then(r => r.json())
             .then(d => {
                 if (d.success) { stockAlert('success', '<i class="fa-solid fa-check-circle me-1"></i>' + d.message); stockLoad(); }

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../lib/settings_modules.php';
+require_once __DIR__ . '/../../lib/settings_modules.php';
 
 function admin_renderSidebar($currentPage = '')
 {

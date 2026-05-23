@@ -4,7 +4,7 @@ require_once __DIR__ . '/../database/connect.php';
 require_once __DIR__ . '/../lib/user_modules.php';
 require_once __DIR__ . '/../lib/ui_modules.php';
 require_once __DIR__ . '/../lib/order_modules.php';
-require_once __DIR__ . '/../admin_lib/admin_account_field_modules.php';
+require_once __DIR__ . '/../../admin/lib/admin_account_field_modules.php';
 
 if (!isset($_SESSION['username'])) {
     header('Location: ../auth/login.php');

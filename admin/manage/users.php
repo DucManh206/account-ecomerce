@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . "/../../admin_lib/admin_layout_modules.php";
-require_once __DIR__ . "/../../admin_lib/admin_user_modules.php";
+require_once __DIR__ . "/../lib/admin_layout_modules.php";
+require_once __DIR__ . "/../lib/admin_user_modules.php";
 
 $users = admin_getUsers();
 $currentUsername = $_SESSION['username'] ?? '';
@@ -250,7 +250,7 @@ function saveUser(e) {
     const form = document.getElementById('userForm');
     const formData = new FormData(form);
 
-    fetch('../admin_lib/admin_user_modules.php', {
+    fetch('../lib/admin_user_modules.php', {
         method: 'POST',
         body: formData
     })
@@ -282,7 +282,7 @@ function submitTopup(e) {
     const form = document.getElementById('topupForm');
     const formData = new FormData(form);
 
-    fetch('../admin_lib/admin_user_modules.php', {
+    fetch('../lib/admin_user_modules.php', {
         method: 'POST',
         body: formData
     })
@@ -313,7 +313,7 @@ function confirmDelete() {
     formData.append('action', 'delete');
     formData.append('id', deleteTarget);
 
-    fetch('../admin_lib/admin_user_modules.php', {
+    fetch('../lib/admin_user_modules.php', {
         method: 'POST',
         body: formData
     })

@@ -181,25 +181,7 @@ function ui_renderNavbar($username = null, $cartCount = 0, $balance = 0, $varian
  * Render Footer
  */
 function ui_renderFooter() {
-    $footerStoreName = function_exists('getStoreName') ? getStoreName() : 'NEXUS STORE';
-    $footerIcon = function_exists('nexus_icon') ? nexus_icon() : 'fa-solid fa-ghost';
-    ?>
-    <footer class="nexus-footer">
-        <div class="container">
-            <div class="nexus-footer-inner">
-                <span class="nexus-footer-brand">
-                    <i class="<?php echo htmlspecialchars($footerIcon); ?> me-2" style="color: #A78BFA;"></i><?php echo htmlspecialchars($footerStoreName); ?>
-                </span>
-                <span class="nexus-footer-text">© <?php echo date('Y'); ?> <?php echo htmlspecialchars($footerStoreName); ?>. Mọi quyền được bảo lưu.</span>
-                <div class="nexus-footer-links">
-                    <a href="#">Điều khoản</a>
-                    <a href="#">Bảo mật</a>
-                    <a href="#">Liên hệ</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-    <?php
+    // Footer đã bị xóa theo yêu cầu
 }
 
 /**

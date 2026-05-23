@@ -4,7 +4,7 @@
  * Xử lý: get, update_status, refund, delete
  */
 session_start();
-require_once __DIR__ . '/../../admin_lib/admin_verifier_modules.php';
+require_once __DIR__ . '/../../admin/lib/admin_verifier_modules.php';
 require_once __DIR__ . '/../../lib/order_modules.php';
 
 header('Content-Type: application/json; charset=utf-8');

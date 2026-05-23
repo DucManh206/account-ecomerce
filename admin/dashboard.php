@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . "/../admin_lib/admin_layout_modules.php";
-require_once __DIR__ . "/../admin_lib/admin_stats_modules.php";
+require_once __DIR__ . "/../lib/admin_layout_modules.php";
+require_once __DIR__ . "/../lib/admin_stats_modules.php";
 
 $stats = admin_getDashboardStats();
 $username = htmlspecialchars($_SESSION['username'] ?? 'Admin');

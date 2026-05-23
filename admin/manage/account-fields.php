@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . "/../../admin_lib/admin_layout_modules.php";
-require_once __DIR__ . "/../../admin_lib/admin_account_field_modules.php";
+require_once __DIR__ . "/../lib/admin_layout_modules.php";
+require_once __DIR__ . "/../lib/admin_account_field_modules.php";
 
 $success = false;
 $errorMsg = '';

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . "/../admin_lib/admin_layout_modules.php";
+require_once __DIR__ . "/../lib/admin_layout_modules.php";
 
 ob_start();
 ?>

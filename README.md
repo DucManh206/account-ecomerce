@@ -33,7 +33,7 @@ Sau khi giải nén, cấu trúc thư mục sẽ như sau:
 ```
 htdocs/
 ├── admin/            # Admin panel (quản lý đơn hàng, sản phẩm, users, nạp tiền)
-├── admin_lib/        # Logic xử lý admin
+│   └── lib/          # Admin modules (layout, sidebar, verifier, ...)
 ├── api/              # API endpoints (giỏ hàng, thanh toán, migration)
 ├── assets/           # CSS, JS, ảnh
 │   ├── css/
@@ -47,12 +47,29 @@ htdocs/
 ├── cart/             # Giỏ hàng & thanh toán thành công
 ├── config/           # Cấu hình database
 │   └── database_config.php
+├── crud/             # CRUD operations theo bảng
+│   ├── users/
+│   ├── products/
+│   ├── categories/
+│   ├── types/
+│   ├── orders/
+│   ├── transactions/
+│   ├── cart/
+│   ├── account_stock/
+│   ├── deposit_requests/
+│   ├── banks/
+│   ├── settings/
+│   └── account_field_types/
 ├── database/         # Kết nối MySQL
 │   └── connect.php
 ├── lib/              # Thư viện dùng chung (cart, order, user, products, security, UI, settings)
 ├── migrations/       # Script tạo database schema & seed dữ liệu
 │   └── setup.php
 ├── products/         # Trang danh sách sản phẩm & checkout
+├── public/           # Tài nguyên public
+│   └── admin/
+│       ├── css/admin.css
+│       └── js/admin.js
 ├── user/             # Trang người dùng (đơn hàng, nạp tiền)
 ├── .htaccess         # Bảo mật cơ bản
 └── index.php         # Trang chủ
