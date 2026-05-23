@@ -1,9 +1,81 @@
+# ============================================
+# NEXUS STORE - Account Ecommerce .gitignore
+# ============================================
+
+# ----------------
+# Sensitive Files
+# ----------------
+config/database_config.php
+.env
+.env.*
+!.env.example
+
+# ----------------
+# System Files
+# ----------------
 .DS_Store
 Thumbs.db
+desktop.ini
 *.log
+*.tmp
+*.temp
+
+# ----------------
+# IDE & Editors
+# ----------------
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# ----------------
+# Dependencies
+# ----------------
 vendor/
 node_modules/
-# Nếu bạn muốn bảo mật config db, hãy bỏ comment dòng dưới
-# config/database_config.php
+composer.lock
+package-lock.json
+
+# ----------------
+# Build & Cache
+# ----------------
+*.cache
+cache/
+tmp/
+temp/
+logs/
+
+# ----------------
+# Uploads & User Content
+# ----------------
+uploads/
+storage/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.pdf
+!assets/**/*.jpg
+!assets/**/*.jpeg
+!assets/**/*.png
+!assets/**/*.gif
+
+# ----------------
+# Backup Files
+# ----------------
+*.sql
+*.sql.gz
+*.bak
+*.backup
+*_backup
+*.old
+
+# ----------------
+# OS Generated
+# ----------------
+.Spotlight-V100
+.Trashes
+ehthumbs.db
