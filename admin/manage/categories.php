@@ -97,37 +97,38 @@ ob_start();
                     </div>
 
                     <!-- Types list -->
-                    <?php if (count($catTypes) > 0): ?>
-                        <div>
-                            <?php foreach ($catTypes as $t): ?>
-                                <?php $prodCount = admin_getTypeProductCount($t['id']); ?>
-                                <div class="d-flex align-items-center justify-content-between py-2" id="type-row-<?php echo $t['id']; ?>">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class="fa-solid <?php echo htmlspecialchars($t['icon_class'] ?? 'fa-tag'); ?>" style="color:#6E56CF;width:18px;text-align:center;"></i>
-                                        <span class="fw-semibold" style="font-size:0.88rem;"><?php echo htmlspecialchars($t['name']); ?></span>
-                                        <?php if ($prodCount > 0): ?>
-                                            <span class="nx-badge nx-badge-muted small"><?php echo $prodCount; ?></span>
-                                        <?php endif; ?>
+                    <div class="px-4 pb-3">
+                        <div class="sidebar-section-label ps-0 mb-2">DANH SÁCH LOẠI</div>
+                        <?php if (count($catTypes) > 0): ?>
+                            <div class="d-flex flex-column gap-1">
+                                <?php foreach ($catTypes as $t): ?>
+                                    <?php $prodCount = admin_getTypeProductCount($t['id']); ?>
+                                    <div class="d-flex align-items-center justify-content-between p-2 rounded-3 border border-light bg-light bg-opacity-10" id="type-row-<?php echo $t['id']; ?>">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fa-solid <?php echo htmlspecialchars($t['icon_class'] ?? 'fa-tag'); ?>" style="color:var(--primary);width:18px;text-align:center;"></i>
+                                            <span class="fw-semibold" style="font-size:0.85rem;"><?php echo htmlspecialchars($t['name']); ?></span>
+                                            <span class="badge bg-white text-muted border small"><?php echo $prodCount; ?> SP</span>
+                                        </div>
+                                        <div class="d-flex gap-1">
+                                            <button class="nx-btn nx-btn-sm nx-btn-secondary p-1" style="height:28px; width:28px;" onclick='editType(<?php echo json_encode($t); ?>, <?php echo $cat['id']; ?>)' title="Sửa loại">
+                                                <i class="fa-solid fa-pen-to-square" style="font-size:0.75rem;"></i>
+                                            </button>
+                                            <button class="nx-btn nx-btn-sm nx-btn-danger p-1" style="height:28px; width:28px;" onclick="deleteType(<?php echo $t['id']; ?>, '<?php echo htmlspecialchars(addslashes($t['name'])); ?>', <?php echo $prodCount; ?>)" title="Xóa loại">
+                                                <i class="fa-solid fa-trash" style="font-size:0.75rem;"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div class="d-flex gap-1">
-                                        <button class="nx-btn nx-btn-sm nx-btn-secondary py-1 px-2" onclick='editType(<?php echo json_encode($t); ?>, <?php echo $cat['id']; ?>)' title="Sửa loại">
-                                            <i class="fa-solid fa-pen-to-square"></i>
-                                        </button>
-                                        <button class="nx-btn nx-btn-sm nx-btn-danger py-1 px-2" onclick="deleteType(<?php echo $t['id']; ?>, '<?php echo htmlspecialchars(addslashes($t['name'])); ?>', <?php echo $prodCount; ?>)" title="Xóa loại">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php else: ?>
-                        <div class="nx-card-body text-center py-3">
-                            <p class="text-muted mb-2 small">Chưa có loại nào trong danh mục này.</p>
-                            <button class="nx-btn nx-btn-sm nx-btn-secondary" onclick="openAddTypeModal(<?php echo $cat['id']; ?>)">
-                                <i class="fa-solid fa-plus me-1"></i> Thêm loại đầu tiên
-                            </button>
-                        </div>
-                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-center py-3 border rounded-3 border-dashed">
+                                <p class="text-muted mb-2 small">Chưa có loại nào.</p>
+                                <button class="nx-btn nx-btn-sm nx-btn-secondary" onclick="openAddTypeModal(<?php echo $cat['id']; ?>)">
+                                    <i class="fa-solid fa-plus me-1"></i> Thêm loại
+                                </button>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         <?php endforeach; ?>

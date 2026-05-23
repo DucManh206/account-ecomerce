@@ -19,7 +19,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['user_id'] = $result['id'];
         $_SESSION['cart_session_id'] = session_id() . '_' . uniqid();
 
-        // Merge guest cart to user cart
         if (isset($_SESSION['cart_merged']) && $_SESSION['cart_merged'] !== $result['id']) {
             mergeGuestCart($result['id']);
             $_SESSION['cart_merged'] = $result['id'];
@@ -45,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập | <?php echo htmlspecialchars(getStoreName()); ?></title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/nexus.css">
@@ -59,86 +58,76 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 24px;
         }
 
-        .login-container {
+        .auth-container {
             width: 100%;
-            max-width: 440px;
+            max-width: 400px;
         }
 
-        .brand-link {
-            display: inline-flex;
+        .brand {
+            display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: center;
             text-decoration: none;
             margin-bottom: 32px;
         }
 
-        .brand-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #6e56cf, #4F46E5);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.2rem;
-        }
-
         .brand-text {
-            font-weight: 800;
-            font-size: 1.3rem;
+            font-weight: 700;
+            font-size: 1.5rem;
             color: var(--text-primary);
         }
 
-        .login-card {
+        .auth-card {
             background: var(--card-base);
             border: 1px solid var(--border-subtle);
             border-radius: 16px;
-            padding: 40px 32px;
+            padding: 36px 32px;
         }
 
-        .login-header {
+        .auth-header {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
         }
 
-        .login-header h1 {
-            font-size: 1.75rem;
+        .auth-header h1 {
+            font-size: 1.5rem;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            color: var(--text-primary);
         }
 
-        .login-header p {
+        .auth-header p {
             color: var(--text-secondary);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
+            margin: 0;
         }
 
         .alert-error {
-            background: rgba(239, 68, 68, 0.1);
+            background: var(--red-dim);
             border: 1px solid rgba(239, 68, 68, 0.2);
-            border-radius: 10px;
-            color: #FCA5A5;
-            padding: 12px 16px;
-            font-size: 0.9rem;
-            margin-bottom: 24px;
+            border-radius: 8px;
+            color: var(--red);
+            padding: 12px 14px;
+            font-size: 0.875rem;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .form-label {
             display: block;
             color: var(--text-secondary);
             font-weight: 500;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
+            font-size: 0.875rem;
+            margin-bottom: 6px;
         }
 
         .input-wrapper {
@@ -147,20 +136,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         .form-input {
             width: 100%;
-            background: rgba(255,255,255,0.03);
+            background: var(--bg-secondary);
             border: 1px solid var(--border-subtle);
-            border-radius: 10px;
+            border-radius: 8px;
             color: var(--text-primary);
-            padding: 12px 16px 12px 44px;
-            font-size: 0.95rem;
-            transition: all 0.2s;
+            padding: 11px 14px 11px 40px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
             outline: none;
         }
 
         .form-input:focus {
-            background: rgba(255,255,255,0.05);
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(250, 250, 250, 0.1);
+            border-color: var(--purple);
+            box-shadow: 0 0 0 3px var(--purple-dim);
         }
 
         .form-input::placeholder {
@@ -169,102 +157,79 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         .input-icon {
             position: absolute;
-            left: 16px;
+            left: 13px;
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-muted);
-            pointer-events: none;
+            font-size: 0.9rem;
         }
 
         .form-input:focus ~ .input-icon {
-            color: var(--accent);
+            color: var(--purple);
         }
 
         .toggle-password {
             position: absolute;
-            right: 14px;
+            right: 12px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
             color: var(--text-muted);
             cursor: pointer;
-            padding: 4px 8px;
+            padding: 4px;
+            font-size: 0.85rem;
             transition: color 0.2s;
         }
 
         .toggle-password:hover {
-            color: var(--text-primary);
+            color: var(--text-secondary);
         }
 
-        .btn-login {
+        .btn-submit {
             width: 100%;
-            background: linear-gradient(135deg, var(--accent), #4F46E5);
-            color: white;
+            background: var(--accent);
+            color: var(--bg-base);
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             font-weight: 600;
-            font-size: 1rem;
-            padding: 14px;
+            font-size: 0.95rem;
+            padding: 12px 20px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.2s;
+            margin-top: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            margin-top: 8px;
         }
 
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(110, 86, 207, 0.3);
+        .btn-submit:hover {
+            background: var(--accent-hover);
         }
 
-        .btn-login:active {
-            transform: translateY(0);
-        }
-
-        .divider {
-            text-align: center;
-            margin: 24px 0;
-            position: relative;
-        }
-
-        .divider::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            width: 100%;
-            height: 1px;
-            background: var(--border-subtle);
-        }
-
-        .divider span {
-            position: relative;
-            background: var(--card-base);
-            padding: 0 12px;
-            color: var(--text-muted);
-            font-size: 0.85rem;
+        .btn-submit:active {
+            background: var(--accent);
         }
 
         .link-group {
             text-align: center;
+            margin-top: 24px;
         }
 
-        .link-register {
+        .link-text {
             color: var(--text-secondary);
             font-size: 0.9rem;
         }
 
-        .link-register a {
-            color: #8B74E6;
+        .link-text a {
+            color: var(--purple);
             text-decoration: none;
             font-weight: 600;
         }
 
-        .link-register a:hover {
-            color: #A99BEF;
+        .link-text a:hover {
+            color: var(--accent);
             text-decoration: underline;
         }
 
@@ -276,40 +241,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             text-decoration: none;
             font-size: 0.85rem;
             margin-top: 16px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            transition: all 0.2s;
+            padding: 8px 14px;
+            border-radius: 6px;
+            transition: background 0.2s, color 0.2s;
         }
 
         .link-home:hover {
             color: var(--text-primary);
-            background: rgba(255,255,255,0.03);
+            background: var(--accent-glow);
         }
 
         @media (max-width: 480px) {
-            .login-card {
-                padding: 32px 24px;
-            }
-            .login-header h1 {
-                font-size: 1.5rem;
+            .auth-card {
+                padding: 28px 20px;
             }
         }
     </style>
 </head>
 <body>
 
-    <div class="login-container">
-        <a href="../index.php" class="brand-link">
-            <div class="brand-icon">
-                <i class="<?php echo function_exists('getStoreIconClass') ? getStoreIconClass() : 'fa-solid fa-ghost'; ?>"></i>
-            </div>
+    <div class="auth-container">
+        <a href="../index.php" class="brand">
             <span class="brand-text"><?php echo htmlspecialchars(getStoreName()); ?></span>
         </a>
 
-        <div class="login-card">
-            <div class="login-header">
+        <div class="auth-card">
+            <div class="auth-header">
                 <h1>Đăng nhập</h1>
-                <p>Chào mừng bạn quay trở lại!</p>
+                <p>Chào mừng bạn quay trở lại</p>
             </div>
 
             <?php if ($login_error): ?>
@@ -341,19 +300,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     </div>
                 </div>
 
-                <button type="submit" class="btn-login">
+                <button type="submit" class="btn-submit">
                     <i class="fa-solid fa-right-to-bracket"></i>
                     Đăng nhập
                 </button>
             </form>
 
-            <div class="divider">
-                <span>hoặc</span>
-            </div>
-
             <div class="link-group">
-                <p class="link-register">
-                    Chưa có tài khoản? <a href="register.php">Đăng ký ngay</a>
+                <p class="link-text">
+                    Chưa có tài khoản? <a href="register.php">Đăng ký</a>
                 </p>
                 <a href="../index.php" class="link-home">
                     <i class="fa-solid fa-arrow-left"></i> Quay về trang chủ

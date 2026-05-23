@@ -45,40 +45,53 @@ function admin_renderLayout($title, $currentPage, $content = null)
     </main>
 </div>
 
-<script src="<?php echo $assetBase; ?>/js/admin.js"></script>
-<script>
-    function toggleSidebar() {
-        var sidebar = document.querySelector('.admin-sidebar');
-        var overlay = document.getElementById('adminSidebarOverlay');
-        if (sidebar) sidebar.classList.toggle('open');
-        if (overlay) overlay.classList.toggle('show');
-    }
-
-    function showModal(id) {
-        document.getElementById(id).classList.add('show');
-    }
-
-    function hideModal(id) {
-        document.getElementById(id).classList.remove('show');
-    }
-
-    function closeAllModals() {
-        document.querySelectorAll('.nx-modal.show').forEach(function(el) {
-            el.classList.remove('show');
-        });
-    }
-
-    // ESC key to close modals and sidebar
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeAllModals();
-            var sidebar = document.querySelector('.admin-sidebar.open');
-            var overlay = document.getElementById('adminSidebarOverlay');
-            if (sidebar) sidebar.classList.remove('open');
-            if (overlay) overlay.classList.remove('show');
+    <script src="<?php echo $assetBase; ?>/js/admin.js"></script>
+    <script>
+        // Global UI Helpers
+        function showModal(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('show');
+                el.classList.add('active'); // Support both styles
+                document.body.style.overflow = 'hidden';
+            }
         }
-    });
-</script>
+
+        function hideModal(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('show');
+                el.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function showAlert(type, message) {
+            const alertBox = document.getElementById('alertBox');
+            if (alertBox) {
+                alertBox.innerHTML = message;
+                alertBox.className = `alert alert-${type === 'danger' ? 'danger' : 'success'} show`;
+                alertBox.classList.remove('d-none');
+                setTimeout(() => {
+                    alertBox.classList.add('d-none');
+                }, 5000);
+            } else {
+                alert(message);
+            }
+        }
+
+        function toggleSidebar() {
+            document.querySelector('.admin-sidebar').classList.toggle('open');
+            document.getElementById('adminSidebarOverlay').classList.toggle('show');
+        }
+
+        // Close on ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.nx-modal.show, .nx-modal.active').forEach(m => hideModal(m.id));
+            }
+        });
+    </script>
 </body>
 </html>
 <?php

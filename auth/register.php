@@ -3,6 +3,7 @@ session_start();
 require_once __DIR__ . '/../lib/user_modules.php';
 require_once __DIR__ . '/../lib/cart_modules.php';
 require_once __DIR__ . '/../lib/settings_modules.php';
+require_once __DIR__ . '/../lib/ui_modules.php';
 
 $error_message = '';
 $success_message = '';
@@ -29,13 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $userId = registerUser($username, $password);
 
             if ($userId) {
-                // Auto login after registration
                 session_regenerate_id(true);
                 $_SESSION['username'] = $username;
                 $_SESSION['user_id'] = $userId;
                 $_SESSION['cart_session_id'] = session_id() . '_' . uniqid();
                 
-                // Merge guest cart
                 if (isset($_SESSION['cart_merged'])) {
                     mergeGuestCart($userId);
                     $_SESSION['cart_merged'] = $userId;
@@ -52,13 +51,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng ký | <?php echo htmlspecialchars(getStoreName()); ?></title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/nexus.css">
@@ -66,247 +64,199 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-base);
+            background: var(--bg-base);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-            margin: 0;
+            padding: 24px;
         }
 
-        body::before {
-            content: '';
-            position: fixed;
-            top: -200px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 600px;
-            height: 500px;
-            background: radial-gradient(ellipse, rgba(110, 86, 207, 0.08) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        .login-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .auth-container {
             width: 100%;
-            max-width: 960px;
-        }
-
-        .login-left {
-            flex: 1;
-            padding: 50px 60px;
-            background: var(--card-base);
-            border-radius: 24px 0 0 24px;
-            border: 1px solid var(--border);
-            border-right: none;
-            max-width: 480px;
-        }
-
-        .login-right {
-            flex: 1;
-            padding: 50px 60px;
-            background: linear-gradient(160deg, rgba(110, 86, 207, 0.08) 0%, rgba(56, 189, 248, 0.04) 100%);
-            border-radius: 0 24px 24px 0;
-            border: 1px solid var(--border);
-            border-left: none;
-            max-width: 480px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            max-width: 400px;
         }
 
         .brand {
             display: flex;
             align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            margin-bottom: 50px;
-        }
-
-        .brand-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--accent), #4F46E5);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 1.2rem;
+            text-decoration: none;
+            margin-bottom: 32px;
         }
 
         .brand-text {
-            font-weight: 800;
-            font-size: 1.4rem;
-            background: linear-gradient(135deg, #8B74E6, #38BDF8);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
-        }
-
-        .login-heading {
-            margin-bottom: 8px;
-        }
-
-        .login-heading h2 {
             font-weight: 700;
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             color: var(--text-primary);
-            margin-bottom: 6px;
         }
 
-        .login-heading p {
+        .auth-card {
+            background: var(--card-base);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 36px 32px;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .auth-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .auth-header p {
             color: var(--text-secondary);
-            font-size: 1rem;
+            font-size: 0.9rem;
             margin: 0;
         }
 
         .alert-error {
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.15);
-            border-radius: 14px;
-            color: #FCA5A5;
-            padding: 14px 18px;
-            font-size: 0.9rem;
-            margin-bottom: 24px;
+            background: var(--red-dim);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            color: var(--red);
+            padding: 12px 14px;
+            font-size: 0.875rem;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
         .alert-success {
-            background: rgba(16, 185, 129, 0.08);
-            border: 1px solid rgba(16, 185, 129, 0.15);
-            border-radius: 14px;
-            color: #6EE7B7;
-            padding: 14px 18px;
-            font-size: 0.9rem;
-            margin-bottom: 24px;
+            background: var(--green-dim);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            color: var(--green);
+            padding: 12px 14px;
+            font-size: 0.875rem;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .field-group {
-            margin-bottom: 22px;
+        .form-group {
+            margin-bottom: 18px;
         }
 
-        .field-label {
+        .form-label {
             display: block;
             color: var(--text-secondary);
             font-weight: 500;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
+            font-size: 0.875rem;
+            margin-bottom: 6px;
         }
 
-        .field-input-wrap {
+        .input-wrapper {
             position: relative;
-            display: flex;
-            align-items: center;
         }
 
-        .field-icon {
-            position: absolute;
-            left: 16px;
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            pointer-events: none;
-            transition: color 0.3s;
-            z-index: 2;
-        }
-
-        .field-input {
+        .form-input {
             width: 100%;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
-            border-radius: 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
             color: var(--text-primary);
-            padding: 15px 48px 15px 48px;
-            font-size: 1rem;
-            font-family: inherit;
-            transition: 0.3s;
-        }
-
-        .field-input:focus {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: var(--accent);
-            box-shadow: 0 0 0 4px var(--accent-light);
+            padding: 11px 40px 11px 40px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
             outline: none;
         }
 
-        .field-input:focus~.field-icon,
-        .field-input:focus+.eye-btn,
-        .field-input:focus~.eye-btn {
-            color: var(--accent);
+        .form-input:focus {
+            border-color: var(--purple);
+            box-shadow: 0 0 0 3px var(--purple-dim);
         }
 
-        .field-input::placeholder {
-            color: rgba(139, 143, 153, 0.4);
+        .form-input::placeholder {
+            color: var(--text-muted);
         }
 
-        .eye-btn {
+        .input-icon {
             position: absolute;
-            right: 14px;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            pointer-events: none;
+            transition: color 0.2s;
+        }
+
+        .form-input:focus ~ .input-icon {
+            color: var(--purple);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
             background: none;
             border: none;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             cursor: pointer;
-            padding: 4px 8px;
-            font-size: 0.9rem;
-            transition: color 0.3s;
+            padding: 4px;
+            font-size: 0.85rem;
+            transition: color 0.2s;
         }
 
-        .eye-btn:hover {
-            color: var(--text-primary);
+        .toggle-password:hover {
+            color: var(--text-secondary);
         }
 
         .btn-submit {
-            background: linear-gradient(135deg, var(--accent), #4F46E5);
-            color: white;
-            border: none;
-            border-radius: 14px;
-            font-weight: 600;
-            font-size: 1.05rem;
-            padding: 16px 28px;
             width: 100%;
-            font-family: inherit;
+            background: var(--accent);
+            color: var(--bg-base);
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 12px 20px;
             cursor: pointer;
-            transition: 0.3s;
+            transition: background 0.2s;
             margin-top: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 30px rgba(110, 86, 207, 0.3);
+            background: var(--accent-hover);
+        }
+
+        .btn-submit:active {
+            background: var(--accent);
         }
 
         .link-group {
             text-align: center;
-            margin-top: 28px;
+            margin-top: 24px;
         }
 
-        .link-register {
+        .link-text {
             color: var(--text-secondary);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
 
-        .link-register a {
-            color: #8B74E6;
+        .link-text a {
+            color: var(--purple);
             text-decoration: none;
             font-weight: 600;
         }
 
-        .link-register a:hover {
-            color: #A99BEF;
+        .link-text a:hover {
+            color: var(--accent);
             text-decoration: underline;
         }
 
@@ -316,96 +266,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             gap: 6px;
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             margin-top: 16px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            transition: 0.3s;
+            padding: 8px 14px;
+            border-radius: 6px;
+            transition: background 0.2s, color 0.2s;
         }
 
         .link-home:hover {
             color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--accent-glow);
         }
 
-        .welcome-text {
-            margin-bottom: 40px;
-        }
-
-        .welcome-text h3 {
-            font-weight: 700;
-            font-size: 1.4rem;
-            margin-bottom: 12px;
-            line-height: 1.4;
-        }
-
-        .welcome-text p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.7;
-        }
-
-        .feature-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .feature-list li {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-        }
-
-        .feature-list li i {
-            width: 28px;
-            height: 28px;
-            background: rgba(16, 185, 129, 0.1);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #10B981;
-            font-size: 0.75rem;
-        }
-
-        @media (max-width: 768px) {
-            .login-wrapper {
-                flex-direction: column;
-                max-width: 480px;
-            }
-
-            .login-left,
-            .login-right {
-                border-radius: 24px;
-                border: 1px solid var(--border);
-                max-width: 100%;
-                padding: 40px 30px;
-            }
-
-            .login-right {
-                border-top: none;
-                border-radius: 0 0 24px 24px;
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 28px 20px;
             }
         }
     </style>
 </head>
-
 <body>
 
-    <div class="login-wrapper">
+    <div class="auth-container">
+        <a href="../index.php" class="brand">
+            <span class="brand-text"><?php echo htmlspecialchars(getStoreName()); ?></span>
+        </a>
 
-        <div class="login-left">
-            <a href="../index.php" class="brand">
-                <div class="brand-icon"><i class="<?php echo nexus_icon(); ?>"></i></div>
-                <span class="brand-text"><?php echo htmlspecialchars(getStoreName()); ?></span>
-            </a>
-
-            <div class="login-heading">
-                <h2>Tạo tài khoản mới</h2>
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>Tạo tài khoản</h1>
                 <p>Đăng ký để bắt đầu mua sắm</p>
             </div>
 
@@ -424,35 +313,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="POST">
-                <div class="field-group">
-                    <label for="username" class="field-label">Tên đăng nhập</label>
-                    <div class="field-input-wrap">
-                        <input type="text" class="field-input" name="username" id="username"
+                <div class="form-group">
+                    <label for="username" class="form-label">Tên đăng nhập</label>
+                    <div class="input-wrapper">
+                        <input type="text" class="form-input" name="username" id="username"
                             placeholder="Chọn tên đăng nhập" autocomplete="off" required
                             value="<?php echo htmlspecialchars($old_username); ?>">
-                        <i class="fa-regular fa-user field-icon"></i>
+                        <i class="fa-regular fa-user input-icon"></i>
                     </div>
                 </div>
 
-                <div class="field-group">
-                    <label for="password" class="field-label">Mật khẩu</label>
-                    <div class="field-input-wrap">
-                        <input type="password" class="field-input" name="password" id="password"
+                <div class="form-group">
+                    <label for="password" class="form-label">Mật khẩu</label>
+                    <div class="input-wrapper">
+                        <input type="password" class="form-input" name="password" id="password"
                             placeholder="Tạo mật khẩu (ít nhất 6 ký tự)" autocomplete="off" required>
-                        <i class="fa-solid fa-lock field-icon"></i>
-                        <button type="button" class="eye-btn" onclick="togglePassword('password', 'eyeIcon1')">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <button type="button" class="toggle-password" onclick="togglePassword('password', 'eyeIcon1')">
                             <i class="fa-regular fa-eye" id="eyeIcon1"></i>
                         </button>
                     </div>
                 </div>
 
-                <div class="field-group">
-                    <label for="confirm_password" class="field-label">Xác nhận mật khẩu</label>
-                    <div class="field-input-wrap">
-                        <input type="password" class="field-input" name="confirm_password" id="confirm_password"
+                <div class="form-group">
+                    <label for="confirm_password" class="form-label">Xác nhận mật khẩu</label>
+                    <div class="input-wrapper">
+                        <input type="password" class="form-input" name="confirm_password" id="confirm_password"
                             placeholder="Nhập lại mật khẩu" autocomplete="off" required>
-                        <i class="fa-solid fa-shield-halved field-icon"></i>
-                        <button type="button" class="eye-btn" onclick="togglePassword('confirm_password', 'eyeIcon2')">
+                        <i class="fa-solid fa-shield-halved input-icon"></i>
+                        <button type="button" class="toggle-password" onclick="togglePassword('confirm_password', 'eyeIcon2')">
                             <i class="fa-regular fa-eye" id="eyeIcon2"></i>
                         </button>
                     </div>
@@ -460,50 +349,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <button type="submit" class="btn-submit">
                     <i class="fa-solid fa-user-plus"></i>
-                    Đăng ký ngay
+                    Đăng ký
                 </button>
             </form>
 
             <div class="link-group">
-                <p class="link-register">
-                    Đã có tài khoản? <a href="login.php">Đăng nhập ngay</a>
+                <p class="link-text">
+                    Đã có tài khoản? <a href="login.php">Đăng nhập</a>
                 </p>
                 <a href="../index.php" class="link-home">
                     <i class="fa-solid fa-arrow-left"></i> Quay về trang chủ
                 </a>
             </div>
         </div>
-
-        <div class="login-right">
-            <div class="welcome-text">
-                <h3>Tham gia cộng đồng<br><?php echo htmlspecialchars(getStoreName()); ?> ngay hôm nay!</h3>
-                <p>Đăng ký tài khoản để trải nghiệm mua sắm với hàng ngàn sản phẩm chất lượng.</p>
-            </div>
-
-            <ul class="feature-list">
-                <li><i class="fa-solid fa-check"></i> Đăng ký miễn phí, nhanh chóng</li>
-                <li><i class="fa-solid fa-check"></i> Bảo mật tài khoản tuyệt đối</li>
-                <li><i class="fa-solid fa-check"></i> Theo dõi đơn hàng dễ dàng</li>
-                <li><i class="fa-solid fa-check"></i> Ưu đãi hấp dẫn mỗi ngày</li>
-            </ul>
-        </div>
-
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function togglePassword(inputId, iconId) {
-            var inputField = document.getElementById(inputId);
-            var eyeIcon = document.getElementById(iconId);
-            if (inputField.type === 'password') {
-                inputField.type = 'text';
-                eyeIcon.className = 'fa-regular fa-eye-slash';
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-regular fa-eye-slash';
             } else {
-                inputField.type = 'password';
-                eyeIcon.className = 'fa-regular fa-eye';
+                input.type = 'password';
+                icon.className = 'fa-regular fa-eye';
             }
         }
     </script>
 </body>
-
 </html>
