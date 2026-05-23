@@ -89,7 +89,7 @@ function registerUser($username, $password) {
 
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
-    $strSQL = "INSERT INTO users (username, password, role, balance) VALUES (?, ?, 0, 100000)";
+    $strSQL = "INSERT INTO users (username, password, role, balance) VALUES (?, ?, 0, 0)";
     $stmt = mysqli_prepare($conn, $strSQL);
 
     if (!$stmt) {

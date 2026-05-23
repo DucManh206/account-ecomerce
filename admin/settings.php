@@ -1,3 +1,2 @@
 <?php
-// Compatibility shim: page moved into admin/crud.
-require __DIR__ . '/crud/settings/settings_page.php';
+require __DIR__ . '/crud/settings/list.php';

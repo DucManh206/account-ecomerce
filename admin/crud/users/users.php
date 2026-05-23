@@ -227,85 +227,8 @@ function admin_handleUserRequest()
     }
 }
 
-function admin_respondJson($data)
-{
-    header('Content-Type: application/json');
-    echo json_encode($data);
-    exit;
-}
-
 if (basename($_SERVER['SCRIPT_FILENAME']) === basename(__FILE__)) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['action'])) {
         admin_handleUserRequest();
     }
-}
-
-/* Assignment-required generic CRUD wrappers for table: users */
-if (!function_exists('users_columns')) {
-function users_columns() {
-    global $conn;
-    $cols = [];
-    $result = mysqli_query($conn, "DESCRIBE `users`");
-    if ($result) while ($row = mysqli_fetch_assoc($result)) $cols[$row['Field']] = $row;
-    return $cols;
-}
-}
-if (!function_exists('users_primary_key')) {
-function users_primary_key() {
-    foreach (users_columns() as $name => $meta) if (($meta['Key'] ?? '') === 'PRI') return $name;
-    return array_key_exists('id', users_columns()) ? 'id' : null;
-}
-}
-if (!function_exists('users_getAll')) {
-function users_getAll() {
-    global $conn;
-    $pk = users_primary_key();
-    $order = $pk ? " ORDER BY `$pk` DESC" : '';
-    $result = mysqli_query($conn, "SELECT * FROM `users`" . $order);
-    return $result ? mysqli_fetch_all($result, MYSQLI_ASSOC) : [];
-}
-}
-if (!function_exists('users_add')) {
-function users_add($data) {
-    global $conn;
-    $cols = users_columns(); $fields=[]; $values=[];
-    foreach ($cols as $name=>$meta) {
-        if (($meta['Extra'] ?? '') === 'auto_increment') continue;
-        if (array_key_exists($name, $data)) { $fields[]=$name; $values[]=$data[$name]; }
-    }
-    if (!$fields) return ['success'=>false,'message'=>'Không có dữ liệu thêm mới'];
-    $fieldSql='`'.implode('`,`',$fields).'`'; $ph=implode(',',array_fill(0,count($fields),'?'));
-    $stmt=mysqli_prepare($conn,"INSERT INTO `users` ($fieldSql) VALUES ($ph)");
-    if (!$stmt) return ['success'=>false,'message'=>mysqli_error($conn)];
-    $types=str_repeat('s',count($values)); mysqli_stmt_bind_param($stmt,$types,...$values);
-    $ok=mysqli_stmt_execute($stmt); $err=mysqli_stmt_error($stmt); mysqli_stmt_close($stmt);
-    return $ok ? ['success'=>true,'message'=>'Thêm mới thành công','id'=>mysqli_insert_id($conn)] : ['success'=>false,'message'=>$err];
-}
-}
-if (!function_exists('users_update')) {
-function users_update($id,$data) {
-    global $conn;
-    $pk=users_primary_key(); if (!$pk) return ['success'=>false,'message'=>'Không tìm thấy khóa chính'];
-    $cols=users_columns(); $sets=[]; $values=[];
-    foreach ($cols as $name=>$meta) {
-        if ($name===$pk || ($meta['Extra'] ?? '')==='auto_increment') continue;
-        if (array_key_exists($name,$data)) { $sets[]="`$name` = ?"; $values[]=$data[$name]; }
-    }
-    if (!$sets) return ['success'=>false,'message'=>'Không có dữ liệu cập nhật'];
-    $values[]=$id; $stmt=mysqli_prepare($conn,"UPDATE `users` SET ".implode(',',$sets)." WHERE `$pk` = ? LIMIT 1");
-    if (!$stmt) return ['success'=>false,'message'=>mysqli_error($conn)];
-    $types=str_repeat('s',count($values)); mysqli_stmt_bind_param($stmt,$types,...$values);
-    $ok=mysqli_stmt_execute($stmt); $err=mysqli_stmt_error($stmt); mysqli_stmt_close($stmt);
-    return $ok ? ['success'=>true,'message'=>'Cập nhật thành công'] : ['success'=>false,'message'=>$err];
-}
-}
-if (!function_exists('users_delete')) {
-function users_delete($id) {
-    global $conn;
-    $pk=users_primary_key(); if (!$pk) return ['success'=>false,'message'=>'Không tìm thấy khóa chính'];
-    $stmt=mysqli_prepare($conn,"DELETE FROM `users` WHERE `$pk` = ? LIMIT 1");
-    if (!$stmt) return ['success'=>false,'message'=>mysqli_error($conn)];
-    mysqli_stmt_bind_param($stmt,'s',$id); $ok=mysqli_stmt_execute($stmt); $affected=mysqli_stmt_affected_rows($stmt); $err=mysqli_stmt_error($stmt); mysqli_stmt_close($stmt);
-    return ($ok && $affected>0) ? ['success'=>true,'message'=>'Xóa thành công'] : ['success'=>false,'message'=>$err ?: 'Không tìm thấy dữ liệu'];
-}
 }

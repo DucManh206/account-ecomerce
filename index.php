@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/crud/products/products.php';
-require_once __DIR__ . '/crud/users/users.php';
+require_once __DIR__ . '/crud/users/user_modules.php';
 require_once __DIR__ . '/crud/cart/cart.php';
 require_once __DIR__ . '/crud/ui/ui_modules.php';
 

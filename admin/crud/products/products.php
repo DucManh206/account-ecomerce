@@ -279,13 +279,11 @@ function admin_handleProductRequest()
 }
 
 if (basename($_SERVER['SCRIPT_FILENAME']) === basename(__FILE__)) {
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['action'])) {
-    admin_handleProductRequest();
-  }
-  exit;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['action'])) {
+        admin_handleProductRequest();
+    }
 }
 
-/* Assignment-required generic CRUD wrappers for table: products */
 if (!function_exists('products_columns')) {
 function products_columns() {
     global $conn;
@@ -318,39 +316,39 @@ function products_add($data) {
         if (($meta['Extra'] ?? '') === 'auto_increment') continue;
         if (array_key_exists($name, $data)) { $fields[]=$name; $values[]=$data[$name]; }
     }
-    if (!$fields) return ['success'=>false,'message'=>'Không có dữ liệu thêm mới'];
+    if (!$fields) return ['success'=>false,'message'=>'Khong co du lieu them moi'];
     $fieldSql='`'.implode('`,`',$fields).'`'; $ph=implode(',',array_fill(0,count($fields),'?'));
     $stmt=mysqli_prepare($conn,"INSERT INTO `products` ($fieldSql) VALUES ($ph)");
     if (!$stmt) return ['success'=>false,'message'=>mysqli_error($conn)];
     $types=str_repeat('s',count($values)); mysqli_stmt_bind_param($stmt,$types,...$values);
     $ok=mysqli_stmt_execute($stmt); $err=mysqli_stmt_error($stmt); mysqli_stmt_close($stmt);
-    return $ok ? ['success'=>true,'message'=>'Thêm mới thành công','id'=>mysqli_insert_id($conn)] : ['success'=>false,'message'=>$err];
+    return $ok ? ['success'=>true,'message'=>'Them moi thanh cong','id'=>mysqli_insert_id($conn)] : ['success'=>false,'message'=>$err];
 }
 }
 if (!function_exists('products_update')) {
 function products_update($id,$data) {
     global $conn;
-    $pk=products_primary_key(); if (!$pk) return ['success'=>false,'message'=>'Không tìm thấy khóa chính'];
+    $pk=products_primary_key(); if (!$pk) return ['success'=>false,'message'=>'Khong tim thay khoa chinh'];
     $cols=products_columns(); $sets=[]; $values=[];
     foreach ($cols as $name=>$meta) {
         if ($name===$pk || ($meta['Extra'] ?? '')==='auto_increment') continue;
         if (array_key_exists($name,$data)) { $sets[]="`$name` = ?"; $values[]=$data[$name]; }
     }
-    if (!$sets) return ['success'=>false,'message'=>'Không có dữ liệu cập nhật'];
+    if (!$sets) return ['success'=>false,'message'=>'Khong co du lieu cap nhat'];
     $values[]=$id; $stmt=mysqli_prepare($conn,"UPDATE `products` SET ".implode(',',$sets)." WHERE `$pk` = ? LIMIT 1");
     if (!$stmt) return ['success'=>false,'message'=>mysqli_error($conn)];
     $types=str_repeat('s',count($values)); mysqli_stmt_bind_param($stmt,$types,...$values);
     $ok=mysqli_stmt_execute($stmt); $err=mysqli_stmt_error($stmt); mysqli_stmt_close($stmt);
-    return $ok ? ['success'=>true,'message'=>'Cập nhật thành công'] : ['success'=>false,'message'=>$err];
+    return $ok ? ['success'=>true,'message'=>'Cap nhat thanh cong'] : ['success'=>false,'message'=>$err];
 }
 }
 if (!function_exists('products_delete')) {
 function products_delete($id) {
     global $conn;
-    $pk=products_primary_key(); if (!$pk) return ['success'=>false,'message'=>'Không tìm thấy khóa chính'];
+    $pk=products_primary_key(); if (!$pk) return ['success'=>false,'message'=>'Khong tim thay khoa chinh'];
     $stmt=mysqli_prepare($conn,"DELETE FROM `products` WHERE `$pk` = ? LIMIT 1");
     if (!$stmt) return ['success'=>false,'message'=>mysqli_error($conn)];
     mysqli_stmt_bind_param($stmt,'s',$id); $ok=mysqli_stmt_execute($stmt); $affected=mysqli_stmt_affected_rows($stmt); $err=mysqli_stmt_error($stmt); mysqli_stmt_close($stmt);
-    return ($ok && $affected>0) ? ['success'=>true,'message'=>'Xóa thành công'] : ['success'=>false,'message'=>$err ?: 'Không tìm thấy dữ liệu'];
+    return ($ok && $affected>0) ? ['success'=>true,'message'=>'Xoa thanh cong'] : ['success'=>false,'message'=>$err ?: 'Khong tim thay du lieu'];
 }
 }

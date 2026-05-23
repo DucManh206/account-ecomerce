@@ -1,23 +1,16 @@
 <?php
-require_once __DIR__ . '/../../../config/db.php';
-require_once __DIR__ . '/../auth/admin_verifier_modules.php';
+require_once __DIR__ . '/../../../admin/crud/layout/admin_layout_modules.php';
 
 function transactions_columns() {
     global $conn;
     $cols = [];
     $result = mysqli_query($conn, "DESCRIBE `transactions`");
-    if ($result) {
-        while ($row = mysqli_fetch_assoc($result)) {
-            $cols[$row['Field']] = $row;
-        }
-    }
+    if ($result) while ($row = mysqli_fetch_assoc($result)) $cols[$row['Field']] = $row;
     return $cols;
 }
 
 function transactions_primary_key() {
-    foreach (transactions_columns() as $name => $meta) {
-        if (($meta['Key'] ?? '') === 'PRI') return $name;
-    }
+    foreach (transactions_columns() as $name => $meta) if (($meta['Key'] ?? '') === 'PRI') return $name;
     return array_key_exists('id', transactions_columns()) ? 'id' : null;
 }
 
@@ -102,4 +95,40 @@ function transactions_delete($id) {
     $err = mysqli_stmt_error($stmt);
     mysqli_stmt_close($stmt);
     return ($ok && $affected > 0) ? ['success'=>true,'message'=>'Xoa thanh cong'] : ['success'=>false,'message'=>$err ?: 'Khong tim thay du lieu'];
+}
+
+function transactions_handleRequest() {
+    $action = $_POST['action'] ?? $_GET['action'] ?? '';
+    switch ($action) {
+        case 'create':
+            $result = transactions_add($_POST);
+            break;
+        case 'update':
+            $id = intval($_POST['id'] ?? 0);
+            $result = ($id > 0) ? transactions_update($id, $_POST) : ['success'=>false,'message'=>'ID khong hop le'];
+            break;
+        case 'delete':
+            $id = intval($_POST['id'] ?? 0);
+            $result = ($id > 0) ? transactions_delete($id) : ['success'=>false,'message'=>'ID khong hop le'];
+            break;
+        case 'get':
+            $id = intval($_GET['id'] ?? 0);
+            $item = transactions_getById($id);
+            $result = ['success'=>$item !== null, 'data'=>$item];
+            break;
+        case 'list':
+            $result = ['success'=>true, 'data'=>transactions_getAll()];
+            break;
+        default:
+            $result = ['success'=>false,'message'=>'Hanh dong khong hop le'];
+    }
+    header('Content-Type: application/json');
+    echo json_encode($result);
+    exit;
+}
+
+if (basename($_SERVER['SCRIPT_FILENAME']) === basename(__FILE__)) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['action'])) {
+        transactions_handleRequest();
+    }
 }
