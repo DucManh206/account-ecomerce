@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../database/connect.php';
+require_once __DIR__ . '/../../database/connect.php';
 
 function admin_getDepositRequests($status = null, $limit = 100) {
     global $conn;

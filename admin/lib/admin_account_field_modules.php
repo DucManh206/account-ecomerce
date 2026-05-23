@@ -2,7 +2,7 @@
 /**
  * Account Field Types Modules - Quản lý loại field tài khoản
  */
-require_once __DIR__ . '/../database/connect.php';
+require_once __DIR__ . '/../../database/connect.php';
 
 function fieldType_getAll() {
     global $conn;

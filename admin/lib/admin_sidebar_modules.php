@@ -14,6 +14,7 @@ function admin_renderSidebar($currentPage = '')
         ['key' => 'categories', 'label' => 'Danh mục', 'icon' => 'fa-layer-group', 'href' => $basePath . '/admin/manage/categories.php'],
         ['key' => 'orders', 'label' => 'Đơn hàng', 'icon' => 'fa-receipt', 'href' => $basePath . '/admin/manage/orders.php'],
         ['key' => 'deposits', 'label' => 'Nạp tiền', 'icon' => 'fa-wallet', 'href' => $basePath . '/admin/manage/deposits.php'],
+        ['key' => 'sepay', 'label' => 'SePay', 'icon' => 'fa-university', 'href' => $basePath . '/admin/manage/sepay-transactions.php'],
     ];
 
     $configItems = [

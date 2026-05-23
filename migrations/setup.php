@@ -223,15 +223,18 @@ if (!te("deposit_requests")) {
         `amount` INT NOT NULL,
         `transfer_amount` INT NOT NULL,
         `transfer_note` VARCHAR(100) DEFAULT NULL,
-        `bank_id` INT DEFAULT NULL,
-        `status` ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+        `unique_code` VARCHAR(50) NOT NULL COMMENT 'Unique code for matching (prefix_id_timestamp)',
+        `status` ENUM('pending','approved','rejected','expired','cancelled') NOT NULL DEFAULT 'pending',
         `admin_note` VARCHAR(255) DEFAULT NULL,
         `processed_by` INT DEFAULT NULL,
         `processed_at` TIMESTAMP NULL,
+        `expires_at` TIMESTAMP NULL COMMENT 'When this request expires',
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX `idx_dep_user` (`user_id`),
         INDEX `idx_dep_status` (`status`),
-        INDEX `idx_dep_created` (`created_at`)
+        INDEX `idx_dep_created` (`created_at`),
+        INDEX `idx_dep_unique_code` (`unique_code`),
+        INDEX `idx_dep_expires` (`expires_at`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", "Table deposit_requests");
 }
 if (!te("settings")) {
@@ -252,6 +255,57 @@ if (!te("account_field_types")) {
         `sort_order` INT DEFAULT 0,
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", "Table account_field_types");
+}
+
+// SePay Configuration
+if (!te("sepay_config")) {
+    rs("CREATE TABLE `sepay_config` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `api_token` VARCHAR(255) NOT NULL DEFAULT '',
+        `account_number` VARCHAR(50) NOT NULL DEFAULT '',
+        `account_holder` VARCHAR(100) NOT NULL DEFAULT '',
+        `bank_code` VARCHAR(20) NOT NULL DEFAULT '',
+        `auto_process` TINYINT(1) DEFAULT 1 COMMENT '1=auto process deposits',
+        `min_amount` INT DEFAULT 10000 COMMENT 'Minimum deposit amount',
+        `max_amount` INT DEFAULT 500000000 COMMENT 'Maximum deposit amount',
+        `transfer_prefix` VARCHAR(20) DEFAULT 'NT' COMMENT 'Prefix for transfer note',
+        `check_interval_minutes` INT DEFAULT 5 COMMENT 'Minutes between auto-check',
+        `cancel_after_minutes` INT DEFAULT 30 COMMENT 'Auto-cancel pending after X minutes',
+        `webhook_secret` VARCHAR(100) NOT NULL DEFAULT '',
+        `last_sync_at` TIMESTAMP NULL,
+        `status` TINYINT(1) DEFAULT 1 COMMENT '0=disabled 1=enabled',
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", "Table sepay_config");
+}
+
+// SePay Transactions Log
+if (!te("sepay_transactions")) {
+    rs("CREATE TABLE `sepay_transactions` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `sepay_id` VARCHAR(50) NOT NULL UNIQUE,
+        `account_number` VARCHAR(50) NOT NULL DEFAULT '',
+        `bank_code` VARCHAR(20) NOT NULL DEFAULT '',
+        `transaction_date` DATETIME NOT NULL,
+        `amount_in` DECIMAL(15,2) DEFAULT 0.00,
+        `amount_out` DECIMAL(15,2) DEFAULT 0.00,
+        `accumulated` DECIMAL(15,2) DEFAULT 0.00,
+        `transaction_content` TEXT,
+        `reference_number` VARCHAR(100) NOT NULL DEFAULT '',
+        `code` VARCHAR(50) DEFAULT NULL,
+        `sub_account` VARCHAR(50) DEFAULT NULL,
+        `bank_account_id` VARCHAR(50) DEFAULT NULL,
+        `status` ENUM('pending','matched','failed','duplicate') DEFAULT 'pending',
+        `matched_deposit_id` INT DEFAULT NULL,
+        `user_id` INT DEFAULT NULL,
+        `processed_at` TIMESTAMP NULL,
+        `raw_data` TEXT,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX `idx_sepay_status` (`status`),
+        INDEX `idx_sepay_user` (`user_id`),
+        INDEX `idx_sepay_date` (`transaction_date`),
+        INDEX `idx_sepay_ref` (`reference_number`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", "Table sepay_transactions");
 }
 
 /* ================================================================
@@ -321,6 +375,8 @@ ac("deposit_requests", "bank_id", "transfer_note", "INT DEFAULT NULL");
 ac("deposit_requests", "admin_note", "status", "VARCHAR(255) DEFAULT NULL");
 ac("deposit_requests", "processed_by", "admin_note", "INT DEFAULT NULL");
 ac("deposit_requests", "processed_at", "processed_by", "TIMESTAMP NULL");
+ac("deposit_requests", "reference_number", "transfer_note", "VARCHAR(100) DEFAULT NULL");
+ac("deposit_requests", "sepay_transaction_id", "reference_number", "VARCHAR(50) DEFAULT NULL");
 ai("deposit_requests", "idx_dep_user", "user_id");
 ai("deposit_requests", "idx_dep_status", "status");
 
@@ -379,6 +435,16 @@ if ($r && mysqli_fetch_assoc($r)["c"] == 0) {
     echo "<p class=\"ok\">[OK] Default settings</p>";
 } else {
     echo "<p class=\"skip\">[SKIP] Settings exist</p>";
+}
+
+// SePay Config - chỉ seed nếu chưa có
+$r = mysqli_query($conn, "SELECT COUNT(*) as c FROM sepay_config");
+if ($r && mysqli_fetch_assoc($r)["c"] == 0) {
+    mysqli_query($conn, "INSERT INTO sepay_config (api_token, account_number, account_holder, bank_code, auto_process, min_amount, max_amount, status) 
+        VALUES ('', '', '', '', 1, 10000, 500000000, 0)");
+    echo "<p class=\"ok\">[OK] SePay config initialized</p>";
+} else {
+    echo "<p class=\"skip\">[SKIP] SePay config exists</p>";
 }
 
 // Account field types

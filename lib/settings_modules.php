@@ -117,3 +117,21 @@ function getEmailNotificationsEnabled() {
 function getSettingWithDefault($key, $default) {
     return getSetting($key, $default);
 }
+
+// ==================== SePay Helpers ====================
+
+function getSePayEnabled() {
+    return getSetting('sepay_enabled', false);
+}
+
+function getSePayApiToken() {
+    return getSetting('sepay_api_token', '');
+}
+
+function getSePayAccountNumber() {
+    return getSetting('sepay_account_number', '');
+}
+
+function getSePayAutoProcess() {
+    return getSetting('sepay_auto_process', true);
+}

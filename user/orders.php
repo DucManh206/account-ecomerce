@@ -193,7 +193,6 @@ $statusMap   = order_getStatusMap();
                             <div class="trans-desc"><?php echo htmlspecialchars($trans['description'] ?? ''); ?></div>
                             <div class="trans-balance">
                                 <?php echo date('d/m/Y H:i:s', strtotime($trans['created_at'] ?? 'now')); ?>
-                                &nbsp;·&nbsp; Số dư: <?php echo number_format(intval($trans['balance_after'] ?? 0)); ?>đ
                             </div>
                         </div>
                         <div class="trans-amount <?php echo $amount > 0 ? 'positive' : 'negative'; ?>">

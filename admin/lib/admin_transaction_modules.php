@@ -3,7 +3,7 @@
  * Admin Transaction Modules
  */
 
-require_once __DIR__ . '/../database/connect.php';
+require_once __DIR__ . '/../../database/connect.php';
 
 /* =====================================================================
    SỐ DƯ

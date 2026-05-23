@@ -5,7 +5,7 @@
  * Để giữ backward compatibility cho các file gọi trực tiếp file này.
  */
 
-require_once __DIR__ . '/../database/connect.php';
+require_once __DIR__ . '/../../database/connect.php';
 require_once __DIR__ . '/admin_transaction_modules.php';
 
 // Xử lý request nếu được gọi trực tiếp (AJAX từ trang admin)
