@@ -38,7 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         } else {
             mysqli_query($conn, "UPDATE deposit_requests SET status = 'cancelled' WHERE user_id = $userId AND status = 'pending'");
             $prefix = $sepayConfig['transfer_prefix'] ?? 'NT';
-            $uniqueCode = $prefix . '_' . $userId . '_' . time();
+            // Nội dung chuyển khoản ngắn, không dấu, không ký tự đặc biệt để app ngân hàng dễ nhận
+            $uniqueCode = strtoupper($prefix) . $userId . time();
             $expires = date('Y-m-d H:i:s', time() + (30 * 60));
             $stmt = $conn->prepare("INSERT INTO deposit_requests (user_id, username, amount, transfer_amount, transfer_note, unique_code, status, expires_at) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)");
             $stmt->bind_param("isiisss", $userId, $username, $amount, $amount, $uniqueCode, $uniqueCode, $expires);
@@ -119,7 +120,13 @@ $balance = ($u = mysqli_fetch_assoc($userRes)) ? intval($u['balance']) : 0;
                 <div class="small text-warning fw-bold mb-2"><i class="fa-solid fa-clock"></i> Chờ chuyển khoản...</div>
                 <img src="https://img.vietqr.io/image/<?php echo $sepayConfig['bank_code']; ?>-<?php echo $sepayConfig['account_number']; ?>-compact.png?amount=<?php echo $current['amount']; ?>&addInfo=<?php echo urlencode($current['unique_code']); ?>" class="qr-img">
                 <div class="info-row"><span class="info-label">Số tiền</span><span class="info-value text-success"><?php echo number_format($current['amount']); ?>đ</span></div>
-                <div class="info-row"><span class="info-label">Nội dung</span><span class="info-value text-primary"><?php echo $current['unique_code']; ?></span></div>
+                <div class="info-row align-items-center">
+                    <span class="info-label">Nội dung CK</span>
+                    <span class="info-value text-primary" id="currentCode" style="font-size:1rem;letter-spacing:0.5px;word-break:break-all;"><?php echo $current['unique_code']; ?></span>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="copyText(document.getElementById('currentCode').innerText)">
+                    <i class="fa-solid fa-copy"></i> Copy nội dung chuyển khoản
+                </button>
                 <div class="mt-3 d-flex gap-2">
                     <form method="POST" class="flex-grow-1"><input type="hidden" name="action" value="sync_sepay"><button class="btn btn-primary w-100 fw-bold btn-sm py-2">Kiểm tra ngay</button></form>
                     <form method="POST"><input type="hidden" name="action" value="cancel_deposit"><input type="hidden" name="deposit_id" value="<?php echo $current['id']; ?>"><button class="btn btn-link text-danger text-decoration-none btn-sm">Hủy đơn</button></form>
@@ -175,7 +182,7 @@ $balance = ($u = mysqli_fetch_assoc($userRes)) ? intval($u['balance']) : 0;
             <div class="info-row"><span class="info-label">Số TK</span><span class="info-value"><?php echo $accountNumber; ?></span></div>
             <div class="info-row"><span class="info-label">Số tiền</span><span class="info-value text-success" id="m-amount"></span></div>
             <div class="info-row border-0 align-items-center">
-                <span class="info-label">Nội dung</span>
+                <span class="info-label">Nội dung CK</span>
                 <div class="d-flex align-items-center">
                     <span class="info-value text-primary me-2" id="m-code" style="word-break: break-all;"></span>
                     <button class="btn btn-sm btn-outline-primary" onclick="copyModalCode()" style="padding: 2px 6px; font-size: 0.7rem;">Copy</button>
@@ -186,11 +193,13 @@ $balance = ($u = mysqli_fetch_assoc($userRes)) ? intval($u['balance']) : 0;
     </div>
 
     <script>
-        function copyModalCode() {
-            const code = document.getElementById('m-code').innerText;
-            navigator.clipboard.writeText(code).then(() => {
-                alert('Đã copy nội dung!');
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Đã copy nội dung chuyển khoản!');
             });
+        }
+        function copyModalCode() {
+            copyText(document.getElementById('m-code').innerText);
         }
         function openQR(amount, code) {
             document.getElementById('m-qr').src = 'https://img.vietqr.io/image/<?php echo $sepayConfig['bank_code']; ?>-<?php echo $sepayConfig['account_number']; ?>-compact.png?amount=' + amount + '&addInfo=' + encodeURIComponent(code);
