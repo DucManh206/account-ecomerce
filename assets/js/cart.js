@@ -6,14 +6,8 @@
 const Cart = {
     // Get API URL - tự động detect path
     getApiUrl() {
-        const path = window.location.pathname;
-        if (path.includes('/products/')) {
-            return '../api/cart.php';
-        }
-        if (path.includes('/cart/')) {
-            return '../api/cart.php';
-        }
-        return 'api/cart.php';
+        // Use absolute route so cart works from root pages, /cart shims, and /crud/* pages.
+        return '/api/cart.php';
     },
 
     // Add product to cart

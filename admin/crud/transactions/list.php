@@ -134,7 +134,7 @@ function editTransaction(data) {
 function saveTransaction(e) {
     e.preventDefault();
     const formData = new FormData(document.getElementById('editForm'));
-    fetch('../../lib/admin_transaction_modules.php', { method: 'POST', body: formData })
+    fetch('admin_transaction_modules.php', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
             if (data.success) {
@@ -152,7 +152,7 @@ function deleteTransaction(id) {
     const formData = new FormData();
     formData.append('action', 'delete');
     formData.append('id', id);
-    fetch('../../lib/admin_transaction_modules.php', { method: 'POST', body: formData })
+    fetch('admin_transaction_modules.php', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
             if (data.success) {

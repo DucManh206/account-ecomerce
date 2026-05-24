@@ -250,7 +250,7 @@ function saveUser(e) {
     const form = document.getElementById('userForm');
     const formData = new FormData(form);
 
-    fetch('../../lib/admin_user_modules.php', {
+    fetch('admin_user_modules.php', {
         method: 'POST',
         body: formData
     })
@@ -282,7 +282,7 @@ function submitTopup(e) {
     const form = document.getElementById('topupForm');
     const formData = new FormData(form);
 
-    fetch('../../lib/admin_user_modules.php', {
+    fetch('admin_user_modules.php', {
         method: 'POST',
         body: formData
     })
@@ -313,7 +313,7 @@ function confirmDelete() {
     formData.append('action', 'delete');
     formData.append('id', deleteTarget);
 
-    fetch('../../lib/admin_user_modules.php', {
+    fetch('admin_user_modules.php', {
         method: 'POST',
         body: formData
     })

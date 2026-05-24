@@ -1113,7 +1113,7 @@ ob_start();
         }
 
         const body = new URLSearchParams({action:'add', product_id:pid, account_data:JSON.stringify(accountData)});
-        fetch('../../lib/admin_account_stock_modules.php', {method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'}})
+        fetch('../account_stock/admin_account_stock_modules.php', {method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'}})
             .then(r => r.json())
             .then(d => {
                 if (d.success) {
@@ -1136,7 +1136,7 @@ ob_start();
         if (!text) return stockAlert('danger', 'Nhập danh sách tài khoản');
 
         const body = new URLSearchParams({action:'bulk_add', product_id:pid, accounts_text:text});
-        fetch('../../lib/admin_account_stock_modules.php', {method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'}})
+        fetch('../account_stock/admin_account_stock_modules.php', {method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'}})
             .then(r => r.json())
             .then(d => {
                 if (d.success) {
@@ -1209,7 +1209,7 @@ ob_start();
     function stockDel(id) {
         if (!confirm('Xóa tài khoản này?')) return;
         const body = new URLSearchParams({action:'delete', account_id:id});
-        fetch('../../lib/admin_account_stock_modules.php', {method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'}})
+        fetch('../account_stock/admin_account_stock_modules.php', {method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'}})
             .then(r => r.json())
             .then(d => {
                 if (d.success) { stockAlert('success', '<i class="fa-solid fa-check-circle me-1"></i>' + d.message); stockLoad(); }

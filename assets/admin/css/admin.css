@@ -2084,3 +2084,105 @@ input[type="checkbox"] { cursor: pointer; width: 16px; height: 16px; }
     .dash-welcome-actions { width: 100%; }
     .dash-welcome-actions .nx-btn { flex: 1; justify-content: center; }
 }
+
+/* =====================================================
+   HERMES FULL ADMIN REDESIGN - 2026
+   ===================================================== */
+:root {
+    --ad-bg: #f6f8fc;
+    --ad-ink: #0f172a;
+    --ad-muted: #64748b;
+    --ad-card: rgba(255,255,255,.92);
+    --ad-line: rgba(15,23,42,.10);
+    --ad-violet: #6d5dfc;
+    --ad-cyan: #06b6d4;
+    --ad-green: #10b981;
+    --ad-red: #ef4444;
+}
+body { background: var(--ad-bg) !important; color: var(--ad-ink) !important; }
+.admin-sidebar {
+    background:
+      radial-gradient(circle at 28% 0%, rgba(109,93,252,.34), transparent 18rem),
+      linear-gradient(180deg, #09111f, #111827) !important;
+    border-right: 1px solid rgba(255,255,255,.08);
+    box-shadow: 24px 0 70px rgba(15,23,42,.24);
+}
+.admin-sidebar-brand { padding: 10px 20px 22px !important; margin-bottom: 8px !important; }
+.admin-sidebar-brand .brand-text {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg,#fff,#c4b5fd,#67e8f9);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.sidebar-section-label { color: rgba(203,213,225,.55) !important; margin-top: 16px; }
+.sidebar-divider { border-color: rgba(255,255,255,.08) !important; }
+.sidebar-item, .admin-sidebar a {
+    border: 1px solid transparent;
+    border-radius: 15px !important;
+    margin: 5px 12px !important;
+    padding: 12px 16px !important;
+    gap: 12px;
+}
+.sidebar-item i, .admin-sidebar a i { width: 18px; text-align:center; }
+.sidebar-item:hover, .admin-sidebar a:hover {
+    color: #fff !important;
+    background: rgba(255,255,255,.085) !important;
+    border-color: rgba(255,255,255,.09);
+    transform: translateX(2px);
+}
+.sidebar-item.active, .admin-sidebar a.active {
+    color: #fff !important;
+    background: linear-gradient(135deg, var(--ad-violet), var(--ad-cyan)) !important;
+    box-shadow: 0 16px 34px rgba(109,93,252,.30);
+}
+.admin-main {
+    background:
+      radial-gradient(circle at 88% -10%, rgba(109,93,252,.16), transparent 28rem),
+      radial-gradient(circle at 16% 0%, rgba(6,182,212,.10), transparent 24rem),
+      var(--ad-bg) !important;
+    padding: clamp(20px, 3vw, 38px) !important;
+}
+.page-header, .admin-page-header {
+    background: rgba(255,255,255,.76) !important;
+    border: 1px solid var(--ad-line) !important;
+    border-radius: 24px !important;
+    padding: 20px 22px !important;
+    box-shadow: 0 18px 50px rgba(15,23,42,.07) !important;
+    backdrop-filter: blur(14px);
+}
+.page-title, .admin-page-title, h1 { letter-spacing: -.04em; font-weight: 800 !important; color: var(--ad-ink) !important; }
+.card, .stat-card, .admin-card, .content-card, .table-container, .modal-content, .nx-admin-card {
+    background: var(--ad-card) !important;
+    border: 1px solid var(--ad-line) !important;
+    border-radius: 22px !important;
+    box-shadow: 0 18px 50px rgba(15,23,42,.075) !important;
+}
+.table { --bs-table-bg: transparent; --bs-table-hover-bg: rgba(109,93,252,.055); }
+.table thead th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+.table tbody td { vertical-align: middle; border-color: #eef2f7 !important; }
+.btn, button, .form-control, .form-select, input, select, textarea { border-radius: 13px !important; }
+.btn-primary, .btn-success, .btn-gradient, .btn-admin-primary {
+    background: linear-gradient(135deg,var(--ad-violet),var(--ad-cyan)) !important;
+    border: 0 !important;
+    box-shadow: 0 12px 28px rgba(109,93,252,.22);
+}
+.form-control, .form-select, input, select, textarea {
+    border: 1px solid #dbe3ee !important;
+    background: rgba(255,255,255,.94) !important;
+}
+.form-control:focus, .form-select:focus, input:focus, select:focus, textarea:focus {
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 0 0 4px rgba(139,92,246,.16) !important;
+}
+.badge { border-radius: 999px; padding: .42rem .65rem; }
+@media (max-width: 768px) {
+    .admin-main { margin-left: 0 !important; padding-top: 72px !important; }
+    .admin-sidebar { transform: translateX(-100%); }
+    .admin-sidebar.open { transform: translateX(0); }
+}

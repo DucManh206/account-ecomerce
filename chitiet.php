@@ -431,8 +431,9 @@ $availableStock = getAvailableStock($product_id);
     <div class="container">
         <div class="page">
             <?php ui_renderBreadcrumb([
-                ['label' => 'Cửa hàng', 'url' => '../index.php'],
-            ], $product['title']); ?>
+                ['label' => 'Cửa hàng', 'url' => ui_url('index.php')],
+                ['label' => $product['title']]
+            ]); ?>
 
             <div class="layout">
                 <!-- LEFT -->
@@ -692,7 +693,7 @@ $availableStock = getAvailableStock($product_id);
             e.preventDefault();
 
             <?php if (!isset($_SESSION['username'])): ?>
-                window.location.href = 'crud/auth/login.php?redirect=../products/index.php?id=<?php echo $product_id; ?>';
+                window.location.href = 'auth/login.php?redirect=chitiet.php?id=<?php echo $product_id; ?>';
                 return;
             <?php endif; ?>
 
@@ -707,7 +708,7 @@ $availableStock = getAvailableStock($product_id);
                 formData.append('product_id', productId);
                 formData.append('quantity', qty);
 
-                const response = await fetch('../api/cart.php', { method: 'POST', body: formData });
+                const response = await fetch('/api/cart.php', { method: 'POST', body: formData });
                 const result = await response.json();
 
                 if (result.success) {

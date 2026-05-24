@@ -48,7 +48,7 @@ $account_info = $order['account_data'];
         <div class="nexus-breadcrumb" style="margin-bottom:1.5rem;">
             <a href="../index.php"><i class="fa-solid fa-house"></i></a>
             <i class="fa-solid fa-chevron-right nexus-breadcrumb-sep"></i>
-            <a href="../user/orders.php">Đơn hàng</a>
+            <a href="../../user/orders.php">Đơn hàng</a>
             <i class="fa-solid fa-chevron-right nexus-breadcrumb-sep"></i>
             <span>#<?php echo str_pad($order['id'], 6, '0', STR_PAD_LEFT); ?></span>
         </div>
@@ -125,7 +125,7 @@ $account_info = $order['account_data'];
                 <span style="font-weight:700;">Lịch sử mua hàng</span>
             </div>
             <p style="color:var(--text-muted);font-size:0.9rem;margin:0;">
-                Bạn có thể xem tất cả các đơn hàng của mình trong <a href="../user/orders.php" style="color:var(--purple);">trang lịch sử đơn hàng</a>.
+                Bạn có thể xem tất cả các đơn hàng của mình trong <a href="../../user/orders.php" style="color:var(--purple);">trang lịch sử đơn hàng</a>.
             </p>
         </div>
     </div>

@@ -198,7 +198,7 @@ function editBank(data) {
 function saveBank(e) {
     e.preventDefault();
     const formData = new FormData(document.getElementById('bankForm'));
-    fetch('../../lib/admin_bank_modules.php', { method: 'POST', body: formData })
+    fetch('admin_bank_modules.php', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
             if (data.success) {
@@ -223,7 +223,7 @@ function confirmDelete() {
     const formData = new FormData();
     formData.append('action', 'delete');
     formData.append('id', deleteTarget);
-    fetch('../../lib/admin_bank_modules.php', { method: 'POST', body: formData })
+    fetch('admin_bank_modules.php', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
             hideModal('deleteModal');

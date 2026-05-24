@@ -192,7 +192,7 @@ $base = ui_getBasePath();
                                         <?php echo htmlspecialchars($item['category']); ?>
                                     </div>
                                     <h3 class="nx-cart-title">
-                                        <a href="<?php echo $base; ?>/products/index.php?id=<?php echo $item['product_id']; ?>">
+                                        <a href="<?php echo $base; ?>/chitiet.php?id=<?php echo $item['product_id']; ?>">
                                             <?php echo htmlspecialchars($item['title']); ?>
                                         </a>
                                     </h3>
