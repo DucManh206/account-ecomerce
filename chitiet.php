@@ -30,7 +30,7 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) 
     $balStmt->execute([$_SESSION['user_id']]);
     $myBalance = $balStmt->fetchColumn();
 }
-
+// trả về ảnh dự phòng 
 function getFallbackImage($categoryName) {
     $categoryName = mb_strtolower($categoryName, 'UTF-8');
     if (strpos($categoryName, 'game') !== false || strpos($categoryName, 'lmht') !== false || strpos($categoryName, 'steam') !== false) {
@@ -40,7 +40,7 @@ function getFallbackImage($categoryName) {
     } elseif (strpos($categoryName, 'software') !== false || strpos($categoryName, 'office') !== false || strpos($categoryName, 'adobe') !== false) {
         return 'https://images.unsplash.com/photo-1618401471353-b98aedd07871?q=80&w=600&auto=format&fit=crop';
     }
-    return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
+    return 'assets/images/default-product.png';
 }
 ?>
 <!DOCTYPE html>
@@ -148,7 +148,7 @@ function getFallbackImage($categoryName) {
                         <?php 
                             $img = !empty($acc['image']) ? $acc['image'] : getFallbackImage($acc['category_name'] ?? '');
                         ?>
-                        <img src="<?= htmlspecialchars($img) ?>" alt="<?= htmlspecialchars($acc['name']) ?>">
+                        <img src="<?= htmlspecialchars($img) ?>" alt="<?= htmlspecialchars($acc['name']) ?>" onerror="this.src='assets/images/default-product.png'; this.onerror=null;">
                     </div>
                     
                     <h1 class="detail-title"><?= htmlspecialchars($acc['name']) ?></h1>

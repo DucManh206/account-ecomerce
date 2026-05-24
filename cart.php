@@ -261,11 +261,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
                 <?php else: ?>
                     <div class="cart-items-list">
                         <?php foreach ($cartAccounts as $acc): 
-                            $img = !empty($acc['image']) ? $acc['image'] : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600';
+                            $img = !empty($acc['image']) ? $acc['image'] : 'assets/images/default-product.png';
                         ?>
                             <div class="cart-item">
                                 <div class="cart-item-details">
-                                    <img src="<?= htmlspecialchars($img) ?>" class="cart-item-img" alt="">
+                                    <img src="<?= htmlspecialchars($img) ?>" class="cart-item-img" alt="" onerror="this.src='assets/images/default-product.png'; this.onerror=null;">
                                     <div>
                                         <a href="chitiet.php?id=<?= $acc['id'] ?>" class="cart-item-title"><?= htmlspecialchars($acc['name']) ?></a>
                                         <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Danh mục: <?= htmlspecialchars($acc['category_name'] ?? 'Chưa phân loại') ?></div>

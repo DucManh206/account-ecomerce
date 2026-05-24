@@ -73,7 +73,7 @@ function getFallbackImage($categoryName) {
     } elseif (strpos($categoryName, 'software') !== false || strpos($categoryName, 'office') !== false || strpos($categoryName, 'adobe') !== false) {
         return 'https://images.unsplash.com/photo-1618401471353-b98aedd07871?q=80&w=600&auto=format&fit=crop';
     }
-    return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
+    return 'assets/images/default-product.png';
 }
 ?>
 <!DOCTYPE html>
@@ -267,7 +267,7 @@ function getFallbackImage($categoryName) {
             ?>
                 <article class="account-card">
                     <div class="card-image-wrapper">
-                        <img src="<?= htmlspecialchars($img) ?>" alt="<?= htmlspecialchars($acc['name']) ?>">
+                        <img src="<?= htmlspecialchars($img) ?>" alt="<?= htmlspecialchars($acc['name']) ?>" onerror="this.src='assets/images/default-product.png'; this.onerror=null;">
                         <span class="card-badge"><?= htmlspecialchars($acc['category_name'] ?? 'Chưa phân loại') ?></span>
                         <span class="card-status <?= $acc['status'] === 'available' ? 'status-available' : 'status-sold' ?>">
                             <?= $acc['status'] === 'available' ? 'Đang bán' : 'Đã bán' ?>
