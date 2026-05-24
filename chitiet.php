@@ -211,7 +211,7 @@ function getFallbackImage($categoryName) {
 
     <footer>
         <div class="container footer-content">
-            <p>&copy; 2026 AccountShop - Nhóm 5. Bài tập lớn Lập trình web và ứng dụng.</p>
+            <p>&copy; Nhóm 5. Bài tập lớn Lập trình web và ứng dụng.</p>
         </div>
     </footer>
 
