@@ -52,6 +52,17 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) 
     $myBalance = $balStmt->fetchColumn();
 }
 
+// Live client store telemetry
+$availCount = 0;
+$soldCount = 0;
+try {
+    $availCount = $pdo->query("SELECT COUNT(*) FROM accounts WHERE status='available'")->fetchColumn();
+    $soldCount = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
+} catch (Exception $e) {
+    $availCount = 0;
+    $soldCount = 0;
+}
+
 // Lấy ảnh default nếu chưa up ảnh
 function getFallbackImage($categoryName) {
     $categoryName = mb_strtolower($categoryName, 'UTF-8');

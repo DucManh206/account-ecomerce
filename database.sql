@@ -2,10 +2,13 @@ CREATE DATABASE IF NOT EXISTS account_shop CHARACTER SET utf8mb4 COLLATE utf8mb4
 USE account_shop;
 
 -- Drop existing tables in dependency order
+DROP TABLE IF EXISTS sepay_transactions;
+DROP TABLE IF EXISTS topup_requests;
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS settings;
 
 -- Bảng users
 CREATE TABLE users (
@@ -113,6 +116,18 @@ CREATE TABLE IF NOT EXISTS sepay_transactions (
   transaction_date DATETIME NOT NULL,
   content VARCHAR(255) NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Bảng topup_requests (yêu cầu nạp tiền)
+CREATE TABLE IF NOT EXISTS topup_requests (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  amount DECIMAL(15,0) NOT NULL,
+  memo VARCHAR(100) NOT NULL,
+  status ENUM('pending', 'completed', 'expired') DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

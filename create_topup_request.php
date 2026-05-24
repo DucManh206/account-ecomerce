@@ -3,7 +3,7 @@ require_once __DIR__ . '/admin/config/db.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
+if (!is_logged_in()) {
     echo json_encode(['status' => 'error', 'message' => 'Bạn chưa đăng nhập.']);
     exit;
 }
@@ -20,7 +20,7 @@ $expectedPrefix = defined('SEPAY_MEMO_PREFIX') ? SEPAY_MEMO_PREFIX : 'NAP';
 $memo = $expectedPrefix . ' ' . $userId;
 
 try {
-    // 1. Kiểm tra xem có yêu cầu nạp tiền nào đang ở trạng thái 'pending' cùng số tiền và chưa hết hạn (< 4 phút) không
+    // 1. Kiểm tra yêu cầu nạp tiền
     $stmt = $pdo->prepare("
         SELECT id, amount, memo, created_at 
         FROM topup_requests 

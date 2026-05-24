@@ -29,12 +29,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($exists) {
             $error = 'Tên đăng nhập này đã được sử dụng.';
         } else {
-            // Mã hóa mật khẩu bằng bcrypt.
             $hashed_password = password_hash($password, PASSWORD_BCRYPT);
             $insert_stmt = $pdo->prepare("INSERT INTO users (username, password, fullname, role, balance) VALUES (?, ?, ?, 'user', 0)");
             
             if ($insert_stmt->execute([$username, $hashed_password, $fullname])) {
-                $success = 'Đăng ký thành công! Đang chuyển hướng...';
+                $success = 'Đăng ký thành công. Đang chuyển hướng';
                 header('refresh:1.5;url=login.php');
             } else {
                 $error = 'Đăng ký không thành công. Thử lại sau.';

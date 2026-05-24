@@ -21,6 +21,7 @@
     --danger: #ef4444;
     --danger-light: rgba(239, 68, 68, 0.1);
     --warning: #f59e0b;
+    --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {

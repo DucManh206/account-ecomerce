@@ -3,18 +3,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    --bg-dark: #0a0a0a;
-    --bg-card: #121212;
-    --bg-card-hover: #161616;
+    --bg-dark: #08090a;
+    --bg-card: #101114;
+    --bg-card-hover: #17181c;
     --primary: #ffffff;
     --text-white: #ffffff;
-    --text-gray: #a3a3a3;
-    --text-muted: #525252;
+    --text-gray: #8e939e;
+    --text-muted: #52525b;
     --success: #10b981;
     --danger: #ef4444;
-    --border-color: #262626;
-    --border-hover: #ffffff;
-    --transition: all 0.2s ease-in-out;
+    --border-color: #1c1d22;
+    --border-hover: #3f3f46;
+    --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {
@@ -115,7 +115,6 @@ body {
     color: var(--text-white);
     letter-spacing: -1px;
     margin-bottom: 12px;
-    text-transform: uppercase;
 }
 
 .hero p {
@@ -249,6 +248,8 @@ body {
 .account-card:hover {
     border-color: var(--border-hover);
     background-color: var(--bg-card-hover);
+    transform: translateY(-2.5px);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
 }
 
 .card-image-wrapper {

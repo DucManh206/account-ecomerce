@@ -3,7 +3,7 @@ require_once __DIR__ . '/admin/config/db.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
+if (!is_logged_in()) {
     echo json_encode(['status' => 'error', 'message' => 'Bạn chưa đăng nhập.']);
     exit;
 }

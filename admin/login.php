@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/config/db.php';
 
-if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
+if (is_admin_logged_in()) {
     header('Location: dashboard.php');
     exit;
 }
@@ -20,10 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if ($user && (password_verify($password, $user['password']) || $user['password'] === md5($password))) {
-            $_SESSION['admin_logged_in'] = true;
-            $_SESSION['admin_user_id'] = $user['id'];
-            $_SESSION['admin_username'] = $user['username'];
-            $_SESSION['admin_fullname'] = $user['fullname'];
+            login_user($user);
             header('Location: dashboard.php');
             exit;
         } else {

@@ -25,17 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if ($user && (password_verify($password, $user['password']) || $user['password'] === md5($password))) {
-            $_SESSION['user_logged_in'] = true;
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_username'] = $user['username'];
-            $_SESSION['user_fullname'] = $user['fullname'];
+            login_user($user);
             
             if ($user['role'] === 'admin') {
-                $_SESSION['admin_logged_in'] = true;
-                $_SESSION['admin_user_id'] = $user['id'];
-                $_SESSION['admin_username'] = $user['username'];
-                $_SESSION['admin_fullname'] = $user['fullname'];
-                
                 $success = 'Đăng nhập Quản trị viên thành công! Đang chuyển hướng...';
                 header('refresh:1;url=admin/dashboard.php');
             } else {

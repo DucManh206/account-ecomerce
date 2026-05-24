@@ -1,102 +1,51 @@
-# Hướng dẫn cài đặt & sử dụng - AccountShop
+# Hướng dẫn cài đặt và chạy đồ án - AccountShop (Nhóm 5)
 
-Tài liệu này hướng dẫn cách cấu hình, khởi chạy cơ sở dữ liệu và sử dụng các tính năng cơ bản của dự án AccountShop (Nhóm 5).
-
----
-
-## 1. Yêu cầu hệ thống
-
-* PHP >= 8.0 (khuyên dùng PHP 8.2)
-* MySQL / MariaDB (thông qua XAMPP, Laragon...)
-* Apache Web Server
+Tài liệu ngắn gọn hướng dẫn chạy thử dự án AccountShop cục bộ trên máy tính.
 
 ---
 
-## 2. Các bước cài đặt nhanh
+## 1. Chuẩn bị môi trường
+* Đã cài sẵn phần mềm **XAMPP** (hoặc Laragon) hỗ trợ chạy PHP và MySQL.
+* Khuyên dùng phiên bản PHP từ 8.0 trở lên.
+
+---
+
+## 2. Các bước cài đặt và chạy
 
 ### Bước 1: Copy mã nguồn
-Copy thư mục dự án vào thư mục chạy web của bạn:
-* XAMPP: `C:\xampp\htdocs\<ten_thu_muc_du_an>`
-* Laragon: `C:\laragon\www\<ten_thu_muc_du_an>`
+Giải nén và copy toàn bộ thư mục dự án `account-ecomerce` vào thư mục:
+* `C:\xampp\htdocs\account-ecomerce` (nếu dùng XAMPP mặc định)
 
-### Bước 2: Cấu hình kết nối Cơ sở dữ liệu
-Mở file `admin/config/db.php` để kiểm tra hoặc cập nhật thông số kết nối:
+### Bước 2: Tạo Cơ sở dữ liệu và Nhập dữ liệu
+1. Mở phần mềm XAMPP, nhấn **Start** ở cả 2 cổng **Apache** và **MySQL**.
+2. Truy cập đường dẫn quản trị database: `http://localhost/phpmyadmin/`
+3. Nhấp chọn **Mới** (New) để tạo cơ sở dữ liệu mới với tên: `account_shop`
+4. Chọn cơ sở dữ liệu `account_shop` vừa tạo, nhấp chọn thẻ **Nhập** (Import).
+5. Chọn tệp tin `database.sql` trong thư mục gốc của dự án và nhấn **Nhập** (Import) để hoàn thành.
+
+### Bước 3: Cấu hình kết nối CSDL
+Nếu dùng tài khoản MySQL khác mặc định, mở tệp tin `admin/config/db.php` và sửa thông số:
 ```php
 $host = 'localhost';
 $dbname = 'account_shop';
-$username = 'web'; // User MySQL
-$password = '123'; // Password MySQL
+$username = 'web'; // Tài khoản MySQL (mặc định XAMPP thường là root)
+$password = '123'; // Mật khẩu MySQL (mặc định XAMPP thường để trống '')
 ```
 
-### Bước 3: Khởi tạo database
+### Bước 4: Chạy thử hệ thống
+* Giao diện mua hàng dành cho khách hàng: `http://localhost/account-ecomerce/index.php`
+* Giao diện trang quản trị viên (Admin): `http://localhost/account-ecomerce/admin/login.php`
 
 ---
 
-Truy cập `phpMyAdmin`, tạo mới database tên `account_shop`. Sau đó chọn Import file `database.sql` nằm ở thư mục gốc của dự án.
+## 3. Tài khoản đăng nhập chạy thử
 
----
+Sau khi đã nạp thành công database, bạn có thể dùng các tài khoản sau để test:
 
-## 3. Danh sách tài khoản thử nghiệm
+* **Tài khoản Quản trị viên (Admin)**:
+  * Username: `admin`
+  * Password: `admin123`
 
-Sau khi khởi tạo CSDL, bạn sử dụng các tài khoản sau để đăng nhập chạy thử:
-
-| Vai trò | Tên đăng nhập (Username) | Mật khẩu (Password) |
-| :--- | :--- | :--- |
-| **Quản trị viên (Admin)** | `admin` | `admin123` |
-| **Khách hàng (User)** | `khachhang1` | `123456` |
-| **Khách hàng (User)** | `khachhang2` | `123456` |
-
----
-
-## 4. Hướng dẫn sử dụng chức năng chính
-
-### Giao diện Quản trị (Admin Dashboard)
-* **Đường dẫn**: `http://localhost/<ten_thu_muc_du_an>/admin/login.php` (hoặc click nút "Quản trị viên" trên navbar sau khi đã đăng nhập tài khoản admin ở frontend).
-* **Các chức năng chính**:
-  * **Trạng thái hệ thống**: Hiển thị nhanh kết nối CSDL, số lượng hàng đang bán và múi giờ.
-  * **Quản lý tài khoản đăng nhập (Bảo mật)**:
-    * Khi thêm/sửa tài khoản, admin có thể dùng khung điền thông tin tự động trực quan để nhập Email, Mật khẩu, Hạn dùng, Ghi chú vào các ô riêng biệt. Hệ thống sẽ tự biên dịch và điền vào ô thông tin chi tiết lớn.
-  * **Quản lý thành viên**:
-    * Cho phép cập nhật họ tên, điều chỉnh số dư tài khoản của khách hàng.
-    * Hỗ trợ thăng cấp/hạ cấp vai trò trực tiếp giữa **Khách hàng (User)** và **Quản trị viên (Admin)** thông qua menu lựa chọn.
-    * Khi tạo mới thành viên, mật khẩu sẽ được tự động mã hóa bằng cơ chế Bcrypt.
-  * **Nhật ký giao dịch**: Hiển thị danh sách 5 đơn hàng mới nhất trên hệ thống.
-
-### Giao diện Khách hàng (Frontend)
-* **Đường dẫn**: `http://localhost/<ten_thu_muc_du_an>/index.php`
-* **Các chức năng chính**:
-  * **Xem và lọc tài khoản**: Lọc nhanh các tài khoản đang bán theo từng danh mục phân loại.
-  * **Giỏ hàng & Thanh toán**: Thêm sản phẩm vào giỏ, cập nhật số lượng và mua hàng trực tiếp trừ vào số dư tài khoản.
-  * **Trang cá nhân & Lịch sử mua**:
-    * Xem lại thông tin đăng nhập của các tài khoản đã mua.
-    * Sử dụng nút "Sao chép" nhanh để copy thông tin đăng nhập mà không cần bôi đen thủ công.
-  * **Nạp tiền tài khoản tự động (Tích hợp SePay & VietQR)**:
-    * Khách hàng chọn/nhập số tiền cần nạp, hệ thống sử dụng API của VietQR để tự động tạo mã QR có số tiền và nội dung chuyển khoản tương ứng.
-    * Hệ thống sử dụng cơ chế polling tự động truy vấn danh sách giao dịch qua cổng SePay API ở chế độ ngầm cứ mỗi 4 giây để cộng số dư cho thành viên ngay khi nhận được tiền.
-    * Tích hợp chế độ chạy thử (Mock Mode) tự động nhận diện khi chưa thiết lập API Token thực tế để giả lập cộng tiền khi bấm "Kiểm tra giao dịch", giúp chấm điểm/thuyết trình đồ án vô cùng dễ dàng.
-  * **Nút điều hướng nhanh cho Admin**: Xuất hiện nút "Quản trị viên" trên navbar ở tất cả các trang khách hàng khi có session admin đang hoạt động.
-
----
-
-## 5. Hướng dẫn cấu hình nạp tiền tự động (SePay & VietQR)
-
-Hệ thống nạp tiền được thiết kế tối ưu, có thể chạy ở chế độ **Thực tế (Real)** hoặc **Chạy thử (Mock)**. Để cấu hình, vui lòng làm theo các bước sau:
-
-### Các bước thực hiện:
-1. **Truy cập trang cấu hình**: Đăng nhập bằng tài khoản admin, truy cập trang quản trị và nhấp vào mục **"Cài đặt thanh toán"** ở thanh menu bên trái.
-2. **Thiết lập thông tin**:
-   - **SePay API Token**: Lấy API Key từ tài khoản quản lý tại [sepay.vn](https://sepay.vn).
-     * *Lưu ý*: Nếu giữ nguyên giá trị mặc định `YOUR_SEPAY_API_TOKEN`, hệ thống sẽ tự động bật **Chế độ chạy thử (Mock Mode)**. Người dùng chỉ cần nhấp nút **"Kiểm tra giao dịch"** để tự động cộng tiền giả lập nhằm mục đích thuyết trình hoặc chấm điểm.
-   - **Mã ngân hàng**: Chọn ngân hàng nhận tiền (Ví dụ: `MBBank`, `Vietcombank`, `TPBank`, `Techcombank`, `ACB`...).
-   - **Số tài khoản ngân hàng**: Nhập số tài khoản ngân hàng liên kết nhận tiền trên cổng SePay.
-   - **Tên chủ tài khoản**: Tên chủ sở hữu tài khoản ngân hàng (viết hoa không dấu, ví dụ: `NGUYEN VAN A`).
-   - **Tiền tố nội dung chuyển khoản**: Ví dụ `NAP`. Giao dịch nạp tiền sẽ yêu cầu nội dung chuyển khoản là `[Tiền tố] [User ID]` (Ví dụ: `NAP 2`).
-3. **Lưu cấu hình**: Nhấp **"Lưu cấu hình"** để lưu các giá trị vào bảng `settings` trong cơ sở dữ liệu.
-
-### Cơ chế tự động hủy sau 4 phút:
-* Mỗi khi khách hàng truy cập trang nạp tiền hoặc đổi số tiền nạp, một yêu cầu nạp tiền có trạng thái **Chờ thanh toán (Pending)** sẽ được tạo trong cơ sở dữ liệu và đếm ngược **4 phút (240 giây)**.
-* Khách hàng cần quét mã QR và thực hiện chuyển khoản trong thời gian này.
-* Sau 4 phút không có giao dịch khớp:
-  - Hệ thống tự động chuyển trạng thái yêu cầu sang **Đã hết hạn (Expired)** trên server.
-  - Trên giao diện khách hàng, mã QR sẽ tự động bị làm mờ, hiển thị thông báo **"GIAO DỊCH HẾT HẠN"**, nút kiểm tra bị vô hiệu hóa và hệ thống dừng gửi truy vấn polling tự động.
-
+* **Tài khoản Thành viên (User)**:
+  * Username: `khachhang`
+  * Password: `123456` (hoặc `member` mật khẩu `123456`)

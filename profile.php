@@ -1,10 +1,7 @@
 <?php
 require_once __DIR__ . '/admin/config/db.php';
 
-if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
-    header('Location: login.php');
-    exit;
-}
+require_login();
 
 $userId = $_SESSION['user_id'];
 $success = '';
