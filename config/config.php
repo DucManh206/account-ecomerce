@@ -1,1 +1,0 @@
-<?php define('APP_NAME', 'Nexus Store'); ?>

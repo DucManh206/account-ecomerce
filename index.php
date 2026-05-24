@@ -1,781 +1,188 @@
 <?php
-session_start();
-require_once __DIR__ . '/crud/products/products.php';
-require_once __DIR__ . '/crud/users/user_modules.php';
-require_once __DIR__ . '/crud/cart/cart.php';
-require_once __DIR__ . '/crud/ui/ui_modules.php';
+// ============================================================
+// Trang chủ - Shop bán tài khoản (Frontend)
+// ============================================================
+require_once __DIR__ . '/admin/config/db.php';
 
-$userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
-$cartCount = getCartCount($userId);
-$balance = isset($_SESSION['username']) ? getBalance($_SESSION['username']) : 0;
+// Nhận tham số tìm kiếm, lọc, sắp xếp
+$search = trim($_GET['search'] ?? '');
+$categoryId = trim($_GET['category'] ?? '');
+$sort = $_GET['sort'] ?? 'newest';
 
-$category_filter = isset($_GET['category']) ? $_GET['category'] : 'all';
-$type_filter = isset($_GET['type']) ? $_GET['type'] : 'all';
-$search_query = isset($_GET['q']) ? trim($_GET['q']) : '';
-$sort_by = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
+// Lấy danh mục để hiển thị ở bộ lọc
+$categories = $pdo->query("SELECT * FROM categories ORDER BY id ASC")->fetchAll();
 
-$all_products = getProducts(false);
+// Xây dựng câu truy vấn SQL lấy tài khoản
+$sql = "SELECT accounts.*, categories.name AS category_name 
+        FROM accounts 
+        LEFT JOIN categories ON accounts.category_id = categories.id 
+        WHERE 1=1";
+$params = [];
 
-$cat_counts = ['all' => count($all_products)];
-$type_counts = ['all' => 0];
-foreach ($all_products as $p) {
-    $cat = $p['category'];
-    if (!isset($cat_counts[$cat])) $cat_counts[$cat] = 0;
-    $cat_counts[$cat]++;
-
-    // Chỉ đếm các loại (types) thuộc danh mục đang chọn
-    if ($category_filter === 'all' || $cat === $category_filter) {
-        $type = $p['type_name'] ?? '';
-        if (!empty($type)) {
-            if (!isset($type_counts[$type])) $type_counts[$type] = 0;
-            $type_counts[$type]++;
-            $type_counts['all']++;
-        }
-    }
+if ($categoryId !== '') {
+    $sql .= " AND accounts.category_id = ?";
+    $params[] = $categoryId;
 }
 
-$products = [];
-foreach ($all_products as $item) {
-    $matchCat = ($category_filter == 'all' || $item['category'] == $category_filter);
-    $matchType = ($type_filter == 'all' || ($item['type_name'] ?? '') == $type_filter);
-    if ($matchCat && $matchType) {
-        $products[] = $item;
-    }
+if ($search !== '') {
+    $sql .= " AND (accounts.name LIKE ? OR accounts.description LIKE ?)";
+    $params[] = '%' . $search . '%';
+    $params[] = '%' . $search . '%';
 }
 
-if ($search_query !== '') {
-    $q = mb_strtolower($search_query, 'UTF-8');
-    $products = array_filter($products, function ($p) use ($q) {
-        return mb_strpos(mb_strtolower($p['title'] ?? '', 'UTF-8'), $q) !== false
-            || mb_strpos(mb_strtolower($p['category'] ?? '', 'UTF-8'), $q) !== false
-            || mb_strpos(mb_strtolower($p['type_name'] ?? '', 'UTF-8'), $q) !== false;
-    });
-    $products = array_values($products);
+// Sắp xếp
+switch ($sort) {
+    case 'price_asc':
+        $sql .= " ORDER BY accounts.price ASC";
+        break;
+    case 'price_desc':
+        $sql .= " ORDER BY accounts.price DESC";
+        break;
+    case 'newest':
+    default:
+        $sql .= " ORDER BY accounts.id DESC";
+        break;
 }
 
-usort($products, function ($a, $b) use ($sort_by) {
-    switch ($sort_by) {
-        case 'price_asc':   return $a['price'] <=> $b['price'];
-        case 'price_desc':  return $b['price'] <=> $a['price'];
-        case 'name':        return strcmp($a['title'], $b['title']);
-        default:            return $b['id'] <=> $a['id'];
-    }
-});
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
+$accounts = $stmt->fetchAll();
 
-$total_count = count($products);
-$storeName = getStoreName();
-$heroBadge = trim((string)getSetting('hero_badge', ''));
-$heroTitle = trim((string)getSetting('hero_title', ''));
-$heroSubtitle = trim((string)getSetting('hero_subtitle', ''));
-$heroShowSupport = (bool)getSetting('hero_show_support', true);
-$heroShowSecurity = (bool)getSetting('hero_show_security', true);
+// Hàm lấy ảnh đại diện mặc định theo loại tài khoản nếu không có ảnh
+function getFallbackImage($categoryName) {
+    $categoryName = mb_strtolower($categoryName, 'UTF-8');
+    if (strpos($categoryName, 'game') !== false || strpos($categoryName, 'lmht') !== false || strpos($categoryName, 'steam') !== false) {
+        return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop';
+    } elseif (strpos($categoryName, 'streaming') !== false || strpos($categoryName, 'netflix') !== false || strpos($categoryName, 'spotify') !== false) {
+        return 'https://images.unsplash.com/photo-1574375927938-d5a98e8edd86?q=80&w=600&auto=format&fit=crop';
+    } elseif (strpos($categoryName, 'software') !== false || strpos($categoryName, 'office') !== false || strpos($categoryName, 'adobe') !== false) {
+        return 'https://images.unsplash.com/photo-1618401471353-b98aedd07871?q=80&w=600&auto=format&fit=crop';
+    }
+    return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
+}
 ?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <?php ui_renderHead($storeName); ?>
-    <style>
-        body { background: var(--bg-base); }
-        
-        /* 3-column layout */
-        .store-layout {
-            display: grid;
-            grid-template-columns: 260px 1fr 300px;
-            gap: 24px;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px 16px;
-        }
-
-        /* Left Sidebar - Categories */
-        .sidebar-left {
-            position: sticky;
-            top: 80px;
-            height: fit-content;
-            max-height: calc(100vh - 100px);
-            overflow-y: auto;
-        }
-        .sidebar-card {
-            background: var(--card-base);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            margin-bottom: 16px;
-        }
-        .sidebar-title {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-        }
-        .cat-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 12px;
-            border-radius: 8px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: var(--transition-fast);
-            margin-bottom: 4px;
-        }
-        .cat-item:hover {
-            background: rgba(255,255,255,0.04);
-            color: var(--text-primary);
-        }
-        .cat-item.active {
-            background: var(--purple-dim);
-            color: #A78BFA;
-        }
-        .cat-item i {
-            width: 20px;
-            text-align: center;
-            margin-right: 8px;
-        }
-        .cat-label {
-            flex: 1;
-        }
-        .cat-count {
-            font-size: 0.75rem;
-            background: rgba(255,255,255,0.08);
-            padding: 2px 8px;
-            border-radius: 50px;
-            font-weight: 600;
-        }
-        
-        /* Hide mobile toggle on desktop */
-        .cat-mobile-toggle {
-            display: none;
-        }
-
-        /* Main Content */
-        .main-content {
-            min-width: 0;
-        }
-        /* Hero Banner */
-        .hero-banner {
-            background: linear-gradient(135deg, rgba(110,86,207,0.12) 0%, rgba(56,189,248,0.08) 100%);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 48px 40px;
-            margin-bottom: 24px;
-            position: relative;
-            overflow: hidden;
-        }
-        .hero-glow {
-            position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(110,86,207,0.25) 0%, transparent 70%);
-            pointer-events: none;
-            animation: pulse 8s ease-in-out infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 0.5; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.1); }
-        }
-        .hero-content-wrap {
-            position: relative;
-            z-index: 1;
-        }
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--card-base);
-            border: 1px solid var(--border-subtle);
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 20px;
-        }
-        .hero-badge i {
-            color: #fbbf24;
-        }
-        .hero-title {
-            font-size: 2.5rem;
-            font-weight: 800;
-            line-height: 1.2;
-            margin-bottom: 16px;
-            letter-spacing: -0.02em;
-        }
-        .gradient-text {
-            background: linear-gradient(135deg, #A78BFA 0%, #38BDF8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .hero-desc {
-            color: var(--text-secondary);
-            font-size: 1rem;
-            line-height: 1.6;
-            max-width: 680px;
-            margin-bottom: 24px;
-        }
-        .hero-stats {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
-        .hero-stat-item {
-            text-align: center;
-        }
-        .hero-stat-value {
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            line-height: 1;
-            margin-bottom: 4px;
-        }
-        .hero-stat-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .hero-stat-divider {
-            width: 1px;
-            height: 32px;
-            background: var(--border-subtle);
-        }
-
-        /* Controls */
-        .controls-bar {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .search-box {
-            position: relative;
-            flex: 1;
-            min-width: 200px;
-        }
-        .search-box input {
-            width: 100%;
-            background: var(--card-base);
-            border: 1px solid var(--border-subtle);
-            border-radius: 50px;
-            padding: 10px 16px 10px 42px;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            transition: var(--transition-fast);
-            outline: none;
-        }
-        .search-box input:focus { border-color: var(--accent); }
-        .search-box i {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-        }
-        .sort-select {
-            background: var(--card-base);
-            border: 1px solid var(--border-subtle);
-            border-radius: 50px;
-            padding: 10px 16px;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            outline: none;
-            cursor: pointer;
-        }
-        .sort-select:focus { border-color: var(--accent); }
-
-        /* Type filter pills - compact */
-        .type-filter {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-        .type-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            background: var(--card-base);
-            border: 1px solid var(--border-subtle);
-            border-radius: 50px;
-            padding: 6px 12px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            text-decoration: none;
-            transition: var(--transition-fast);
-        }
-        .type-pill:hover {
-            background: rgba(255,255,255,0.04);
-            color: var(--text-primary);
-        }
-        .type-pill.active {
-            background: var(--purple-dim);
-            color: #A78BFA;
-            border-color: var(--purple);
-        }
-
-        /* Product count */
-        .section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        .product-count {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        /* Right Sidebar - Stats & Promo */
-        .sidebar-right {
-            position: sticky;
-            top: 80px;
-            height: fit-content;
-            max-height: calc(100vh - 100px);
-            overflow-y: auto;
-        }
-        .stat-mini {
-            background: var(--card-base);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 16px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .stat-mini-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-        .stat-mini-content {
-            flex: 1;
-            min-width: 0;
-        }
-        .stat-mini-value {
-            font-size: 1.5rem;
-            font-weight: 800;
-            line-height: 1;
-            margin-bottom: 4px;
-        }
-        .stat-mini-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .promo-card {
-            background: linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(6,182,212,0.08) 100%);
-            border: 1px solid rgba(16,185,129,0.2);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            margin-bottom: 12px;
-        }
-        .promo-card h4 {
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: var(--green);
-        }
-        .promo-card p {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin: 0;
-        }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .store-layout {
-                grid-template-columns: 240px 1fr;
-            }
-            .sidebar-right {
-                display: none;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .store-layout {
-                grid-template-columns: 1fr;
-                gap: 16px;
-                padding: 16px 12px;
-            }
-            .sidebar-left {
-                position: static;
-                max-height: none;
-            }
-            .sidebar-card {
-                padding: 0;
-                background: transparent;
-                border: none;
-            }
-            .sidebar-title {
-                display: none;
-            }
-            /* Mobile category dropdown */
-            .cat-mobile-toggle {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                background: var(--card-base);
-                border: 1px solid var(--border-subtle);
-                border-radius: var(--radius-md);
-                padding: 12px 16px;
-                cursor: pointer;
-                margin-bottom: 12px;
-            }
-            .cat-mobile-toggle-text {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-size: 0.9rem;
-                font-weight: 600;
-                color: var(--text-primary);
-            }
-            .cat-mobile-toggle i {
-                color: var(--text-muted);
-                transition: transform 0.2s;
-            }
-            .cat-mobile-list {
-                display: none;
-                background: var(--card-base);
-                border: 1px solid var(--border-subtle);
-                border-radius: var(--radius-md);
-                padding: 8px;
-                margin-bottom: 16px;
-            }
-            .cat-mobile-list.open {
-                display: block;
-            }
-            .cat-mobile-toggle.open i {
-                transform: rotate(180deg);
-            }
-            .hero-banner {
-                padding: 32px 24px;
-            }
-            .hero-title {
-                font-size: 1.75rem;
-            }
-            .hero-desc {
-                font-size: 0.9rem;
-            }
-            .hero-stats {
-                gap: 16px;
-            }
-            .hero-stat-value {
-                font-size: 1.5rem;
-            }
-            .hero-stat-label {
-                font-size: 0.7rem;
-            }
-            .controls-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .search-box {
-                min-width: 100%;
-            }
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Shop - Hệ thống bán tài khoản tự động</title>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-    <?php ui_renderNavbar($_SESSION['username'] ?? null, $cartCount['quantity'], $balance, 'store'); ?>
 
-    <div class="store-layout">
-        <!-- Left Sidebar: Categories -->
-        <aside class="sidebar-left">
-            <div class="sidebar-card">
-                <!-- Mobile toggle -->
-                <div class="cat-mobile-toggle" onclick="toggleCategoryMobile()">
-                    <div class="cat-mobile-toggle-text">
-                        <i class="fa-solid fa-layer-group"></i>
-                        <span>Danh mục sản phẩm</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-down"></i>
-                </div>
-                
-                <!-- Desktop title -->
-                <div class="sidebar-title">Danh mục</div>
-                
-                <!-- Category list (wrapped for mobile) -->
-                <div class="cat-mobile-list" id="catMobileList">
-                    <a href="?category=all" class="cat-item <?php echo ($category_filter == 'all') ? 'active' : ''; ?>">
-                        <i class="fa-solid fa-layer-group"></i>
-                        <span class="cat-label">Tất cả</span>
-                        <span class="cat-count"><?php echo $cat_counts['all']; ?></span>
-                    </a>
-                    <?php foreach ($cat_counts as $cat => $cnt): if ($cat === 'all') continue; ?>
-                        <a href="?category=<?php echo urlencode($cat); ?>" class="cat-item <?php echo ($category_filter == $cat) ? 'active' : ''; ?>">
-                            <i class="fa-solid fa-tag"></i>
-                            <span class="cat-label"><?php echo htmlspecialchars($cat); ?></span>
-                            <span class="cat-count"><?php echo $cnt; ?></span>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <div class="container navbar-content">
+            <a href="index.php" class="logo">
+                <span>&#x1F511;</span> AccountShop
+            </a>
+            <div class="nav-links">
+                <a href="index.php" class="nav-link">Trang chủ</a>
+                <a href="admin/dashboard.php" class="btn-nav" target="_blank">Khu vực Admin</a>
             </div>
-        </aside>
+        </div>
+    </header>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Hero Banner -->
-            <div class="hero-banner">
-                <div class="hero-glow"></div>
-                <div class="hero-content-wrap">
-                    <?php if ($heroBadge !== ''): ?>
-                        <div class="hero-badge">
-                            <i class="fa-solid fa-sparkles"></i>
-                            <span><?php echo htmlspecialchars($heroBadge); ?></span>
-                        </div>
-                    <?php endif; ?>
-                    <h1 class="hero-title">
-                        <?php if ($heroTitle !== ''): ?>
-                            <?php echo nl2br(htmlspecialchars($heroTitle)); ?>
-                        <?php else: ?>
-                            <?php echo htmlspecialchars($storeName); ?>
-                        <?php endif; ?>
-                    </h1>
-                    <?php if ($heroSubtitle !== ''): ?>
-                        <p class="hero-desc"><?php echo nl2br(htmlspecialchars($heroSubtitle)); ?></p>
-                    <?php endif; ?>
-                    <div class="hero-stats">
-                        <div class="hero-stat-item">
-                            <div class="hero-stat-value"><?php echo $cat_counts['all']; ?>+</div>
-                            <div class="hero-stat-label">Sản phẩm</div>
-                        </div>
-                        <?php if ($heroShowSupport): ?>
-                            <div class="hero-stat-divider"></div>
-                            <div class="hero-stat-item">
-                                <div class="hero-stat-value">24/7</div>
-                                <div class="hero-stat-label">Hỗ trợ</div>
-                            </div>
-                        <?php endif; ?>
-                        <?php if ($heroShowSecurity): ?>
-                            <div class="hero-stat-divider"></div>
-                            <div class="hero-stat-item">
-                                <div class="hero-stat-value">100%</div>
-                                <div class="hero-stat-label">Bảo mật</div>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Sở hữu tài khoản <span>Premium</span> chỉ trong vài giây</h1>
+            <p>Hệ thống cung cấp tài khoản Game, Netflix, Spotify, Key phần mềm tự động uy tín, bảo mật và nhanh chóng hàng đầu Việt Nam.</p>
+            
+            <!-- Search Box -->
+            <form action="index.php" method="GET" class="search-box">
+                <input type="text" name="search" placeholder="Tìm kiếm tài khoản (Ví dụ: Netflix, LMHT...)" value="<?= htmlspecialchars($search) ?>">
+                <?php if ($categoryId): ?>
+                    <input type="hidden" name="category" value="<?= htmlspecialchars($categoryId) ?>">
+                <?php endif; ?>
+                <?php if ($sort): ?>
+                    <input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>">
+                <?php endif; ?>
+                <button type="submit">Tìm kiếm</button>
+            </form>
+        </div>
+    </section>
 
-            <!-- Controls -->
-            <div class="controls-bar">
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm..." value="<?php echo htmlspecialchars($search_query); ?>">
-                </div>
-                <select class="sort-select" id="sortSelect">
-                    <option value="newest" <?php echo ($sort_by == 'newest') ? 'selected' : ''; ?>>Mới nhất</option>
-                    <option value="price_asc" <?php echo ($sort_by == 'price_asc') ? 'selected' : ''; ?>>Giá thấp → cao</option>
-                    <option value="price_desc" <?php echo ($sort_by == 'price_desc') ? 'selected' : ''; ?>>Giá cao → thấp</option>
-                    <option value="name" <?php echo ($sort_by == 'name') ? 'selected' : ''; ?>>Tên A → Z</option>
-                </select>
-            </div>
-
-            <!-- Type Filter (only if category selected) -->
-            <?php if ($category_filter !== 'all' && count($type_counts) > 1): ?>
-                <div class="type-filter">
-                    <a href="?category=<?php echo urlencode($category_filter); ?>&type=all" class="type-pill <?php echo ($type_filter == 'all') ? 'active' : ''; ?>">
+    <!-- Filters & Sort -->
+    <section class="search-filter-section">
+        <div class="container">
+            <div class="filter-wrapper">
+                <!-- Categories Tabs -->
+                <div class="categories-tabs">
+                    <a href="index.php?category=&search=<?= urlencode($search) ?>&sort=<?= $sort ?>" 
+                       class="tab-btn <?= $categoryId === '' ? 'active' : '' ?>">
                         Tất cả
                     </a>
-                    <?php foreach ($type_counts as $type => $cnt): if ($type === 'all') continue; ?>
-                        <a href="?category=<?php echo urlencode($category_filter); ?>&type=<?php echo urlencode($type); ?>" class="type-pill <?php echo ($type_filter == $type) ? 'active' : ''; ?>">
-                            <?php echo htmlspecialchars($type); ?>
+                    <?php foreach ($categories as $cat): ?>
+                        <a href="index.php?category=<?= $cat['id'] ?>&search=<?= urlencode($search) ?>&sort=<?= $sort ?>" 
+                           class="tab-btn <?= (string)$categoryId === (string)$cat['id'] ? 'active' : '' ?>">
+                            <?= htmlspecialchars($cat['name']) ?>
                         </a>
                     <?php endforeach; ?>
                 </div>
-            <?php endif; ?>
 
-            <!-- Section Header -->
-            <div class="section-header">
-                <div class="section-title">Sản phẩm</div>
-                <div class="product-count"><?php echo $total_count; ?> kết quả</div>
+                <!-- Sort dropdown -->
+                <div class="sort-select">
+                    <form action="index.php" method="GET" id="sortForm">
+                        <?php if ($categoryId): ?>
+                            <input type="hidden" name="category" value="<?= htmlspecialchars($categoryId) ?>">
+                        <?php endif; ?>
+                        <?php if ($search): ?>
+                            <input type="hidden" name="search" value="<?= htmlspecialchars($search) ?>">
+                        <?php endif; ?>
+                        <select name="sort" onchange="document.getElementById('sortForm').submit();">
+                            <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>Mới nhất</option>
+                            <option value="price_asc" <?= $sort === 'price_asc' ? 'selected' : '' ?>>Giá từ thấp đến cao</option>
+                            <option value="price_desc" <?= $sort === 'price_desc' ? 'selected' : '' ?>>Giá từ cao đến thấp</option>
+                        </select>
+                    </form>
+                </div>
             </div>
+        </div>
+    </section>
 
-            <!-- Product Grid -->
-            <div class="row g-3" id="productGrid">
-                <?php
-                if (count($products) > 0) {
-                    foreach ($products as $row) {
-                        $detailsHTML = "";
-                        if ($row['details'] != "") {
-                            $detailsArr = json_decode($row['details'], true);
-                            if (is_array($detailsArr)) {
-                                foreach ($detailsArr as $key => $val) {
-                                    $detailsHTML .= "<li>{$key} <span>{$val}</span></li>";
-                                }
-                            }
-                        }
-                        $priceStr = number_format($row['price'], 0, ',', '.') . 'đ';
-                ?>
-                        <div class="col-lg-4 col-md-6">
-                            <div class="nx-card">
-                                <div class="nx-card-img">
-                                    <img src="<?php echo htmlspecialchars($row['image_url']); ?>" alt="<?php echo htmlspecialchars($row['title']); ?>" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=600&q=80'">
-                                    <?php if ($row['badge'] != ""): ?>
-                                    <span class="nx-card-badge"><?php echo htmlspecialchars($row['badge']); ?></span>
-                                    <?php endif; ?>
-                                    <div class="nx-card-overlay">
-                                        <a href="chitiet.php?id=<?php echo $row['id']; ?>" class="nx-btn nx-btn-primary" style="flex:1;justify-content:center;">
-                                            <i class="fa-solid fa-eye"></i> Xem chi tiết
-                                        </a>
-                                        <button class="nx-btn nx-btn-outline add-to-cart-btn" data-product-id="<?php echo $row['id']; ?>"><i class="fa-solid fa-cart-plus"></i></button>
-                                    </div>
-                                </div>
-                                <div class="nx-card-body">
-                                    <div class="nx-card-category">
-                                        <i class="<?php echo getIconClass($row['icon_class']); ?>"></i>
-                                        <?php echo htmlspecialchars($row['category']); ?>
-                                        <?php if (!empty($row['type_name'])): ?>
-                                            <span style="background:rgba(255,255,255,0.05);color:var(--text-muted);border:1px solid var(--border-subtle);font-size:0.62rem;font-weight:500;padding:2px 7px;border-radius:5px;margin-left:2px;">
-                                                <?php echo htmlspecialchars($row['type_name']); ?>
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <h5 class="nx-card-title">
-                                        <a href="chitiet.php?id=<?php echo $row['id']; ?>"><?php echo htmlspecialchars($row['title']); ?></a>
-                                    </h5>
-                                    <?php if ($detailsHTML): ?>
-                                    <div class="nx-card-details"><ul><?php echo $detailsHTML; ?></ul></div>
-                                    <?php endif; ?>
-                                    <div class="nx-card-footer">
-                                        <div class="nx-card-price-wrap">
-                                            <?php if ($row['old_price'] > 0): ?>
-                                            <div class="nx-card-price-old"><?php echo number_format($row['old_price'], 0, ',', '.'); ?>đ</div>
-                                            <?php endif; ?>
-                                            <div class="nx-card-price"><?php echo $priceStr; ?></div>
-                                        </div>
-                                        <?php if (!empty($row['in_stock'])): ?>
-                                            <a href="chitiet.php?id=<?php echo $row['id']; ?>" class="nx-btn nx-btn-primary nx-btn-sm">
-                                                <i class="fa-solid fa-bolt"></i> Mua
-                                            </a>
-                                        <?php else: ?>
-                                            <span class="nx-btn nx-btn-sm" style="opacity:0.4;cursor:not-allowed;background:rgba(255,255,255,0.05);color:var(--text-muted);">
-                                                <i class="fa-solid fa-ban"></i> Hết hàng
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    <?php } ?>
-                <?php } else { ?>
-                    <div class="col-12">
-                        <div class="nx-empty">
-                            <div class="nx-empty-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
-                            <div class="nx-empty-title">Không tìm thấy sản phẩm nào</div>
-                            <div class="nx-empty-desc">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm khác nhé!</div>
+    <!-- Accounts Grid -->
+    <main class="container">
+        <div class="accounts-grid">
+            <?php foreach ($accounts as $acc): 
+                $img = !empty($acc['image']) ? $acc['image'] : getFallbackImage($acc['category_name'] ?? '');
+            ?>
+                <article class="account-card">
+                    <div class="card-image-wrapper">
+                        <img src="<?= htmlspecialchars($img) ?>" alt="<?= htmlspecialchars($acc['name']) ?>">
+                        <span class="card-badge"><?= htmlspecialchars($acc['category_name'] ?? 'Chưa phân loại') ?></span>
+                        <span class="card-status <?= $acc['status'] === 'available' ? 'status-available' : 'status-sold' ?>">
+                            <?= $acc['status'] === 'available' ? 'Đang bán' : 'Đã bán' ?>
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <h2 class="card-title"><?= htmlspecialchars($acc['name']) ?></h2>
+                        <p class="card-desc"><?= htmlspecialchars($acc['description'] ?? 'Chưa có mô tả chi tiết.') ?></p>
+                        <div class="card-footer">
+                            <span class="card-price"><?= number_format($acc['price'], 0, ',', '.') ?>đ</span>
+                            <a href="chitiet.php?id=<?= $acc['id'] ?>" class="btn-view">Chi tiết</a>
                         </div>
                     </div>
-                <?php } ?>
+                </article>
+            <?php endforeach; ?>
+        </div>
+
+        <?php if (empty($accounts)): ?>
+            <div class="empty" style="text-align: center; margin: 40px 0; color: var(--text-gray);">
+                <p style="font-size: 1.2rem;">Không tìm thấy tài khoản nào phù hợp với yêu cầu của bạn.</p>
+                <a href="index.php" class="tab-btn" style="display: inline-block; margin-top: 16px;">Xem tất cả</a>
             </div>
-        </main>
+        <?php endif; ?>
+    </main>
 
-        <!-- Right Sidebar: Stats & Promo -->
-        <aside class="sidebar-right">
-            <div class="stat-mini">
-                <div class="stat-mini-icon" style="background: rgba(110,86,207,0.15); color: #A78BFA;">
-                    <i class="fa-solid fa-layer-group"></i>
-                </div>
-                <div class="stat-mini-content">
-                    <div class="stat-mini-value"><?php echo $cat_counts['all']; ?></div>
-                    <div class="stat-mini-label">Sản phẩm</div>
-                </div>
-            </div>
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <p>&copy; 2026 AccountShop - Nhóm 5. Dự án học tập Lập trình web và ứng dụng.</p>
+            <p>Thành viên: Võ Anh Kiệt Hoàng, Trần Gia Bảo, Nguyễn Đức Mạnh, Nguyễn Hoàng Thái.</p>
+        </div>
+    </footer>
 
-            <div class="stat-mini">
-                <div class="stat-mini-icon" style="background: rgba(16,185,129,0.15); color: #34D399;">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
-                <div class="stat-mini-content">
-                    <div class="stat-mini-value">100%</div>
-                    <div class="stat-mini-label">Bảo mật</div>
-                </div>
-            </div>
-
-            <div class="stat-mini">
-                <div class="stat-mini-icon" style="background: rgba(239,68,68,0.15); color: #F87171;">
-                    <i class="fa-solid fa-bolt"></i>
-                </div>
-                <div class="stat-mini-content">
-                    <div class="stat-mini-value">24/7</div>
-                    <div class="stat-mini-label">Hỗ trợ</div>
-                </div>
-            </div>
-
-            <div class="promo-card">
-                <h4><i class="fa-solid fa-gift"></i> Ưu đãi đặc biệt</h4>
-                <p>Nạp tiền lần đầu nhận ngay 10% bonus vào tài khoản!</p>
-            </div>
-        </aside>
-    </div>
-
-    <?php ui_renderFooter(); ?>
-    <?php ui_renderToastContainer(); ?>
-    <?php ui_renderScripts(); ?>
-    <script>
-        let searchTimer;
-        const searchInput = document.getElementById('searchInput');
-        const sortSelect = document.getElementById('sortSelect');
-
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(updateURL, 400);
-        });
-
-        sortSelect.addEventListener('change', updateURL);
-
-        function updateURL() {
-            const params = new URLSearchParams(window.location.search);
-            const q = searchInput.value.trim();
-            const sort = sortSelect.value;
-            const cat = params.get('category') || 'all';
-            params.set('category', cat);
-            if (q) params.set('q', q);
-            else params.delete('q');
-            if (sort !== 'newest') params.set('sort', sort);
-            else params.delete('sort');
-            window.location.search = params.toString();
-        }
-
-        // Mobile category toggle
-        function toggleCategoryMobile() {
-            const list = document.getElementById('catMobileList');
-            const toggle = document.querySelector('.cat-mobile-toggle');
-            list.classList.toggle('open');
-            toggle.classList.toggle('open');
-        }
-
-        // Auto-open on desktop
-        function checkMobileView() {
-            const list = document.getElementById('catMobileList');
-            if (window.innerWidth > 768) {
-                list.classList.add('open');
-            }
-        }
-        checkMobileView();
-        window.addEventListener('resize', checkMobileView);
-    </script>
 </body>
 </html>
