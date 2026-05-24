@@ -1,7 +1,5 @@
 /**
- * NEXUS ADMIN - Global Stylesheet
- * Design tokens extend nexus.css for the admin light-theme layout.
- * Import AFTER nexus.css (or standalone for admin pages that don't need store design).
+ * css code for admin panel
  */
 
 :root {
@@ -47,6 +45,7 @@ body {
     background: var(--admin-sidebar-bg);
     color: #fff;
     padding-top: 16px;
+    padding-bottom: 28px;
     position: fixed;
     width: 260px;
     left: 0; top: 0; bottom: 0;
@@ -154,6 +153,8 @@ body {
 .admin-sidebar hr, .sidebar hr {
     border-color: rgba(255, 255, 255, 0.06);
 }
+
+.admin-sidebar-nav { padding-bottom: 32px; }
 
 /* ====== Main Content ====== */
 .admin-main {
@@ -1721,7 +1722,7 @@ input[type="checkbox"] { cursor: pointer; width: 16px; height: 16px; }
 /* Stats Grid */
 .dash-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 16px;
     margin-bottom: 28px;
 }
@@ -1771,11 +1772,13 @@ input[type="checkbox"] { cursor: pointer; width: 16px; height: 16px; }
     min-width: 0;
 }
 .dash-stat-value {
-    font-size: 1.7rem;
+    font-size: clamp(1.25rem, 1.5vw, 1.7rem);
     font-weight: 800;
     line-height: 1.2;
     color: var(--admin-text-dark);
     letter-spacing: -0.5px;
+    white-space: nowrap;
+    overflow: visible;
 }
 .dash-stat-label {
     font-size: 0.75rem;
@@ -1787,8 +1790,8 @@ input[type="checkbox"] { cursor: pointer; width: 16px; height: 16px; }
 }
 .dash-stat-trend {
     position: absolute;
-    top: 14px;
-    right: 16px;
+    top: 12px;
+    right: 12px;
     font-size: 0.65rem;
     font-weight: 600;
     color: var(--admin-text-muted);
@@ -1798,6 +1801,7 @@ input[type="checkbox"] { cursor: pointer; width: 16px; height: 16px; }
     white-space: nowrap;
 }
 .dash-stat-trend.up { background: #d1fae5; color: #059669; }
+.dash-stat-card:nth-child(4) .dash-stat-trend { display: none; }
 
 /* Section Title */
 .dash-section-title {

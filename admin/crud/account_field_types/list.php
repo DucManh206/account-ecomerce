@@ -252,7 +252,7 @@ function saveField(e) {
     const form = document.getElementById('fieldForm');
     const formData = new FormData(form);
 
-    fetch('../../lib/admin_account_field_modules.php', {
+    fetch('../lib/admin_account_field_modules.php', {
         method: 'POST',
         body: formData
     })
@@ -279,7 +279,7 @@ function confirmDelete() {
     const formData = new FormData();
     formData.append('action', 'delete');
     formData.append('id', deleteTarget);
-    fetch('../../lib/admin_account_field_modules.php', {
+    fetch('../lib/admin_account_field_modules.php', {
         method: 'POST',
         body: formData
     })
@@ -307,5 +307,5 @@ function hideModal(id) { document.getElementById(id).classList.remove('show'); }
 
 <?php
 $content = ob_get_clean();
-admin_renderLayout('Loại Field Tài khoản', 'account-fields');
+admin_renderLayout('Loại Field Tài khoản', 'account_fields');
 ?>

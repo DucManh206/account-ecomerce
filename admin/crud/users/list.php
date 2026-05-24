@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . "/../../../admin/crud/layout/admin_layout_modules.php";
-require_once __DIR__ . "/users.php";
+require_once __DIR__ . "/admin_user_modules.php";
 
 $users = admin_getUsers();
 $currentUsername = $_SESSION['username'] ?? '';

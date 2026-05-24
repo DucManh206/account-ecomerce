@@ -32,7 +32,7 @@ function admin_createAccountFieldType($data) {
     $icon_class = mysqli_real_escape_string($conn, trim($data['icon_class'] ?? 'fa-key'));
     $placeholder = mysqli_real_escape_string($conn, trim($data['placeholder'] ?? ''));
     $sort_order = intval($data['sort_order'] ?? 0);
-    $is_default = isset($data['is_default']) ? 1 : 0;
+    $is_default = (isset($data['is_default']) && strval($data['is_default']) === '1') ? 1 : 0;
 
     if (empty($key) || empty($label)) {
         return ['success' => false, 'message' => 'Key và Label bắt buộc'];

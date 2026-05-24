@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../../../config/db.php';
+require_once __DIR__ . '/../../../config/db.php';
 require_once __DIR__ . '/../auth/admin_verifier_modules.php';
 
 function admin_getAccountFieldTypes() {
@@ -29,7 +29,7 @@ function admin_createAccountFieldType($data) {
     $icon_class = trim($data['icon_class'] ?? 'fa-key');
     $placeholder = trim($data['placeholder'] ?? '');
     $sort_order = intval($data['sort_order'] ?? 0);
-    $is_default = isset($data['is_default']) ? 1 : 0;
+    $is_default = (isset($data['is_default']) && strval($data['is_default']) === '1') ? 1 : 0;
 
     if (empty($key) || empty($label)) {
         return ['success' => false, 'message' => 'Key va Label bat buoc'];
@@ -63,7 +63,7 @@ function admin_updateAccountFieldType($id, $data) {
     $icon_class = trim($data['icon_class'] ?? 'fa-key');
     $placeholder = trim($data['placeholder'] ?? '');
     $sort_order = intval($data['sort_order'] ?? 0);
-    $is_default = isset($data['is_default']) ? 1 : 0;
+    $is_default = (isset($data['is_default']) && strval($data['is_default']) === '1') ? 1 : 0;
 
     if (empty($label)) return ['success' => false, 'message' => 'Label bat buoc'];
 

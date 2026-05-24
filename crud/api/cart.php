@@ -195,6 +195,30 @@ switch ($action) {
         ]);
         break;
 
+    case 'count':
+        $count = getCartCount($userId);
+        echo json_encode(['success' => true, 'count' => $count]);
+        break;
+
+    case 'check':
+        $productId = intval($_POST['product_id'] ?? 0);
+        if ($productId <= 0) {
+            echo json_encode(['success' => false, 'in_cart' => false]);
+            break;
+        }
+        $inCart = isInCart($productId, $userId);
+        echo json_encode(['success' => true, 'in_cart' => $inCart]);
+        break;
+
+    case 'merge':
+        if (!$userId) {
+            echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập để gộp giỏ hàng']);
+            break;
+        }
+        $result = mergeGuestCart($userId);
+        echo json_encode($result);
+        break;
+
     default:
         echo json_encode(['success' => false, 'message' => 'Hành động không hợp lệ']);
 }
