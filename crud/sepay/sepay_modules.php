@@ -343,9 +343,12 @@ function sepay_processTransaction($transactionId) {
 function sepay_expireOldRequests() {
     global $conn;
 
-    // Assignment flow: nếu quá 1 phút chưa có giao dịch khớp thì tự hủy yêu cầu nạp.
+    $config = sepay_getConfig();
+    $cancelMinutes = intval($config['cancel_after_minutes'] ?? 30);
+    if ($cancelMinutes <= 0) $cancelMinutes = 30;
+
     $sql = "UPDATE deposit_requests
-            SET status = 'cancelled', admin_note = 'Auto cancel after 1 minute waiting'
+            SET status = 'cancelled', admin_note = 'Auto cancel after {$cancelMinutes} minutes waiting'
             WHERE status = 'pending'
             AND expires_at IS NOT NULL
             AND expires_at < NOW()";

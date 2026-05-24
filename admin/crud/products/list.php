@@ -171,66 +171,63 @@ ob_start();
             <input type="hidden" id="editId" name="id" value="">
             <input type="hidden" name="action" id="formAction" value="create">
             <div class="nx-modal-body">
-                        <div class="row g-3">
-                            <div class="col-md-12">
-                                <div class="nx-card p-3" style="background: #f8fafc; border-style: dashed;">
-                                    <label class="nx-label fw-bold small text-primary mb-2">Thông tin cơ bản</label>
-                                    <div class="row g-3">
-                                        <div class="col-md-8">
-                                            <label class="nx-label fw-bold">Tên sản phẩm <span class="text-danger">*</span></label>
-                                            <input type="text" class="nx-input" id="fTitle" name="title" required placeholder="VD: Tài khoản Netflix Premium">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label class="nx-label fw-bold">Badge</label>
-                                            <input type="text" class="nx-input" id="fBadge" name="badge" placeholder="Hot, VIP, -50%...">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                <div class="row g-3">
+                    <!-- Tên + Badge -->
+                    <div class="col-md-8">
+                        <label class="nx-label fw-bold">Tên sản phẩm <span class="text-danger">*</span></label>
+                        <input type="text" class="nx-input" id="fTitle" name="title" required placeholder="VD: Tài khoản Netflix Premium">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="nx-label fw-bold">Badge</label>
+                        <input type="text" class="nx-input" id="fBadge" name="badge" placeholder="Hot, VIP, -50%...">
+                    </div>
 
-                            <div class="col-md-6">
-                                <label class="nx-label fw-bold">Danh mục <span class="text-danger">*</span></label>
-                                <select class="nx-select" id="fCategory" name="category" required onchange="onCategoryChange()">
-                                    <option value="">-- Chọn --</option>
-                                    <?php foreach ($filterCategories as $c): ?>
-                                        <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="nx-label fw-bold">Loại sản phẩm</label>
-                                <select class="nx-select" id="fTypeId" name="type_id">
-                                    <option value="">-- Không phân loại --</option>
-                                </select>
-                            </div>
+                    <!-- Danh mục + Loại -->
+                    <div class="col-md-6">
+                        <label class="nx-label fw-bold">Danh mục <span class="text-danger">*</span></label>
+                        <select class="nx-select" id="fCategory" name="category" required onchange="onCategoryChange()">
+                            <option value="">-- Chọn --</option>
+                            <?php foreach ($filterCategories as $c): ?>
+                                <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="nx-label fw-bold">Loại sản phẩm</label>
+                        <select class="nx-select" id="fTypeId" name="type_id">
+                            <option value="">-- Không phân loại --</option>
+                        </select>
+                    </div>
 
-                            <div class="col-md-6">
-                                <label class="nx-label fw-bold text-success">Giá bán hiện tại <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="number" class="nx-input" id="fPrice" name="price" required min="0" placeholder="0">
-                                    <span class="input-group-text">đ</span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="nx-label fw-bold text-muted">Giá gốc (để gạch đi)</label>
-                                <div class="input-group">
-                                    <input type="number" class="nx-input" id="fOldPrice" name="old_price" min="0" placeholder="0">
-                                    <span class="input-group-text">đ</span>
-                                </div>
-                            </div>
+                    <!-- Giá -->
+                    <div class="col-md-6">
+                        <label class="nx-label fw-bold">Giá bán <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" class="nx-input" id="fPrice" name="price" required min="0" placeholder="0">
+                            <span class="input-group-text">đ</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="nx-label fw-bold text-muted">Giá gốc (gạch đi)</label>
+                        <div class="input-group">
+                            <input type="number" class="nx-input" id="fOldPrice" name="old_price" min="0" placeholder="0">
+                            <span class="input-group-text">đ</span>
+                        </div>
+                    </div>
 
-                            <div class="col-12">
-                                <label class="nx-label fw-bold">Link ảnh sản phẩm</label>
-                                <div class="d-flex gap-2">
-                                    <input type="url" class="nx-input" id="fImageUrl" name="image_url" placeholder="https://..." oninput="updateImagePreview()">
-                                    <div id="imgPreviewContainer" style="width: 42px; height: 42px; border-radius: 8px; border: 1px solid #ddd; overflow: hidden; flex-shrink: 0;">
-                                        <img id="imgPreviewThumb" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
-                                    </div>
-                                </div>
+                    <!-- Ảnh sản phẩm -->
+                    <div class="col-12">
+                        <label class="nx-label fw-bold">Link ảnh sản phẩm <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-2 align-items-center">
+                            <input type="url" class="nx-input" id="fImageUrl" name="image_url" required placeholder="https://images.unsplash.com/photo-..." oninput="updateImagePreview()" style="flex:1;">
+                            <div id="imgPreviewContainer" style="width: 60px; height: 60px; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; flex-shrink: 0; background: #f1f5f9; display:flex;align-items:center;justify-content:center;">
+                                <img id="imgPreviewThumb" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                                <i id="imgPreviewPlaceholder" class="fa-solid fa-image text-muted" style="font-size:1.1rem;opacity:0.4;"></i>
                             </div>
                         </div>
+                    </div>
 
-                    <!-- Icon + Color -->
+                    <!-- Icon + Màu -->
                     <div class="col-md-6">
                         <label class="nx-label fw-bold">Icon</label>
                         <div class="d-flex gap-1 flex-wrap">
@@ -256,7 +253,7 @@ ob_start();
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="nx-label fw-bold">Màu nền badge</label>
+                        <label class="nx-label fw-bold">Màu badge</label>
                         <div class="d-flex gap-2 align-items-center">
                             <?php
                             $colors = [
@@ -270,31 +267,24 @@ ob_start();
                                 ['bg-light', '#F3F4F6'],
                             ];
                             foreach ($colors as $c): ?>
-                                <label class="color-swatch" style="background:<?php echo $c[1]; ?>;" title="<?php echo $c[0]; ?>">
+                                <label class="color-swatch" style="background:<?php echo $c[1]; ?>;width:32px;height:32px;" title="<?php echo $c[0]; ?>">
                                     <input type="radio" name="color_class" value="<?php echo $c[0]; ?>" class="d-none">
                                 </label>
                             <?php endforeach; ?>
                         </div>
                     </div>
 
-                    <!-- Description & Details -->
+                    <!-- Mô tả -->
                     <div class="col-12">
-                        <div class="nx-card p-3" style="background: #fff;">
-                            <label class="nx-label fw-bold small text-primary mb-2">Chi tiết sản phẩm</label>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="nx-label fw-bold">Mô tả ngắn</label>
-                                    <textarea class="nx-input" id="fDescription" name="description" rows="2" placeholder="Hiển thị ở trang chủ..."></textarea>
-                                </div>
-                                <div class="col-12">
-                                    <label class="nx-label fw-bold d-flex justify-content-between">
-                                        <span>Thông số kỹ thuật (JSON)</span>
-                                        <a href="javascript:void(0)" onclick="fillDemoJson()" class="small text-decoration-none">Mẫu thử</a>
-                                    </label>
-                                    <textarea class="nx-input font-monospace" id="fDetails" name="details" rows="3" placeholder='{"Rank": "Vàng 1", "VP": "200 ACC VP"}' style="font-size:0.82rem; background: #fafafa;"></textarea>
-                                </div>
-                            </div>
-                        </div>
+                        <label class="nx-label fw-bold">Mô tả ngắn</label>
+                        <textarea class="nx-input" id="fDescription" name="description" rows="2" placeholder="Hiển thị ở trang chủ..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="nx-label fw-bold d-flex justify-content-between">
+                            <span>Thông số kỹ thuật (JSON)</span>
+                            <a href="javascript:void(0)" onclick="fillDemoJson()" class="small text-decoration-none">Điền mẫu</a>
+                        </label>
+                        <textarea class="nx-input font-monospace" id="fDetails" name="details" rows="3" placeholder='{"Rank": "Vàng 1", "VP": "200 ACC VP"}' style="font-size:0.82rem; background: #fafafa;"></textarea>
                     </div>
                 </div>
             </div>
@@ -590,7 +580,7 @@ ob_start();
         if (currentCategory) body.set('category', currentCategory);
         if (currentTypeId) body.set('type_id', currentTypeId);
 
-        fetch('../../lib/admin_product_modules.php', {
+        fetch('admin_product_modules.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -701,14 +691,18 @@ ob_start();
     function updateImagePreview() {
         const url = document.getElementById('fImageUrl').value;
         const img = document.getElementById('imgPreviewThumb');
+        const placeholder = document.getElementById('imgPreviewPlaceholder');
         if (url) {
             img.src = url;
             img.style.display = 'block';
+            placeholder.style.display = 'none';
             img.onerror = () => {
                 img.style.display = 'none';
+                placeholder.style.display = 'flex';
             };
         } else {
             img.style.display = 'none';
+            placeholder.style.display = 'flex';
         }
     }
 
@@ -728,7 +722,7 @@ ob_start();
         const formData = new FormData(form);
         const isUpdate = formData.get('action') === 'update';
 
-        fetch('../../lib/admin_product_modules.php', {
+        fetch('admin_product_modules.php', {
                 method: 'POST',
                 body: formData
             })
@@ -772,7 +766,7 @@ ob_start();
         const formData = new FormData();
         formData.append('action', 'delete');
         formData.append('id', deleteTarget);
-        fetch('../../lib/admin_product_modules.php', {
+        fetch('admin_product_modules.php', {
                 method: 'POST',
                 body: formData
             })
@@ -861,7 +855,7 @@ ob_start();
         formData.append('action', 'bulk_delete');
         selectedIds.forEach(id => formData.append('ids[]', id));
 
-        fetch('../../lib/admin_product_modules.php', {
+        fetch('admin_product_modules.php', {
                 method: 'POST',
                 body: formData
             })

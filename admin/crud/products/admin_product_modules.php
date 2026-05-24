@@ -111,7 +111,7 @@ function admin_createProduct($data)
 {
   global $conn;
 
-  $required = ['title', 'price', 'category', 'image_url'];
+  $required = ['title', 'price', 'category'];
   foreach ($required as $field) {
     if (!isset($data[$field]) || trim($data[$field]) === '') {
       return ['success' => false, 'message' => "Thiếu trường bắt buộc: $field"];
@@ -121,7 +121,8 @@ function admin_createProduct($data)
   $title = mysqli_real_escape_string($conn, $data['title']);
   $category = mysqli_real_escape_string($conn, $data['category']);
   $game_type  = mysqli_real_escape_string($conn, $data['game_type'] ?? '');
-  $image_url = mysqli_real_escape_string($conn, $data['image_url']);
+  $raw_image = trim($data['image_url'] ?? '');
+  $image_url = $raw_image === '' ? 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=600&q=80' : mysqli_real_escape_string($conn, $raw_image);
   $price = intval($data['price']);
   $old_price  = intval($data['old_price'] ?? 0);
   $badge = mysqli_real_escape_string($conn, $data['badge'] ?? '');
@@ -275,7 +276,9 @@ function admin_handleProductRequest()
       $result = ['success' => false, 'message' => 'Hành động không hợp lệ'];
   }
 
-  admin_respondJson(true, 'Thành công', $result);
+  header('Content-Type: application/json; charset=utf-8');
+  echo json_encode($result);
+  exit;
 }
 
 if (basename($_SERVER['SCRIPT_FILENAME']) === basename(__FILE__)) {

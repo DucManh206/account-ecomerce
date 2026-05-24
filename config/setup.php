@@ -451,12 +451,14 @@ if ($r && mysqli_fetch_assoc($r)["c"] == 0) {
 // SePay Config - chỉ seed nếu chưa có
 $r = mysqli_query($conn, "SELECT COUNT(*) as c FROM sepay_config");
 if ($r && mysqli_fetch_assoc($r)["c"] == 0) {
-    mysqli_query($conn, "INSERT INTO sepay_config (api_token, account_number, account_holder, bank_code, auto_process, min_amount, max_amount, status) 
-        VALUES ('', '', '', '', 1, 10000, 500000000, 0)");
-    echo "<p class=\"ok\">[OK] SePay config initialized</p>";
+    mysqli_query($conn, "INSERT INTO sepay_config (api_token, account_number, account_holder, bank_code, auto_process, min_amount, max_amount, status, transfer_prefix, check_interval_minutes, cancel_after_minutes) 
+        VALUES ('', '', '', '', 1, 10000, 500000000, 0, 'NT', 5, 30)");
+    echo "<p class=\"ok\">[OK] SePay config initialized (prefix NT, auto-cancel 30 minutes)</p>";
 } else {
     echo "<p class=\"skip\">[SKIP] SePay config exists</p>";
 }
+rs("UPDATE sepay_config SET cancel_after_minutes = 30 WHERE cancel_after_minutes IS NULL OR cancel_after_minutes < 5", "Normalize SePay auto-cancel >= 30 minutes");
+rs("UPDATE sepay_config SET transfer_prefix = 'NT' WHERE transfer_prefix IS NULL OR transfer_prefix = ''", "Normalize SePay transfer prefix");
 
 // Account field types
 $r = mysqli_query($conn, "SELECT COUNT(*) as c FROM account_field_types");

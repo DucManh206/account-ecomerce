@@ -18,6 +18,8 @@ $userId = $_SESSION['user_id'] ?? 0;
 $username = $_SESSION['username'];
 $sepayConfig = sepay_getConfig();
 $sepayEnabled = $sepayConfig && $sepayConfig['status'] == 1;
+$depositTtlMinutes = max(5, intval($sepayConfig['cancel_after_minutes'] ?? 30));
+$depositTtlSeconds = $depositTtlMinutes * 60;
 
 $error = '';
 $success = isset($_GET['success']) ? 'Đã tạo yêu cầu nạp tiền!' : '';
@@ -40,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $prefix = $sepayConfig['transfer_prefix'] ?? 'NT';
             // Nội dung chuyển khoản ngắn, không dấu, không ký tự đặc biệt để app ngân hàng dễ nhận
             $uniqueCode = strtoupper($prefix) . $userId . time();
-            $expires = date('Y-m-d H:i:s', time() + 60);
+            $expires = date('Y-m-d H:i:s', time() + $depositTtlSeconds);
             $stmt = $conn->prepare("INSERT INTO deposit_requests (user_id, username, amount, transfer_amount, transfer_note, unique_code, status, expires_at) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)");
             $stmt->bind_param("isiisss", $userId, $username, $amount, $amount, $uniqueCode, $uniqueCode, $expires);
             $stmt->execute();
@@ -67,6 +69,8 @@ $accountHolder = $sepayConfig['account_holder'] ?? '';
 // Lấy số dư
 $userRes = mysqli_query($conn, "SELECT balance FROM users WHERE id = $userId");
 $balance = ($u = mysqli_fetch_assoc($userRes)) ? intval($u['balance']) : 0;
+$cancelMinutes = intval($sepayConfig['cancel_after_minutes'] ?? 30);
+if ($cancelMinutes <= 0) $cancelMinutes = 30;
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -119,7 +123,7 @@ $balance = ($u = mysqli_fetch_assoc($userRes)) ? intval($u['balance']) : 0;
         <?php if ($current): ?>
             <div class="qr-card">
                 <div class="small text-warning fw-bold mb-2"><i class="fa-solid fa-clock"></i> Chờ chuyển khoản...</div>
-                <div class="small text-muted mb-2">Tự kiểm tra giao dịch mỗi 3 giây. Còn <span id="depositCountdown">60</span>s trước khi tự hủy.</div>
+                <div class="small text-muted mb-2">Tu dong kiem tra giao dich. Con <span id="depositCountdown"></span> truoc khi tu huy.</div>
                 <div class="small text-info mb-2" id="depositPollStatus">Đang chờ giao dịch...</div>
                 <img src="https://img.vietqr.io/image/<?php echo $sepayConfig['bank_code']; ?>-<?php echo $sepayConfig['account_number']; ?>-compact.png?amount=<?php echo $current['amount']; ?>&addInfo=<?php echo urlencode($current['unique_code']); ?>" class="qr-img">
                 <div class="info-row"><span class="info-label">Số tiền</span><span class="info-value text-success"><?php echo number_format($current['amount']); ?>đ</span></div>
@@ -201,12 +205,18 @@ $balance = ($u = mysqli_fetch_assoc($userRes)) ? intval($u['balance']) : 0;
         let depositCountdownTimer = null;
         let depositRemaining = <?php echo $current && !empty($current['expires_at']) ? max(0, strtotime($current['expires_at']) - time()) : 0; ?>;
 
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return m > 0 ? m + 'p ' + s + 's' : s + 's';
+        }
+
         function updateDepositCountdown() {
             const el = document.getElementById('depositCountdown');
-            if (el) el.innerText = Math.max(0, depositRemaining);
+            if (el) el.innerText = formatTime(Math.max(0, depositRemaining));
             if (depositRemaining <= 0 && currentDepositId) {
                 const statusEl = document.getElementById('depositPollStatus');
-                if (statusEl) statusEl.innerText = 'Đã quá 1 phút, đang hủy yêu cầu nạp...';
+                if (statusEl) statusEl.innerText = 'Da het thoi gian, dang huy yeu cau nap...';
             }
             depositRemaining--;
         }
@@ -235,7 +245,7 @@ $balance = ($u = mysqli_fetch_assoc($userRes)) ? intval($u['balance']) : 0;
                 if (data.status === 'cancelled' || data.status === 'expired' || data.remaining_seconds <= 0) {
                     if (depositPollTimer) clearInterval(depositPollTimer);
                     if (depositCountdownTimer) clearInterval(depositCountdownTimer);
-                    alert('Yêu cầu nạp đã quá 1 phút và tự hủy. Vui lòng tạo mã mới nếu muốn nạp tiếp.');
+                    alert('Yeu cau nap da het thoi gian va tu huy. Vui long tao ma moi neu muon nap tiep.');
                     window.location.href = 'deposit.php';
                 }
             } catch (e) {

@@ -46,7 +46,7 @@ function order_getStats(): array {
             while ($row = mysqli_fetch_assoc($res)) {
                 $s = $row['status'];
                 if (isset($result[$s])) $result[$s] = intval($row['cnt']);
-                if ($s === 'completed') $result['total'] += intval($row['cnt']);
+                $result['total'] += intval($row['cnt']);
             }
             mysqli_free_result($res);
         }
