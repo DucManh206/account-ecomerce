@@ -166,5 +166,6 @@ function ui_renderScripts(): void
     $base = ui_getBasePath();
     echo '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>' . PHP_EOL;
     echo '<script src="' . ui_e($base . '/assets/js/nexus-ui.js') . '"></script>' . PHP_EOL;
+    echo '<script src="' . ui_e($base . '/assets/js/cart.js') . '"></script>' . PHP_EOL;
 }
 }

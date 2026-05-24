@@ -14,14 +14,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $result = getLogin($user, $pass);
 
     if ($result) {
+        $guestCartSessionId = $_SESSION['cart_session_id'] ?? null;
         session_regenerate_id(true);
         $_SESSION['username'] = $result['username'];
         $_SESSION['user_id'] = $result['id'];
-        $_SESSION['cart_session_id'] = session_id() . '_' . uniqid();
-
-        if (isset($_SESSION['cart_merged']) && $_SESSION['cart_merged'] !== $result['id']) {
-            mergeGuestCart($result['id']);
-            $_SESSION['cart_merged'] = $result['id'];
+        if ($guestCartSessionId) {
+            $_SESSION['cart_session_id'] = $guestCartSessionId;
+            mergeGuestCart((int)$result['id']);
+            $_SESSION['cart_merged'] = (int)$result['id'];
         }
 
         if (isset($result['role']) && $result['role'] == 1) {

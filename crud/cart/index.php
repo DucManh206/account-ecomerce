@@ -293,7 +293,7 @@ $base = ui_getBasePath();
                 const formData = new FormData();
                 formData.append('action', 'checkout');
 
-                const response = await fetch('<?php echo $base; ?>/api/cart_checkout.php', {
+                const response = await fetch('/api/cart_checkout.php', {
                     method: 'POST',
                     body: formData
                 });
