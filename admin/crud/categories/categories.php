@@ -108,6 +108,8 @@ function admin_deleteCategory($id)
     global $conn;
     $id = intval($id);
 
+    // Gỡ type_id khỏi sản phẩm trước khi xóa các loại con để tránh tag treo.
+    mysqli_query($conn, "UPDATE products SET type_id = NULL WHERE type_id IN (SELECT id FROM types WHERE category_id = $id)");
     mysqli_query($conn, "DELETE FROM types WHERE category_id = $id");
 
     $sql = "DELETE FROM categories WHERE id = $id LIMIT 1";

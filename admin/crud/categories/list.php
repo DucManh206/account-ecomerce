@@ -372,7 +372,7 @@ ob_start();
         e.preventDefault();
         const form = document.getElementById('catForm');
         const formData = new FormData(form);
-        fetch('../../lib/admin_category_modules.php', {
+        fetch('admin_category_modules.php', {
                 method: 'POST',
                 body: formData
             })
@@ -407,7 +407,7 @@ ob_start();
         const formData = new FormData();
         formData.append('action', 'delete');
         formData.append('id', deleteCatTarget);
-        fetch('../../lib/admin_category_modules.php', {
+        fetch('admin_category_modules.php', {
                 method: 'POST',
                 body: formData
             })
@@ -493,7 +493,7 @@ ob_start();
         const form = document.getElementById('typeForm');
         const formData = new FormData(form);
 
-        fetch('../../lib/admin_types_modules.php', {
+        fetch('../types/admin_types_modules.php', {
                 method: 'POST',
                 body: formData
             })
@@ -529,7 +529,7 @@ ob_start();
         formData.append('action', 'delete');
         formData.append('id', deleteTypeTarget);
 
-        fetch('../../lib/admin_types_modules.php', {
+        fetch('../types/admin_types_modules.php', {
                 method: 'POST',
                 body: formData
             })
