@@ -14,6 +14,11 @@ $stmtUser->execute([$userId]);
 $myBalance = $stmtUser->fetchColumn() ?: 0;
 
 $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
+
+// Lấy lịch sử yêu cầu nạp tiền của khách hàng
+$stmtHistory = $pdo->prepare("SELECT * FROM topup_requests WHERE user_id = ? ORDER BY id DESC LIMIT 10");
+$stmtHistory->execute([$userId]);
+$topupHistory = $stmtHistory->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -23,6 +28,63 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
     <title>Nạp tiền tài khoản - <?= SITE_NAME ?></title>
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
+        /* Force square borders to match current minimalist theme */
+        * {
+            border-radius: 0 !important;
+        }
+
+        /* Nav Indicators Styles & Visited Color Fix */
+        .cart-badge-indicator {
+            position: relative;
+            display: flex;
+            align-items: center;
+            color: var(--text-white) !important;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 6px 12px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+        .cart-badge-indicator:hover {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            color: #0a0a0a !important;
+        }
+        .cart-badge-indicator:visited {
+            color: var(--text-white) !important;
+        }
+        .balance-indicator {
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #10b981 !important;
+            padding: 6px 14px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .balance-indicator:hover {
+            background-color: rgba(16, 185, 129, 0.2);
+        }
+        .balance-indicator:visited {
+            color: #10b981 !important;
+        }
+        .cart-count {
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50% !important; /* Keep circle shape for cart badge count */
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+
+        /* Top-up layouts */
         .topup-container {
             max-width: 900px;
             margin: 40px auto;
@@ -32,10 +94,9 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
         }
 
         .topup-card {
-            background-color: var(--card-bg);
+            background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             padding: 32px;
-            border-radius: var(--radius-sm);
         }
 
         .topup-title {
@@ -45,6 +106,8 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
             margin-bottom: 24px;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .amount-grid {
@@ -68,8 +131,8 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
 
         .amount-btn:hover, .amount-btn.active {
             border-color: #ffffff;
-            background-color: #161616;
-            color: var(--primary) !important;
+            background-color: #ffffff;
+            color: #0a0a0a !important;
         }
 
         .form-group-topup {
@@ -109,19 +172,22 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
             align-items: center;
             justify-content: center;
             text-align: center;
-            background-color: var(--card-bg);
+            background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             padding: 32px;
-            border-radius: var(--radius-sm);
+        }
+
+        .qr-relative-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
         }
 
         .qr-wrapper {
             background: #ffffff;
             padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
             display: inline-block;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
             transition: var(--transition);
         }
 
@@ -129,6 +195,83 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
             width: 220px;
             height: 220px;
             display: block;
+            transition: filter 0.3s ease;
+        }
+
+        .qr-expired-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #ef4444;
+            font-weight: 800;
+            font-size: 1.1rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .qr-expired-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .qr-expired-overlay svg {
+            margin-bottom: 12px;
+            width: 44px;
+            height: 44px;
+            stroke: #ef4444;
+        }
+
+        /* Countdown timer styling */
+        .timer-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            height: 6px;
+            margin-top: 8px;
+            position: relative;
+        }
+
+        .timer-bar {
+            height: 100%;
+            width: 100%;
+            background: #ffffff;
+            transition: width 1s linear;
+        }
+
+        .timer-text {
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: 0.5px;
+            transition: color 0.3s ease;
+        }
+
+        .timer-text.expired {
+            color: #ef4444;
+        }
+
+        .timer-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
         }
 
         .info-row {
@@ -169,7 +312,6 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
             padding: 2px 8px;
             font-size: 0.75rem;
             cursor: pointer;
-            border-radius: 2px;
             transition: var(--transition);
         }
 
@@ -183,18 +325,26 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            color: #f59e0b;
+            color: var(--text-gray);
             font-size: 0.85rem;
             margin-top: 12px;
             font-weight: 500;
         }
 
+        .polling-status.expired {
+            color: #ef4444;
+        }
+
+        .polling-status.success {
+            color: #10b981;
+        }
+
         .spinner {
             width: 14px;
             height: 14px;
-            border: 2px solid rgba(245, 158, 11, 0.2);
-            border-top-color: #f59e0b;
-            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #ffffff;
+            border-radius: 50% !important; /* Spinner retains roundness to spin correctly */
             animation: spin 0.8s linear infinite;
         }
 
@@ -203,14 +353,99 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
         }
 
         .mock-alert {
-            background-color: rgba(245, 158, 11, 0.05);
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            color: #fbd38d;
+            background-color: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            color: var(--text-gray);
             padding: 14px;
             font-size: 0.85rem;
             margin-top: 20px;
             text-align: left;
             line-height: 1.5;
+        }
+
+        /* Custom Button verifying exactly matching index theme */
+        #btn_verify {
+            background-color: #ffffff;
+            color: #0a0a0a;
+            border: 1px solid #ffffff;
+            width: 100%;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: var(--transition);
+        }
+
+        #btn_verify:hover {
+            background-color: transparent;
+            color: #ffffff;
+        }
+
+        #btn_verify:disabled {
+            background-color: #262626;
+            border-color: #262626;
+            color: #737373;
+            cursor: not-allowed;
+        }
+
+        /* History layout */
+        .history-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 32px;
+            margin-top: 40px;
+            margin-bottom: 60px;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            margin-top: 16px;
+        }
+
+        .history-table th {
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--text-gray);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .history-table td {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+            color: #e5e7eb;
+            vertical-align: middle;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid transparent;
+            text-transform: uppercase;
+        }
+
+        .status-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border-color: var(--success);
+        }
+
+        .status-pending {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-gray);
+            border-color: var(--border-color);
+        }
+
+        .status-expired {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-color: var(--danger);
         }
 
         @media (max-width: 900px) {
@@ -276,13 +511,14 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
 
                 <div class="form-group-topup">
                     <label for="custom_amount">Hoặc nhập số tiền mong muốn (đ)</label>
-                    <input type="number" id="custom_amount" min="1000" step="1000" value="50000" oninput="updateCustomAmount(this.value)">
+                    <input type="number" id="custom_amount" min="1000" step="1000" value="50000" onchange="updateCustomAmount(this.value)">
                 </div>
 
                 <div style="font-size: 0.85rem; color: var(--text-gray); line-height: 1.6; margin-top: 16px;">
                     <p style="color: var(--text-white); font-weight: 600; margin-bottom: 6px;">Lưu ý quan trọng:</p>
                     <ul style="padding-left: 16px;">
-                        <li>Vui lòng chuyển khoản đúng số tiền và nội dung để hệ thống tự động cộng tiền sau 1 - 3 phút.</li>
+                        <li>Vui lòng chuyển khoản đúng số tiền và nội dung để hệ thống tự động cộng tiền.</li>
+                        <li>Yêu cầu chuyển khoản có hiệu lực tối đa là 4 phút. Sau 4 phút không khớp giao dịch sẽ tự động bị huỷ bỏ.</li>
                         <li>Nội dung chuyển khoản viết liền không dấu, có chứa ID thành viên của bạn (Hệ thống đã tạo sẵn chuẩn xác).</li>
                     </ul>
                 </div>
@@ -290,9 +526,31 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
 
             <!-- Cột phải: VietQR và Thông tin chuyển khoản -->
             <div class="qr-side">
-                <div class="qr-wrapper" id="qr_container">
-                    <!-- Sẽ được điền động bằng Javascript -->
-                    <img src="" alt="VietQR" class="qr-image" id="qr_img">
+                <div class="qr-relative-container">
+                    <div class="qr-wrapper" id="qr_container">
+                        <img src="" alt="VietQR" class="qr-image" id="qr_img">
+                    </div>
+                    <div class="qr-expired-overlay" id="qr_expired_overlay">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <span>GIAO DỊCH HẾT HẠN</span>
+                    </div>
+                </div>
+
+                <!-- Thanh hiển thị đếm ngược thời gian -->
+                <div class="timer-wrapper" id="timer_wrapper">
+                    <div class="timer-text" id="timer_text">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span>Thời gian thanh toán còn lại: <strong id="countdown_timer">04:00</strong></span>
+                    </div>
+                    <div class="timer-container">
+                        <div class="timer-bar" id="timer_bar"></div>
+                    </div>
                 </div>
 
                 <div class="info-row">
@@ -327,20 +585,64 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
 
                 <input type="hidden" id="val_money_raw" value="50000">
 
-                <button type="button" id="btn_verify" class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="manualCheck()">Kiểm tra giao dịch</button>
+                <button type="button" id="btn_verify" class="btn btn-primary" style="margin-top: 10px;" onclick="manualCheck()">Kiểm tra giao dịch</button>
                 
-                <div class="polling-status">
-                    <div class="spinner"></div>
-                    <span>Đang chờ bạn quét mã thanh toán...</span>
+                <div class="polling-status" id="polling_status">
+                    <div class="spinner" id="polling_spinner"></div>
+                    <span id="polling_text">Đang chờ bạn quét mã thanh toán...</span>
                 </div>
 
                 <?php if (SEPAY_API_TOKEN === 'YOUR_SEPAY_API_TOKEN'): ?>
-                    <div class="mock-alert">
+                    <div class="mock-alert" id="mock_alert_box">
                         <strong>Chế độ chạy thử đang bật:</strong> Bạn chỉ cần click nút <strong>"Kiểm tra giao dịch"</strong> phía trên, hệ thống sẽ tự động giả lập cộng số tiền bạn chọn vào tài khoản để chấm điểm bài làm mà không cần giao dịch ngân hàng thực tế.
                     </div>
                 <?php endif; ?>
             </div>
 
+        </div>
+
+        <!-- Bảng lịch sử nạp tiền -->
+        <div class="history-card">
+            <h2 class="topup-title" style="margin-bottom: 20px;">Lịch sử yêu cầu nạp tiền</h2>
+            
+            <?php if (empty($topupHistory)): ?>
+                <div style="text-align: center; padding: 40px 0; color: var(--text-gray); font-style: italic;">
+                    Bạn chưa tạo yêu cầu nạp tiền nào.
+                </div>
+            <?php else: ?>
+                <div style="overflow-x: auto;">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Mã GD (Nội dung)</th>
+                                <th>Số tiền</th>
+                                <th>Thời gian tạo</th>
+                                <th>Cập nhật cuối</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($topupHistory as $h): ?>
+                                <tr>
+                                    <td style="font-weight: 700; font-family: monospace;"><?= htmlspecialchars($h['memo']) ?></td>
+                                    <td style="font-weight: 700; color: var(--text-white);"><?= number_format($h['amount'], 0, ',', '.') ?>đ</td>
+                                    <td style="font-size: 0.85rem; color: var(--text-gray);"><?= date('d/m/Y H:i:s', strtotime($h['created_at'])) ?></td>
+                                    <td style="font-size: 0.85rem; color: var(--text-gray);"><?= date('d/m/Y H:i:s', strtotime($h['updated_at'])) ?></td>
+                                    <td>
+                                        <?php if ($h['status'] === 'completed'): ?>
+                                            <span class="status-badge status-success">Thành công</span>
+                                        <?php elseif ($h['status'] === 'expired'): ?>
+                                            <span class="status-badge status-expired">Đã hủy / Hết hạn</span>
+                                        <?php else: ?>
+                                            <span class="status-badge status-pending">Đang chờ</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -348,26 +650,118 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
         const bankCode = "<?= SEPAY_BANK_CODE ?>";
         const bankNum = "<?= SEPAY_BANK_NUM ?>";
         const bankName = "<?= SEPAY_BANK_NAME ?>";
-        const memo = "<?= $expectedMemo ?>";
         let currentAmount = 50000;
-        let isChecking = false;
+        let currentRequestId = 0;
+        let currentMemo = "";
+        let countdownSecs = 0;
+        let countdownTimerInterval = null;
+        let pollingInterval = null;
+        let isSuccessState = false;
 
-        function updateQR() {
+        function updateQR(amount, memo) {
             // Định dạng hiển thị số tiền
-            document.getElementById('val_money').innerText = currentAmount.toLocaleString('vi-VN') + 'đ';
-            document.getElementById('val_money_raw').value = currentAmount;
+            document.getElementById('val_money').innerText = amount.toLocaleString('vi-VN') + 'đ';
+            document.getElementById('val_money_raw').value = amount;
+            document.getElementById('val_memo').innerText = memo;
 
             // Cập nhật link VietQR
             const qrImg = document.getElementById('qr_img');
-            // VietQR API endpoint: https://img.vietqr.io/image/<bank>-<bank_num>-compact.jpg?amount=<amount>&addInfo=<content>&accountName=<accountName>
-            const qrUrl = `https://img.vietqr.io/image/${bankCode}-${bankNum}-compact.jpg?amount=${currentAmount}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(bankName)}`;
+            const qrUrl = `https://img.vietqr.io/image/${bankCode}-${bankNum}-compact.jpg?amount=${amount}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(bankName)}`;
             
-            // Tạo hiệu ứng mờ nhẹ khi đổi ảnh để tạo cảm giác mượt mà
             qrImg.style.opacity = '0.5';
             qrImg.src = qrUrl;
             qrImg.onload = function() {
                 qrImg.style.opacity = '1';
             };
+        }
+
+        function createTopUpRequest(amount) {
+            // Xóa các interval cũ
+            clearInterval(countdownTimerInterval);
+            clearInterval(pollingInterval);
+            
+            // Đưa UI về trạng thái chờ
+            document.getElementById('qr_expired_overlay').classList.remove('active');
+            document.getElementById('btn_verify').disabled = false;
+            document.getElementById('btn_verify').innerText = "Kiểm tra giao dịch";
+            document.getElementById('timer_text').classList.remove('expired');
+            document.getElementById('polling_spinner').style.display = 'block';
+            document.getElementById('polling_status').className = 'polling-status';
+            document.getElementById('polling_text').innerText = "Đang chờ bạn quét mã thanh toán...";
+
+            fetch(`create_topup_request.php?amount=${amount}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        currentRequestId = data.request_id;
+                        currentAmount = data.amount;
+                        currentMemo = data.memo;
+                        countdownSecs = data.expiry_seconds;
+                        
+                        updateQR(currentAmount, currentMemo);
+                        startCountdown();
+                        
+                        // Bắt đầu tự động kiểm tra sau mỗi 4 giây
+                        pollingInterval = setInterval(checkPayment, 4000);
+                    } else {
+                        alert(data.message || 'Lỗi khởi tạo yêu cầu nạp tiền.');
+                    }
+                })
+                .catch(err => {
+                    console.error("Lỗi kết nối API:", err);
+                    alert("Không thể khởi tạo yêu cầu nạp tiền. Vui lòng thử lại.");
+                });
+        }
+
+        function startCountdown() {
+            const timerBar = document.getElementById('timer_bar');
+            const countdownEl = document.getElementById('countdown_timer');
+            const maxSeconds = 240; // 4 phút
+
+            function updateUI() {
+                if (countdownSecs <= 0) {
+                    clearInterval(countdownTimerInterval);
+                    clearInterval(pollingInterval);
+                    
+                    // Cập nhật trạng thái hết hạn trên UI
+                    document.getElementById('qr_expired_overlay').classList.add('active');
+                    document.getElementById('btn_verify').disabled = true;
+                    document.getElementById('timer_text').classList.add('expired');
+                    countdownEl.innerText = "00:00";
+                    timerBar.style.width = "0%";
+                    
+                    document.getElementById('polling_spinner').style.display = 'none';
+                    document.getElementById('polling_status').className = 'polling-status expired';
+                    document.getElementById('polling_text').innerText = "Giao dịch đã hết thời gian (4 phút) và đã tự động hủy.";
+                    
+                    // Gọi API để cập nhật trạng thái hết hạn trong DB
+                    fetch(`check_topup.php?request_id=${currentRequestId}`).catch(err => console.error(err));
+                    return;
+                }
+
+                // Cập nhật thời gian
+                const mins = Math.floor(countdownSecs / 60);
+                const secs = countdownSecs % 60;
+                countdownEl.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                
+                // Thay đổi màu đếm ngược khi sắp hết giờ (dưới 60s)
+                if (countdownSecs <= 60) {
+                    document.getElementById('timer_text').style.color = '#ef4444';
+                    timerBar.style.background = '#ef4444';
+                } else {
+                    document.getElementById('timer_text').style.color = '#ffffff';
+                    timerBar.style.background = '#ffffff';
+                }
+                
+                // Cập nhật thanh bar
+                const pct = (countdownSecs / maxSeconds) * 100;
+                timerBar.style.width = `${pct}%`;
+                
+                countdownSecs--;
+            }
+
+            updateUI();
+            countdownTimerInterval = setInterval(updateUI, 1000);
         }
 
         function selectAmount(value, btn) {
@@ -376,27 +770,40 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
             
             // Xử lý active state của nút
             document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
-            if(btn) btn.classList.add('active');
+            if(btn) {
+                btn.classList.add('active');
+            } else {
+                // Tự động active nút tương ứng
+                document.querySelectorAll('.amount-btn').forEach(b => {
+                    const btnVal = parseInt(b.innerText.replace(/\./g, '')) || 0;
+                    if (btnVal === currentAmount) {
+                        b.classList.add('active');
+                    }
+                });
+            }
 
-            updateQR();
+            createTopUpRequest(currentAmount);
         }
 
         function updateCustomAmount(value) {
             const amount = parseInt(value) || 0;
             if (amount >= 1000) {
                 currentAmount = amount;
-                updateQR();
+                
+                // Cập nhật trạng thái active cho nút chọn nhanh
+                document.querySelectorAll('.amount-btn').forEach(b => {
+                    const btnVal = parseInt(b.innerText.replace(/\./g, '')) || 0;
+                    if (btnVal !== currentAmount) {
+                        b.classList.remove('active');
+                    } else {
+                        b.classList.add('active');
+                    }
+                });
+
+                createTopUpRequest(currentAmount);
+            } else {
+                alert("Số tiền nạp tối thiểu là 1.000đ");
             }
-            
-            // Bỏ active của các nút chọn nhanh
-            document.querySelectorAll('.amount-btn').forEach(b => {
-                const btnVal = parseInt(b.innerText.replace(/\./g, '')) || 0;
-                if (btnVal !== currentAmount) {
-                    b.classList.remove('active');
-                } else {
-                    b.classList.add('active');
-                }
-            });
         }
 
         function copyVal(id) {
@@ -413,37 +820,71 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
             });
         }
 
-        // Kiểm tra nạp tiền qua AJAX
+        // Tự động kiểm tra nạp tiền qua AJAX (polling)
         function checkPayment() {
-            if (isChecking) return;
+            if (currentRequestId <= 0 || isSuccessState) return;
             
-            fetch(`check_topup.php?amount=${currentAmount}`)
+            fetch(`check_topup.php?request_id=${currentRequestId}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        isChecking = true; // Ngăn không chạy tiếp
+                        isSuccessState = true;
+                        clearInterval(countdownTimerInterval);
+                        clearInterval(pollingInterval);
+                        
+                        document.getElementById('polling_spinner').style.display = 'none';
+                        document.getElementById('polling_status').className = 'polling-status success';
+                        document.getElementById('polling_text').innerText = "Thanh toán thành công!";
+                        
                         alert(data.message);
                         window.location.href = 'profile.php?success=' + encodeURIComponent(data.message);
+                    } else if (data.status === 'expired') {
+                        clearInterval(countdownTimerInterval);
+                        clearInterval(pollingInterval);
+                        
+                        document.getElementById('qr_expired_overlay').classList.add('active');
+                        document.getElementById('btn_verify').disabled = true;
+                        document.getElementById('timer_text').classList.add('expired');
+                        document.getElementById('polling_spinner').style.display = 'none';
+                        document.getElementById('polling_status').className = 'polling-status expired';
+                        document.getElementById('polling_text').innerText = data.message;
                     }
                 })
                 .catch(err => console.error("Lỗi đồng bộ giao dịch:", err));
         }
 
         function manualCheck() {
+            if (currentRequestId <= 0) return;
+            
             const btn = document.getElementById('btn_verify');
             const originalText = btn.innerText;
             btn.disabled = true;
             btn.innerText = "Đang kiểm tra...";
 
-            fetch(`check_topup.php?amount=${currentAmount}`)
+            fetch(`check_topup.php?request_id=${currentRequestId}`)
                 .then(res => res.json())
                 .then(data => {
                     btn.disabled = false;
                     btn.innerText = originalText;
                     
                     if (data.status === 'success') {
+                        isSuccessState = true;
+                        clearInterval(countdownTimerInterval);
+                        clearInterval(pollingInterval);
+                        
                         alert(data.message);
                         window.location.href = 'profile.php?success=' + encodeURIComponent(data.message);
+                    } else if (data.status === 'expired') {
+                        clearInterval(countdownTimerInterval);
+                        clearInterval(pollingInterval);
+                        
+                        document.getElementById('qr_expired_overlay').classList.add('active');
+                        btn.disabled = true;
+                        document.getElementById('timer_text').classList.add('expired');
+                        document.getElementById('polling_spinner').style.display = 'none';
+                        document.getElementById('polling_status').className = 'polling-status expired';
+                        document.getElementById('polling_text').innerText = data.message;
+                        alert(data.message);
                     } else {
                         alert(data.message);
                     }
@@ -455,11 +896,8 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
                 });
         }
 
-        // Tự động kiểm tra sau mỗi 4 giây (Auto Polling)
-        setInterval(checkPayment, 4000);
-
-        // Khởi tạo trang lần đầu
-        updateQR();
+        // Khởi tạo trang lần đầu với số tiền mặc định 50,000
+        selectAmount(50000, null);
     </script>
 </body>
 </html>

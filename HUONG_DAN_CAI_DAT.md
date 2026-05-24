@@ -75,3 +75,28 @@ Sau khi khởi tạo CSDL, bạn sử dụng các tài khoản sau để đăng 
     * Hệ thống sử dụng cơ chế polling tự động truy vấn danh sách giao dịch qua cổng SePay API ở chế độ ngầm cứ mỗi 4 giây để cộng số dư cho thành viên ngay khi nhận được tiền.
     * Tích hợp chế độ chạy thử (Mock Mode) tự động nhận diện khi chưa thiết lập API Token thực tế để giả lập cộng tiền khi bấm "Kiểm tra giao dịch", giúp chấm điểm/thuyết trình đồ án vô cùng dễ dàng.
   * **Nút điều hướng nhanh cho Admin**: Xuất hiện nút "Quản trị viên" trên navbar ở tất cả các trang khách hàng khi có session admin đang hoạt động.
+
+---
+
+## 5. Hướng dẫn cấu hình nạp tiền tự động (SePay & VietQR)
+
+Hệ thống nạp tiền được thiết kế tối ưu, có thể chạy ở chế độ **Thực tế (Real)** hoặc **Chạy thử (Mock)**. Để cấu hình, vui lòng làm theo các bước sau:
+
+### Các bước thực hiện:
+1. **Truy cập trang cấu hình**: Đăng nhập bằng tài khoản admin, truy cập trang quản trị và nhấp vào mục **"Cài đặt thanh toán"** ở thanh menu bên trái.
+2. **Thiết lập thông tin**:
+   - **SePay API Token**: Lấy API Key từ tài khoản quản lý tại [sepay.vn](https://sepay.vn).
+     * *Lưu ý*: Nếu giữ nguyên giá trị mặc định `YOUR_SEPAY_API_TOKEN`, hệ thống sẽ tự động bật **Chế độ chạy thử (Mock Mode)**. Người dùng chỉ cần nhấp nút **"Kiểm tra giao dịch"** để tự động cộng tiền giả lập nhằm mục đích thuyết trình hoặc chấm điểm.
+   - **Mã ngân hàng**: Chọn ngân hàng nhận tiền (Ví dụ: `MBBank`, `Vietcombank`, `TPBank`, `Techcombank`, `ACB`...).
+   - **Số tài khoản ngân hàng**: Nhập số tài khoản ngân hàng liên kết nhận tiền trên cổng SePay.
+   - **Tên chủ tài khoản**: Tên chủ sở hữu tài khoản ngân hàng (viết hoa không dấu, ví dụ: `NGUYEN VAN A`).
+   - **Tiền tố nội dung chuyển khoản**: Ví dụ `NAP`. Giao dịch nạp tiền sẽ yêu cầu nội dung chuyển khoản là `[Tiền tố] [User ID]` (Ví dụ: `NAP 2`).
+3. **Lưu cấu hình**: Nhấp **"Lưu cấu hình"** để lưu các giá trị vào bảng `settings` trong cơ sở dữ liệu.
+
+### Cơ chế tự động hủy sau 4 phút:
+* Mỗi khi khách hàng truy cập trang nạp tiền hoặc đổi số tiền nạp, một yêu cầu nạp tiền có trạng thái **Chờ thanh toán (Pending)** sẽ được tạo trong cơ sở dữ liệu và đếm ngược **4 phút (240 giây)**.
+* Khách hàng cần quét mã QR và thực hiện chuyển khoản trong thời gian này.
+* Sau 4 phút không có giao dịch khớp:
+  - Hệ thống tự động chuyển trạng thái yêu cầu sang **Đã hết hạn (Expired)** trên server.
+  - Trên giao diện khách hàng, mã QR sẽ tự động bị làm mờ, hiển thị thông báo **"GIAO DỊCH HẾT HẠN"**, nút kiểm tra bị vô hiệu hóa và hệ thống dừng gửi truy vấn polling tự động.
+
