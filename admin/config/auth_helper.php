@@ -21,7 +21,7 @@ function require_login() {
 
 function require_admin() {
     if (!is_admin_logged_in()) {
-        header('Location: ' . BASE_PATH . 'admin/login.php');
+        header('Location: ' . BASE_PATH . 'login.php');
         exit;
     }
 }
