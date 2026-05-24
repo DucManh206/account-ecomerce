@@ -47,7 +47,7 @@ try {
         exit;
     }
 
-    // 2. Kiểm tra nếu yêu cầu đã quá hạn 4 phút (240 giây)
+    // Kiểm tra nếu yêu cầu đã quá hạn 4 phút (240 giây)
     $createdAtTimestamp = strtotime($request['created_at']);
     $elapsed = time() - $createdAtTimestamp;
 
@@ -62,27 +62,27 @@ try {
         exit;
     }
 
-    // 3. Xử lý logic check giao dịch
+    // logic check giao dịch
     $expectedPrefix = defined('SEPAY_MEMO_PREFIX') ? SEPAY_MEMO_PREFIX : 'NAP';
     $expectedMemo = $request['memo'];
 
-    // --- Chế độ chạy thử (Mock Mode) ---
+    // Chạy thử
     if (!defined('SEPAY_API_TOKEN') || SEPAY_API_TOKEN === 'YOUR_SEPAY_API_TOKEN') {
         $mockTxId = 'MOCK_TX_' . $requestId . '_' . time();
         
         try {
             $pdo->beginTransaction();
             
-            // Bảo vệ kép: kiểm tra xem giao dịch mock này đã được lưu chưa
+            // kiểm tra giao dịch mock
             $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM sepay_transactions WHERE sepay_transaction_id = ?");
             $stmtCheck->execute([$mockTxId]);
             if ($stmtCheck->fetchColumn() == 0) {
                 
-                // 1. Cập nhật trạng thái yêu cầu
+                // Cập nhật trạng thái yêu cầu
                 $stmtReq = $pdo->prepare("UPDATE topup_requests SET status = 'completed' WHERE id = ?");
                 $stmtReq->execute([$requestId]);
 
-                // 2. Thêm vào bảng sepay_transactions
+                // Thêm vào bảng sepay_transactions
                 $stmtInsert = $pdo->prepare("INSERT INTO sepay_transactions (sepay_transaction_id, user_id, amount, transaction_date, content) VALUES (?, ?, ?, NOW(), ?)");
                 $stmtInsert->execute([$mockTxId, $userId, $amount, $expectedMemo]);
                 
@@ -109,7 +109,7 @@ try {
         }
     }
 
-    // --- Chế độ chạy thực tế (Sepay User API transactions/list) ---
+    //   thực tế   
     $url = 'https://my.sepay.vn/userapi/transactions/list?limit=50';
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -143,16 +143,16 @@ try {
         $sepayTxId = $tx['id'] ?? '';
         $txDateStr = $tx['transaction_date'] ?? '';
 
-        // 1. Kiểm tra nội dung chuyển khoản khớp mẫu "NAP <userId>" hoặc "NAP<userId>" (không phân biệt hoa thường)
+        // Kiểm tra nội dung chuyển khoản khớp mẫu "NAP <userId>" hoặc "NAP<userId>" 
         $pattern = '/\b' . preg_quote($expectedPrefix, '/') . '\s*' . $userId . '\b/i';
         if (preg_match($pattern, $txContent)) {
             
-            // 2. Giao dịch phải được thực hiện từ khi tạo yêu cầu nạp tiền trở đi
+            // Giao dịch phải được thực hiện từ khi tạo yêu cầu nạp tiền trở đi
             $txTimestamp = strtotime($txDateStr);
             // Thêm 30s buffer trong trường hợp giờ máy chủ lệch nhẹ
             if ($txTimestamp >= ($createdAtTimestamp - 30)) {
                 
-                // 3. Kiểm tra xem giao dịch này đã được ghi nhận trong CSDL chưa
+                // Kiểm tra xem giao dịch này đã được ghi nhận trong CSDL chưa
                 $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM sepay_transactions WHERE sepay_transaction_id = ?");
                 $stmtCheck->execute([$sepayTxId]);
                 $isProcessed = $stmtCheck->fetchColumn() > 0;

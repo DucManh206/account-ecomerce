@@ -20,7 +20,7 @@ $expectedPrefix = defined('SEPAY_MEMO_PREFIX') ? SEPAY_MEMO_PREFIX : 'NAP';
 $memo = $expectedPrefix . ' ' . $userId;
 
 try {
-    // 1. Kiểm tra yêu cầu nạp tiền
+    //Kiểm tra yêu cầu nạp tiền
     $stmt = $pdo->prepare("
         SELECT id, amount, memo, created_at 
         FROM topup_requests 
@@ -48,11 +48,11 @@ try {
         }
     }
 
-    // 2. Nếu không trùng hoặc đã quá hạn, chuyển tất cả yêu cầu 'pending' cũ của user này sang 'expired'
+    //Quá hạn thì chuyển tất cả yêu cầu 'pending' cũ của user này sang 'expired'
     $stmtExpire = $pdo->prepare("UPDATE topup_requests SET status = 'expired' WHERE user_id = ? AND status = 'pending'");
     $stmtExpire->execute([$userId]);
 
-    // 3. Tạo yêu cầu nạp tiền mới
+    // Tạo yêu cầu nạp tiền mới
     $stmtInsert = $pdo->prepare("INSERT INTO topup_requests (user_id, amount, memo, status, created_at) VALUES (?, ?, ?, 'pending', NOW())");
     $stmtInsert->execute([$userId, $amount, $memo]);
     $requestId = $pdo->lastInsertId();

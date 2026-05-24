@@ -309,7 +309,7 @@ function getFallbackImage($categoryName) {
 
     <footer>
         <div class="container footer-content">
-            <p>&copy; 2026 AccountShop - Nhóm 5. Bài tập lớn Lập trình web và ứng dụng.</p>
+            <p>&copy; Nhóm 5. Bài tập lớn Lập trình web và ứng dụng.</p>
             <p>Thành viên: Võ Anh Kiệt Hoàng, Trần Gia Bảo, Nguyễn Đức Mạnh, Nguyễn Hoàng Thái.</p>
         </div>
     </footer>

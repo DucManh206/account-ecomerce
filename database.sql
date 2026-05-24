@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO settings (setting_key, setting_value) VALUES
-('sepay_api_token', 'YOUR_SEPAY_API_TOKEN'),
+('sepay_api_token', 'SEPAY_TOKEN_O_DAY'),
 ('sepay_bank_code', 'MBBank'),
 ('sepay_bank_num', '0398687777'),
 ('sepay_bank_name', 'NGUYEN VAN A'),
