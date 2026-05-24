@@ -1,13 +1,5 @@
 <?php
-// ============================================================
-// Đăng xuất - Admin
-// ============================================================
+// Chuyển hướng trang đăng xuất admin về trang đăng xuất chung của hệ thống
 require_once __DIR__ . '/config/config.php';
-
-// Xóa toàn bộ session
-$_SESSION = [];
-session_destroy();
-
-// Chuyển về trang đăng nhập
-header('Location: login.php');
+header('Location: ' . BASE_PATH . 'logout.php');
 exit;

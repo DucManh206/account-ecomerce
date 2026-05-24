@@ -1,8 +1,9 @@
 <?php
-// ============================================================
-// Chi tiết sản phẩm & Mua tài khoản (Frontend)
-// ============================================================
 require_once __DIR__ . '/admin/config/db.php';
+
+if (!isset($_SESSION['cart'])) {
+    $_SESSION['cart'] = [];
+}
 
 $id = $_GET['id'] ?? '';
 if (empty($id)) {
@@ -10,7 +11,6 @@ if (empty($id)) {
     exit;
 }
 
-// Lấy thông tin tài khoản
 $stmt = $pdo->prepare("
     SELECT accounts.*, categories.name AS category_name 
     FROM accounts 
@@ -21,27 +21,16 @@ $stmt->execute([$id]);
 $acc = $stmt->fetch();
 
 if (!$acc) {
-    $error = 'Sản phẩm không tồn tại hoặc đã bị gỡ bỏ.';
+    $error = 'Tài khoản không tồn tại hoặc đã bị ẩn.';
 }
 
-$buySuccess = false;
-$credentials = '';
-
-// Xử lý khi nhấn Mua ngay
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_buy']) && $acc && $acc['status'] === 'available') {
-    // Cập nhật trạng thái thành đã bán
-    $updateStmt = $pdo->prepare("UPDATE accounts SET status = 'sold' WHERE id = ?");
-    if ($updateStmt->execute([$id])) {
-        $buySuccess = true;
-        $credentials = $acc['account_detail'];
-        // Cập nhật lại thông tin tài khoản để hiển thị trạng thái mới
-        $acc['status'] = 'sold';
-    } else {
-        $error = 'Không thể thực hiện giao dịch. Vui lòng thử lại sau.';
-    }
+$myBalance = 0;
+if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) {
+    $balStmt = $pdo->prepare("SELECT balance FROM users WHERE id = ?");
+    $balStmt->execute([$_SESSION['user_id']]);
+    $myBalance = $balStmt->fetchColumn();
 }
 
-// Hàm lấy ảnh đại diện mặc định theo loại tài khoản
 function getFallbackImage($categoryName) {
     $categoryName = mb_strtolower($categoryName, 'UTF-8');
     if (strpos($categoryName, 'game') !== false || strpos($categoryName, 'lmht') !== false || strpos($categoryName, 'steam') !== false) {
@@ -61,34 +50,84 @@ function getFallbackImage($categoryName) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $acc ? htmlspecialchars($acc['name']) : 'Lỗi' ?> - Account Shop</title>
     <link rel="stylesheet" href="assets/css/style.css">
-    <script>
-        function copyCredentials() {
-            var copyText = document.getElementById("credentialsBox");
-            navigator.clipboard.writeText(copyText.innerText).then(function() {
-                var btn = document.getElementById("copyBtn");
-                btn.innerText = "Đã sao chép! ✓";
-                btn.style.background = "#10b981";
-                setTimeout(function() {
-                    btn.innerText = "Sao chép thông tin";
-                    btn.style.background = "rgba(255, 255, 255, 0.08)";
-                }, 2000);
-            }, function(err) {
-                alert("Không thể tự động sao chép. Vui lòng chọn và sao chép thủ công.");
-            });
+    <style>
+        .balance-indicator {
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: var(--transition);
         }
-    </script>
+        .balance-indicator:hover {
+            background-color: rgba(16, 185, 129, 0.2);
+        }
+        .cart-badge-indicator {
+            position: relative;
+            display: flex;
+            align-items: center;
+            color: var(--text-white);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+        .cart-badge-indicator:hover {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        .cart-count {
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Navigation Bar -->
     <header class="navbar">
         <div class="container navbar-content">
             <a href="index.php" class="logo">
-                <span>&#x1F511;</span> AccountShop
+                AccountShop
             </a>
+            
             <div class="nav-links">
+                <?php if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true): ?>
+                    <a href="admin/dashboard.php" class="btn-nav" style="border-color: #f59e0b; color: #f59e0b !important;">Quản trị viên</a>
+                <?php endif; ?>
                 <a href="index.php" class="nav-link">Trang chủ</a>
-                <a href="admin/dashboard.php" class="btn-nav" target="_blank">Khu vực Admin</a>
+                <a href="topup.php" class="nav-link">Nạp tiền</a>
+                <a href="cart.php" class="cart-badge-indicator">
+                    <span>Giỏ hàng</span>
+                    <span class="cart-count"><?= count($_SESSION['cart']) ?></span>
+                </a>
+                
+                <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
+                    <a href="profile.php" class="balance-indicator">
+                        Số dư: <?= number_format($myBalance, 0, ',', '.') ?>đ
+                    </a>
+                    <a href="profile.php" class="nav-link" style="color: var(--text-white); font-weight: 600;">
+                        Hi, <?= htmlspecialchars($_SESSION['user_fullname']) ?>
+                    </a>
+                    <a href="logout.php" class="btn-nav" style="background: var(--danger);">Đăng xuất</a>
+                <?php else: ?>
+                    <a href="login.php" class="nav-link">Đăng nhập</a>
+                    <a href="register.php" class="btn-nav">Đăng ký</a>
+                <?php endif; ?>
             </div>
         </div>
     </header>
@@ -104,7 +143,6 @@ function getFallbackImage($categoryName) {
         <?php else: ?>
             
             <div class="detail-layout">
-                <!-- Main detail column -->
                 <main class="detail-main">
                     <div class="detail-img-container">
                         <?php 
@@ -124,58 +162,41 @@ function getFallbackImage($categoryName) {
                         </div>
                         <div class="meta-item">Ngày đăng: <span><?= date('d/m/Y', strtotime($acc['created_at'])) ?></span></div>
                     </div>
-                    
-                    <!-- Form hiển thị thông tin tài khoản đã mua thành công -->
-                    <?php if ($buySuccess): ?>
-                        <div class="purchase-success-panel">
-                            <div class="success-header">
-                                <span style="font-size: 1.5rem;">&#x2705;</span>
-                                <h4>Mua tài khoản thành công!</h4>
-                            </div>
-                            <p style="color: var(--text-gray); margin-bottom: 12px; font-size: 0.95rem;">
-                                Dưới đây là thông tin chi tiết đăng nhập của tài khoản bạn đã mua. Vui lòng bảo mật thông tin này:
-                            </p>
-                            <div id="credentialsBox" class="account-credentials-box"><?= htmlspecialchars($credentials) ?></div>
-                            <button id="copyBtn" onclick="copyCredentials()" class="btn-copy">Sao chép thông tin</button>
-                        </div>
-                    <?php endif; ?>
 
                     <div class="detail-content">
-                        <h3>Mô tả chi tiết sản phẩm</h3>
+                        <h3>Mô tả tài khoản</h3>
                         <p><?= htmlspecialchars($acc['description'] ?? 'Không có mô tả cho sản phẩm này.') ?></p>
                         
-                        <h3>Hướng dẫn sử dụng & Bảo hành</h3>
+                        <h3>Hướng dẫn & Bảo hành</h3>
                         <p style="color: var(--text-gray); font-size: 0.95rem; line-height: 1.6;">
-                            1. Vui lòng đổi mật khẩu và liên kết thông tin cá nhân ngay sau khi nhận tài khoản nếu loại tài khoản hỗ trợ đổi thông tin.<br>
-                            2. Đối với tài khoản dùng chung (Netflix, Spotify gia đình...), vui lòng không tự ý thay đổi mật khẩu hoặc cài đặt chung của tài khoản.<br>
-                            3. Mọi vấn đề phát sinh trong quá trình sử dụng vui lòng liên hệ Ban Quản Trị Nhóm 5 để được hỗ trợ bảo hành theo quy định.
+                            1. Vui lòng đổi mật khẩu sau khi mua để tự bảo mật tài khoản.<br>
+                            2. Đối với tài khoản dùng chung, vui lòng không đổi mật khẩu hoặc can thiệp cài đặt chung.<br>
+                            3. Mọi vấn đề phát sinh vui lòng liên hệ Nhóm 5 để được hỗ trợ bảo hành.
                         </p>
                     </div>
                 </main>
                 
-                <!-- Purchase sidebar column -->
                 <aside class="detail-sidebar">
                     <div class="purchase-card">
                         <div class="purchase-price-label">Giá bán chính thức</div>
                         <div class="purchase-price"><?= number_format($acc['price'], 0, ',', '.') ?>đ</div>
                         
-                        <?php if (isset($error) && $acc): ?>
-                            <div class="frontend-alert frontend-alert-error" style="margin-bottom: 16px; font-size: 0.85rem; padding: 8px 12px;">
-                                <?= htmlspecialchars($error) ?>
-                            </div>
+                        <?php if ($acc['status'] === 'available'): ?>
+                            <?php if (in_array($acc['id'], $_SESSION['cart'])): ?>
+                                <a href="cart.php" class="btn-buy" style="display: block; text-decoration: none; text-align: center; background: #059669; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);">
+                                    Xem giỏ hàng
+                                </a>
+                            <?php else: ?>
+                                <a href="cart.php?action=add&id=<?= $acc['id'] ?>" class="btn-buy" style="display: block; text-decoration: none; text-align: center;">
+                                    Thêm vào giỏ
+                                </a>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <button class="btn-buy" disabled>Tài khoản đã bán</button>
                         <?php endif; ?>
                         
-                        <form method="POST">
-                            <input type="hidden" name="action_buy" value="1">
-                            <?php if ($acc['status'] === 'available'): ?>
-                                <button type="submit" class="btn-buy">Mua ngay</button>
-                            <?php else: ?>
-                                <button type="button" class="btn-buy" disabled>Tài khoản đã bán</button>
-                            <?php endif; ?>
-                        </form>
-                        
                         <div style="margin-top: 20px; font-size: 0.85rem; color: var(--text-muted); text-align: center;">
-                            Hệ thống giả lập thanh toán tự động.<br>Nhận tài khoản ngay lập tức sau khi nhấn Mua.
+                            Hệ thống trừ số dư tự động.<br>Nhận acc ngay sau khi thanh toán giỏ hàng.
                         </div>
                     </div>
                     
@@ -188,11 +209,9 @@ function getFallbackImage($categoryName) {
         <?php endif; ?>
     </div>
 
-    <!-- Footer -->
     <footer>
         <div class="container footer-content">
-            <p>&copy; 2026 AccountShop - Nhóm 5. Dự án học tập Lập trình web và ứng dụng.</p>
-            <p>Thành viên: Võ Anh Kiệt Hoàng, Trần Gia Bảo, Nguyễn Đức Mạnh, Nguyễn Hoàng Thái.</p>
+            <p>&copy; 2026 AccountShop - Nhóm 5. Bài tập lớn Lập trình web và ứng dụng.</p>
         </div>
     </footer>
 

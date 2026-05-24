@@ -49,38 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 <div class="admin-layout">
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2>Account Shop</h2>
-            <span class="sidebar-role">Admin</span>
-        </div>
-        <nav class="sidebar-nav">
-            <a href="../../dashboard.php" class="nav-item">
-                <span class="nav-icon">&#x1F3E0;</span>
-                <span>Dashboard</span>
-            </a>
-            <a href="list.php" class="nav-item active">
-                <span class="nav-icon">&#x1F4CB;</span>
-                <span>Quản lý tài khoản</span>
-            </a>
-            <a href="../categories/list.php" class="nav-item">
-                <span class="nav-icon">&#x1F4C1;</span>
-                <span>Danh mục</span>
-            </a>
-            <hr class="nav-divider">
-            <a href="../../../index.php" target="_blank" class="nav-item">
-                <span class="nav-icon">&#x1F30D;</span>
-                <span>Xem trang chủ</span>
-            </a>
-            <a href="../../logout.php" class="nav-item nav-logout">
-                <span class="nav-icon">&#x1F6AA;</span>
-                <span>Đăng xuất</span>
-            </a>
-        </nav>
-        <div class="sidebar-footer">
-            <p>Xin chào, <strong><?= htmlspecialchars($_SESSION['admin_fullname']) ?></strong></p>
-        </div>
-    </aside>
+    <?php include __DIR__ . '/../../sidebar.php'; ?>
     
     <main class="main-content">
         <header class="topbar">
@@ -96,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <form method="POST" class="form-card">
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="name">Tên tài khoản / Sản phẩm</label>
+                        <label for="name">Tên tài khoản</label>
                         <input type="text" id="name" name="name" value="<?= htmlspecialchars($account['name']) ?>" required>
                     </div>
                     <div class="form-group">
@@ -138,8 +107,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <div class="form-group">
                     <label for="account_detail">Thông tin tài khoản đăng nhập (Bảo mật - chỉ hiện sau khi mua)</label>
-                    <textarea id="account_detail" name="account_detail" rows="6" placeholder="Tên đăng nhập, mật khẩu, email, ghi chú bàn giao..."><?= htmlspecialchars($account['account_detail'] ?? '') ?></textarea>
+                    <textarea id="account_detail" name="account_detail" rows="4" placeholder="Tên đăng nhập, mật khẩu, email, ghi chú..." required><?= htmlspecialchars($account['account_detail'] ?? '') ?></textarea>
                 </div>
+                
+                <!-- Bảng tự động điền trực quan -->
+                <div style="background-color: #0d0d0d; border: 1px solid var(--border-color); padding: 20px; margin-top: -10px; margin-bottom: 10px;">
+                    <div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #a78bfa; margin-bottom: 12px; letter-spacing: 0.5px;">Bảng điền thông tin trực quan (Tự động cập nhật phía trên)</div>
+                    <div class="form-row" style="margin-bottom: 12px;">
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">Tên đăng nhập / Email bán</label>
+                            <input type="text" id="helper_user" placeholder="Netflix email/username..." oninput="updateAccountDetailTextarea()">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">Mật khẩu</label>
+                            <input type="text" id="helper_pass" placeholder="Mật khẩu..." oninput="updateAccountDetailTextarea()">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">Hạn sử dụng / Thông tin phụ</label>
+                            <input type="text" id="helper_info" placeholder="Ví dụ: Netflix 4K - 6 tháng" oninput="updateAccountDetailTextarea()">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">Ghi chú khác</label>
+                            <input type="text" id="helper_note" placeholder="Ví dụ: Đã đổi mật khẩu..." oninput="updateAccountDetailTextarea()">
+                        </div>
+                    </div>
+                </div>
+                
+                <script>
+                    function updateAccountDetailTextarea() {
+                        var user = document.getElementById('helper_user').value.trim();
+                        var pass = document.getElementById('helper_pass').value.trim();
+                        var info = document.getElementById('helper_info').value.trim();
+                        var note = document.getElementById('helper_note').value.trim();
+                        
+                        var compiled = '';
+                        if (user) compiled += 'Tên đăng nhập: ' + user + '\n';
+                        if (pass) compiled += 'Mật khẩu: ' + pass + '\n';
+                        if (info) compiled += 'Hạn dùng/Thông tin: ' + info + '\n';
+                        if (note) compiled += 'Ghi chú: ' + note;
+                        
+                        document.getElementById('account_detail').value = compiled;
+                    }
+
+                    // Tự động phân tích dữ liệu có sẵn đưa vào Helper khi tải trang
+                    window.addEventListener('DOMContentLoaded', function() {
+                        var detail = document.getElementById('account_detail').value;
+                        var lines = detail.split('\n');
+                        lines.forEach(function(line) {
+                            var cleanLine = line.trim();
+                            if (cleanLine.indexOf('Tên đăng nhập: ') === 0) {
+                                document.getElementById('helper_user').value = cleanLine.replace('Tên đăng nhập: ', '').trim();
+                            } else if (cleanLine.indexOf('Mật khẩu: ') === 0) {
+                                document.getElementById('helper_pass').value = cleanLine.replace('Mật khẩu: ', '').trim();
+                            } else if (cleanLine.indexOf('Hạn dùng/Thông tin: ') === 0) {
+                                document.getElementById('helper_info').value = cleanLine.replace('Hạn dùng/Thông tin: ', '').trim();
+                            } else if (cleanLine.indexOf('Ghi chú: ') === 0) {
+                                document.getElementById('helper_note').value = cleanLine.replace('Ghi chú: ', '').trim();
+                            }
+                        });
+                    });
+                </script>
                 
                 <button type="submit" class="btn btn-primary">Cập nhật tài khoản</button>
             </form>

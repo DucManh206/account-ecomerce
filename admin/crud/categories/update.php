@@ -43,38 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 <div class="admin-layout">
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2>Account Shop</h2>
-            <span class="sidebar-role">Admin</span>
-        </div>
-        <nav class="sidebar-nav">
-            <a href="../../dashboard.php" class="nav-item">
-                <span class="nav-icon">&#x1F3E0;</span>
-                <span>Dashboard</span>
-            </a>
-            <a href="../accounts/list.php" class="nav-item">
-                <span class="nav-icon">&#x1F4CB;</span>
-                <span>Quản lý tài khoản</span>
-            </a>
-            <a href="list.php" class="nav-item active">
-                <span class="nav-icon">&#x1F4C1;</span>
-                <span>Danh mục</span>
-            </a>
-            <hr class="nav-divider">
-            <a href="../../../index.php" target="_blank" class="nav-item">
-                <span class="nav-icon">&#x1F30D;</span>
-                <span>Xem trang chủ</span>
-            </a>
-            <a href="../../logout.php" class="nav-item nav-logout">
-                <span class="nav-icon">&#x1F6AA;</span>
-                <span>Đăng xuất</span>
-            </a>
-        </nav>
-        <div class="sidebar-footer">
-            <p>Xin chào, <strong><?= htmlspecialchars($_SESSION['admin_fullname']) ?></strong></p>
-        </div>
-    </aside>
+    <?php include __DIR__ . '/../../sidebar.php'; ?>
     
     <main class="main-content">
         <header class="topbar">

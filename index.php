@@ -1,18 +1,16 @@
 <?php
-// ============================================================
-// Trang chủ - Shop bán tài khoản (Frontend)
-// ============================================================
 require_once __DIR__ . '/admin/config/db.php';
 
-// Nhận tham số tìm kiếm, lọc, sắp xếp
+if (!isset($_SESSION['cart'])) {
+    $_SESSION['cart'] = [];
+}
+
 $search = trim($_GET['search'] ?? '');
 $categoryId = trim($_GET['category'] ?? '');
 $sort = $_GET['sort'] ?? 'newest';
 
-// Lấy danh mục để hiển thị ở bộ lọc
 $categories = $pdo->query("SELECT * FROM categories ORDER BY id ASC")->fetchAll();
 
-// Xây dựng câu truy vấn SQL lấy tài khoản
 $sql = "SELECT accounts.*, categories.name AS category_name 
         FROM accounts 
         LEFT JOIN categories ON accounts.category_id = categories.id 
@@ -30,7 +28,6 @@ if ($search !== '') {
     $params[] = '%' . $search . '%';
 }
 
-// Sắp xếp
 switch ($sort) {
     case 'price_asc':
         $sql .= " ORDER BY accounts.price ASC";
@@ -48,7 +45,14 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $accounts = $stmt->fetchAll();
 
-// Hàm lấy ảnh đại diện mặc định theo loại tài khoản nếu không có ảnh
+$myBalance = 0;
+if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) {
+    $balStmt = $pdo->prepare("SELECT balance FROM users WHERE id = ?");
+    $balStmt->execute([$_SESSION['user_id']]);
+    $myBalance = $balStmt->fetchColumn();
+}
+
+// Lấy ảnh default nếu chưa up ảnh
 function getFallbackImage($categoryName) {
     $categoryName = mb_strtolower($categoryName, 'UTF-8');
     if (strpos($categoryName, 'game') !== false || strpos($categoryName, 'lmht') !== false || strpos($categoryName, 'steam') !== false) {
@@ -68,31 +72,137 @@ function getFallbackImage($categoryName) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Shop - Hệ thống bán tài khoản tự động</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .header-user-badge {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .balance-indicator {
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .balance-indicator:hover {
+            background-color: rgba(16, 185, 129, 0.2);
+        }
+        .cart-badge-indicator {
+            position: relative;
+            display: flex;
+            align-items: center;
+            color: var(--text-white);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+        .cart-badge-indicator:hover {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        .cart-count {
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+        .card-actions-wrapper {
+            display: flex;
+            gap: 8px;
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .btn-add-cart {
+            background-color: #ffffff;
+            color: #000000;
+            border: 1px solid #ffffff;
+            padding: 8px 14px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+            transition: var(--transition);
+        }
+        .btn-add-cart:hover {
+            background-color: transparent;
+            color: #ffffff;
+            border-color: #ffffff;
+        }
+        .btn-add-cart-disabled {
+            background-color: #4b5563;
+            color: #9ca3af;
+            border: none;
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-weight: 600;
+            flex: 1;
+            text-align: center;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Navigation Bar -->
     <header class="navbar">
         <div class="container navbar-content">
             <a href="index.php" class="logo">
-                <span>&#x1F511;</span> AccountShop
+                AccountShop
             </a>
+            
             <div class="nav-links">
+                <?php if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true): ?>
+                    <a href="admin/dashboard.php" class="btn-nav" style="border-color: #f59e0b; color: #f59e0b !important;">Quản trị viên</a>
+                <?php endif; ?>
                 <a href="index.php" class="nav-link">Trang chủ</a>
-                <a href="admin/dashboard.php" class="btn-nav" target="_blank">Khu vực Admin</a>
+                <a href="topup.php" class="nav-link">Nạp tiền</a>
+                <a href="cart.php" class="cart-badge-indicator">
+                    <span>Giỏ hàng</span>
+                    <span class="cart-count"><?= count($_SESSION['cart']) ?></span>
+                </a>
+                
+                <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
+                    <a href="profile.php" class="balance-indicator">
+                        Số dư: <?= number_format($myBalance, 0, ',', '.') ?>đ
+                    </a>
+                    <a href="profile.php" class="nav-link" style="color: var(--text-white); font-weight: 600;">
+                        Hi, <?= htmlspecialchars($_SESSION['user_fullname']) ?>
+                    </a>
+                    <a href="logout.php" class="btn-nav" style="background: var(--danger);">Đăng xuất</a>
+                <?php else: ?>
+                    <a href="login.php" class="nav-link">Đăng nhập</a>
+                    <a href="register.php" class="btn-nav">Đăng ký</a>
+                <?php endif; ?>
             </div>
         </div>
     </header>
 
-    <!-- Hero Section -->
     <section class="hero">
         <div class="container">
-            <h1>Sở hữu tài khoản <span>Premium</span> chỉ trong vài giây</h1>
-            <p>Hệ thống cung cấp tài khoản Game, Netflix, Spotify, Key phần mềm tự động uy tín, bảo mật và nhanh chóng hàng đầu Việt Nam.</p>
+            <h1>Mua tài khoản <span>Premium</span> tự động</h1>
+            <p>Chuyên cung cấp tài khoản Game, Netflix, Spotify, Key Office giá rẻ, uy tín. Nhận thông tin acc ngay lập tức.</p>
             
-            <!-- Search Box -->
             <form action="index.php" method="GET" class="search-box">
-                <input type="text" name="search" placeholder="Tìm kiếm tài khoản (Ví dụ: Netflix, LMHT...)" value="<?= htmlspecialchars($search) ?>">
+                <input type="text" name="search" placeholder="Tìm tài khoản cần mua..." value="<?= htmlspecialchars($search) ?>">
                 <?php if ($categoryId): ?>
                     <input type="hidden" name="category" value="<?= htmlspecialchars($categoryId) ?>">
                 <?php endif; ?>
@@ -104,11 +214,9 @@ function getFallbackImage($categoryName) {
         </div>
     </section>
 
-    <!-- Filters & Sort -->
     <section class="search-filter-section">
         <div class="container">
             <div class="filter-wrapper">
-                <!-- Categories Tabs -->
                 <div class="categories-tabs">
                     <a href="index.php?category=&search=<?= urlencode($search) ?>&sort=<?= $sort ?>" 
                        class="tab-btn <?= $categoryId === '' ? 'active' : '' ?>">
@@ -122,7 +230,6 @@ function getFallbackImage($categoryName) {
                     <?php endforeach; ?>
                 </div>
 
-                <!-- Sort dropdown -->
                 <div class="sort-select">
                     <form action="index.php" method="GET" id="sortForm">
                         <?php if ($categoryId): ?>
@@ -142,7 +249,6 @@ function getFallbackImage($categoryName) {
         </div>
     </section>
 
-    <!-- Accounts Grid -->
     <main class="container">
         <div class="accounts-grid">
             <?php foreach ($accounts as $acc): 
@@ -159,9 +265,23 @@ function getFallbackImage($categoryName) {
                     <div class="card-body">
                         <h2 class="card-title"><?= htmlspecialchars($acc['name']) ?></h2>
                         <p class="card-desc"><?= htmlspecialchars($acc['description'] ?? 'Chưa có mô tả chi tiết.') ?></p>
-                        <div class="card-footer">
-                            <span class="card-price"><?= number_format($acc['price'], 0, ',', '.') ?>đ</span>
-                            <a href="chitiet.php?id=<?= $acc['id'] ?>" class="btn-view">Chi tiết</a>
+                        
+                        <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin-bottom: 12px;">
+                            <?= number_format($acc['price'], 0, ',', '.') ?>đ
+                        </div>
+                        
+                        <div class="card-actions-wrapper">
+                            <a href="chitiet.php?id=<?= $acc['id'] ?>" class="btn-view" style="flex: 1; text-align: center;">Chi tiết</a>
+                            
+                            <?php if ($acc['status'] === 'available'): ?>
+                                <?php if (in_array($acc['id'], $_SESSION['cart'])): ?>
+                                    <a href="cart.php" class="btn-add-cart" style="background-color: #059669;">Đã thêm</a>
+                                <?php else: ?>
+                                    <a href="cart.php?action=add&id=<?= $acc['id'] ?>" class="btn-add-cart">+ Thêm giỏ</a>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <button class="btn-add-cart-disabled" disabled>Đã bán</button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </article>
@@ -170,16 +290,15 @@ function getFallbackImage($categoryName) {
 
         <?php if (empty($accounts)): ?>
             <div class="empty" style="text-align: center; margin: 40px 0; color: var(--text-gray);">
-                <p style="font-size: 1.2rem;">Không tìm thấy tài khoản nào phù hợp với yêu cầu của bạn.</p>
+                <p style="font-size: 1.2rem;">Không tìm thấy tài khoản phù hợp.</p>
                 <a href="index.php" class="tab-btn" style="display: inline-block; margin-top: 16px;">Xem tất cả</a>
             </div>
         <?php endif; ?>
     </main>
 
-    <!-- Footer -->
     <footer>
         <div class="container footer-content">
-            <p>&copy; 2026 AccountShop - Nhóm 5. Dự án học tập Lập trình web và ứng dụng.</p>
+            <p>&copy; 2026 AccountShop - Nhóm 5. Bài tập lớn Lập trình web và ứng dụng.</p>
             <p>Thành viên: Võ Anh Kiệt Hoàng, Trần Gia Bảo, Nguyễn Đức Mạnh, Nguyễn Hoàng Thái.</p>
         </div>
     </footer>

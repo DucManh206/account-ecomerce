@@ -14,25 +14,35 @@ $error = $_GET['error'] ?? '';
 </head>
 <body>
 <div class="admin-layout">
-    <aside class="sidebar">
-        <div class="sidebar-header"><h2>Account Shop</h2><span class="sidebar-role">Admin</span></div>
-        <nav class="sidebar-nav">
-            <a href="../../dashboard.php" class="nav-item"><span>&#x1F3E0;</span><span>Dashboard</span></a>
-            <a href="list.php" class="nav-item active"><span>&#x1F4CB;</span><span>Quản lý tài khoản</span></a>
-            <a href="../categories/list.php" class="nav-item"><span>&#x1F4C1;</span><span>Danh mục</span></a>
-            <hr class="nav-divider">
-            <a href="../../../index.php" target="_blank" class="nav-item"><span>&#x1F30D;</span><span>Xem trang chủ</span></a>
-            <a href="../../logout.php" class="nav-item nav-logout"><span>&#x1F6AA;</span><span>Đăng xuất</span></a>
-        </nav>
-    </aside>
+    <?php include __DIR__ . '/../../sidebar.php'; ?>
+
     <main class="main-content">
-        <header class="topbar"><h1>Quản lý tài khoản</h1><a href="add.php" class="btn btn-primary">+ Thêm tài khoản</a></header>
+        <header class="topbar">
+            <h1>Quản lý tài khoản</h1>
+            <a href="add.php" class="btn btn-primary">+ Thêm tài khoản</a>
+        </header>
+        
         <div class="content-body">
-            <?php if ($success): ?><div class="alert alert-success"><?= htmlspecialchars($success) ?></div><?php endif; ?>
-            <?php if ($error): ?><div class="alert alert-error"><?= htmlspecialchars($error) ?></div><?php endif; ?>
+            <?php if ($success): ?>
+                <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
+            <?php endif; ?>
+            <?php if ($error): ?>
+                <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
+            <?php endif; ?>
+            
             <div class="table-card">
                 <table class="data-table">
-                    <thead><tr><th>ID</th><th>Tên tài khoản</th><th>Danh mục</th><th>Giá</th><th>Trạng thái</th><th>Ngày tạo</th><th>Thao tác</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên tài khoản</th>
+                            <th>Danh mục</th>
+                            <th>Giá</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
                     <tbody>
                     <?php foreach ($accounts as $acc): ?>
                         <tr>
@@ -40,7 +50,11 @@ $error = $_GET['error'] ?? '';
                             <td><strong><?= htmlspecialchars($acc['name']) ?></strong></td>
                             <td><?= htmlspecialchars($acc['category_name'] ?? 'Chưa phân loại') ?></td>
                             <td><?= number_format($acc['price'], 0, ',', '.') ?>đ</td>
-                            <td><span class="badge <?= $acc['status'] === 'available' ? 'badge-green' : 'badge-red' ?>"><?= $acc['status'] === 'available' ? 'Đang bán' : 'Đã bán' ?></span></td>
+                            <td>
+                                <span class="badge <?= $acc['status'] === 'available' ? 'badge-green' : 'badge-red' ?>">
+                                    <?= $acc['status'] === 'available' ? 'Đang bán' : 'Đã bán' ?>
+                                </span>
+                            </td>
                             <td><?= date('d/m/Y', strtotime($acc['created_at'])) ?></td>
                             <td class="actions">
                                 <a href="update.php?id=<?= $acc['id'] ?>" class="btn btn-small btn-edit">Sửa</a>
@@ -48,7 +62,11 @@ $error = $_GET['error'] ?? '';
                             </td>
                         </tr>
                     <?php endforeach; ?>
-                    <?php if (!$accounts): ?><tr><td colspan="7" class="empty">Chưa có tài khoản nào.</td></tr><?php endif; ?>
+                    <?php if (!$accounts): ?>
+                        <tr>
+                            <td colspan="7" class="empty">Chưa có tài khoản nào.</td>
+                        </tr>
+                    <?php endif; ?>
                     </tbody>
                 </table>
             </div>

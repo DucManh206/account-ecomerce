@@ -1,10 +1,6 @@
 <?php
-// ============================================================
-// Trang đăng nhập - Admin
-// ============================================================
 require_once __DIR__ . '/config/db.php';
 
-// Nếu đã đăng nhập thì chuyển thẳng vào dashboard
 if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
     header('Location: dashboard.php');
     exit;
@@ -17,13 +13,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = trim($_POST['password'] ?? '');
 
     if (empty($username) || empty($password)) {
-        $error = 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.';
+        $error = 'Vui lòng điền tài khoản và mật khẩu.';
     } else {
-        $stmt = $pdo->prepare("SELECT * FROM admin_users WHERE username = ?");
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? AND role = 'admin'");
         $stmt->execute([$username]);
         $user = $stmt->fetch();
 
-        if ($user && $user['password'] === md5($password)) {
+        if ($user && (password_verify($password, $user['password']) || $user['password'] === md5($password))) {
             $_SESSION['admin_logged_in'] = true;
             $_SESSION['admin_user_id'] = $user['id'];
             $_SESSION['admin_username'] = $user['username'];
@@ -31,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: dashboard.php');
             exit;
         } else {
-            $error = 'Sai tên đăng nhập hoặc mật khẩu.';
+            $error = 'Tài khoản hoặc mật khẩu không chính xác.';
         }
     }
 }
@@ -59,13 +55,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="username">Tên đăng nhập</label>
                     <input type="text" id="username" name="username" placeholder="Nhập tên đăng nhập" required>
                 </div>
-                <div class="form-group">
+                 <div class="form-group">
                     <label for="password">Mật khẩu</label>
                     <input type="password" id="password" name="password" placeholder="Nhập mật khẩu" required>
+                </div>
+                <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px; margin-top: -10px; margin-bottom: 20px;">
+                    <input type="checkbox" id="show-password" style="width: auto; cursor: pointer;">
+                    <label for="show-password" style="font-size: 0.85rem; color: #a3a3a3; cursor: pointer; user-select: none;">Hiện mật khẩu</label>
                 </div>
                 <button type="submit" class="btn btn-primary btn-full">Đăng nhập</button>
             </form>
         </div>
     </div>
+    <script>
+        document.getElementById('show-password').addEventListener('change', function() {
+            var passwordInput = document.getElementById('password');
+            if (this.checked) {
+                passwordInput.type = 'text';
+            } else {
+                passwordInput.type = 'password';
+            }
+        });
+    </script>
 </body>
 </html>
