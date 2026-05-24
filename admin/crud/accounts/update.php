@@ -17,6 +17,10 @@ $categories = getCategories($pdo);
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Convert datetime-local format 'Y-m-d\TH:i' to MySQL standard format 'Y-m-d H:i:s'
+    $createdAtInput = trim($_POST['created_at'] ?? '');
+    $dbCreatedAt = !empty($createdAtInput) ? date('Y-m-d H:i:s', strtotime($createdAtInput)) : date('Y-m-d H:i:s');
+
     $data = [
         'name' => trim($_POST['name'] ?? ''),
         'description' => trim($_POST['description'] ?? ''),
@@ -24,7 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'category_id' => trim($_POST['category_id'] ?? ''),
         'image' => trim($_POST['image'] ?? ''),
         'account_detail' => trim($_POST['account_detail'] ?? ''),
-        'status' => $_POST['status'] ?? 'available'
+        'status' => $_POST['status'] ?? 'available',
+        'created_at' => $dbCreatedAt
     ];
 
     if ($data['name'] === '' || $data['price'] === '') {
@@ -92,6 +97,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <option value="available" <?= $account['status'] === 'available' ? 'selected' : '' ?>>Đang bán</option>
                             <option value="sold" <?= $account['status'] === 'sold' ? 'selected' : '' ?>>Đã bán</option>
                         </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="created_at">Ngay dang ban (Chinh sua thoi gian dang)</label>
+                        <input type="datetime-local" id="created_at" name="created_at" value="<?= date('Y-m-d\TH:i', strtotime($account['created_at'])) ?>" required>
                     </div>
                 </div>
                 

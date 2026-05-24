@@ -19,13 +19,28 @@ if (isset($_GET['action']) && $_GET['action'] === 'add') {
     if ($account) {
         if (!in_array($accountId, $_SESSION['cart'])) {
             $_SESSION['cart'][] = $accountId;
+            if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'cart_count' => count($_SESSION['cart'])]);
+                exit;
+            }
             header('Location: cart.php');
             exit;
         } else {
-            $error = 'Sản phẩm đã có trong giỏ hàng!';
+            $error = 'San pham da co trong gio hang!';
+            if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => $error]);
+                exit;
+            }
         }
     } else {
-        $error = 'Tài khoản không tồn tại hoặc đã bán.';
+        $error = 'Tai khoan khong ton tai hoac da ban.';
+        if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => $error]);
+            exit;
+        }
     }
 }
 
@@ -96,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
                 $deductStmt->execute([$totalPrice, $userId]);
                 
                 $orderStmt = $pdo->prepare("INSERT INTO orders (user_id, account_id, price) VALUES (?, ?, ?)");
-                $updateStatusStmt = $pdo->prepare("UPDATE accounts SET status = 'sold' WHERE id = ?");
+                $updateStatusStmt = $pdo->prepare("UPDATE accounts SET status = 'sold', hidden = 1 WHERE id = ?");
                 
                 foreach ($_SESSION['cart'] as $accId) {
                     $priceStmt = $pdo->prepare("SELECT price FROM accounts WHERE id = ?");
@@ -197,6 +212,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
             font-weight: 600;
             transition: var(--transition);
         }
+        
+        .cart-item-sold {
+            background-color: rgba(239, 68, 68, 0.05) !important;
+            border: 1px solid rgba(239, 68, 68, 0.3) !important;
+            padding: 16px !important;
+            margin-bottom: 8px;
+        }
+        .cart-item-sold .cart-item-title {
+            color: #ef4444 !important;
+        }
+        .cart-item-sold .sold-error-msg {
+            color: #ef4444;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         .btn-cart-delete:hover {
             background-color: var(--danger);
             color: white;
@@ -262,13 +294,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
                     <div class="cart-items-list">
                         <?php foreach ($cartAccounts as $acc): 
                             $img = !empty($acc['image']) ? $acc['image'] : 'assets/images/default-product.png';
+                            $isSold = ($acc['status'] !== 'available');
                         ?>
-                            <div class="cart-item">
+                            <div class="cart-item <?= $isSold ? 'cart-item-sold' : '' ?>">
                                 <div class="cart-item-details">
                                     <img src="<?= htmlspecialchars($img) ?>" class="cart-item-img" alt="" onerror="this.src='assets/images/default-product.png'; this.onerror=null;">
                                     <div>
                                         <a href="chitiet.php?id=<?= $acc['id'] ?>" class="cart-item-title"><?= htmlspecialchars($acc['name']) ?></a>
                                         <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Danh mục: <?= htmlspecialchars($acc['category_name'] ?? 'Chưa phân loại') ?></div>
+                                        <?php if ($isSold): ?>
+                                            <div class="sold-error-msg">Tai khoan nay da bi mua mat - Vui long xoa khoi gio</div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 24px;">

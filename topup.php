@@ -589,9 +589,9 @@ $topupHistory = $stmtHistory->fetchAll();
                     <span id="polling_text">Đang chờ bạn quét mã thanh toán...</span>
                 </div>
 
-                <?php if (SEPAY_API_TOKEN === 'YOUR_SEPAY_API_TOKEN'): ?>
+                <?php if (!SEPAY_ENABLED || SEPAY_API_TOKEN === 'YOUR_SEPAY_API_TOKEN'): ?>
                     <div class="mock-alert" id="mock_alert_box">
-                        <strong>Chế độ chạy thử đang bật:</strong> Bạn chỉ cần click nút <strong>"Kiểm tra giao dịch"</strong> phía trên, hệ thống sẽ tự động giả lập cộng số tiền bạn chọn vào tài khoản để chấm điểm bài làm mà không cần giao dịch ngân hàng thực tế.
+                        <strong>Chế độ chạy thử đang bật<?= !SEPAY_ENABLED ? ' (SePay đã tắt)' : '' ?>:</strong> Bạn chỉ cần click nút <strong>"Kiểm tra giao dịch"</strong> phía trên, hệ thống sẽ tự động giả lập cộng số tiền bạn chọn vào tài khoản để chấm điểm bài làm mà không cần giao dịch ngân hàng thực tế.
                     </div>
                 <?php endif; ?>
             </div>

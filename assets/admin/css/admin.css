@@ -3,6 +3,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
+    color-scheme: dark;
     --primary: #ffffff;
     --primary-hover: #e5e5e5;
     --primary-light: #262626;
@@ -568,4 +569,15 @@ body {
         flex-direction: column;
         gap: 20px;
     }
+}
+
+/* Fix option contrast in selects */
+select {
+    background-color: #121212 !important;
+    color: #ffffff !important;
+}
+
+option, select option {
+    background-color: #121212 !important;
+    color: #ffffff !important;
 }

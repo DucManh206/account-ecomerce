@@ -49,6 +49,7 @@ CREATE TABLE accounts (
   image VARCHAR(255) DEFAULT NULL,
   account_detail TEXT DEFAULT NULL COMMENT 'Thông tin đăng nhập',
   status ENUM('available', 'sold') DEFAULT 'available',
+  hidden TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Ẩn sản phẩm khỏi trang chủ',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
@@ -138,6 +139,7 @@ CREATE TABLE IF NOT EXISTS settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO settings (setting_key, setting_value) VALUES
+('sepay_enabled', '1'),
 ('sepay_api_token', 'SEPAY_TOKEN_O_DAY'),
 ('sepay_bank_code', 'MBBank'),
 ('sepay_bank_num', '0398687777'),

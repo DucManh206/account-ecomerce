@@ -45,6 +45,7 @@ try {
     } catch (Exception $e) {
         $settingsMap = [];
     }
+    if (!defined('SEPAY_ENABLED'))     define('SEPAY_ENABLED',     ($settingsMap['sepay_enabled']    ?? '1') === '1');
     if (!defined('SEPAY_API_TOKEN'))   define('SEPAY_API_TOKEN',   $settingsMap['sepay_api_token']  ?? 'YOUR_SEPAY_API_TOKEN');
     if (!defined('SEPAY_BANK_CODE'))   define('SEPAY_BANK_CODE',   $settingsMap['sepay_bank_code']  ?? 'MBBank');
     if (!defined('SEPAY_BANK_NUM'))    define('SEPAY_BANK_NUM',    $settingsMap['sepay_bank_num']   ?? '0000000000');

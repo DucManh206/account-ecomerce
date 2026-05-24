@@ -66,8 +66,8 @@ try {
     $expectedPrefix = defined('SEPAY_MEMO_PREFIX') ? SEPAY_MEMO_PREFIX : 'NAP';
     $expectedMemo = $request['memo'];
 
-    // Chạy thử
-    if (!defined('SEPAY_API_TOKEN') || SEPAY_API_TOKEN === 'YOUR_SEPAY_API_TOKEN') {
+    // Chạy thử (khi tắt SePay hoặc chưa cấu hình token)
+    if (!defined('SEPAY_ENABLED') || !SEPAY_ENABLED || !defined('SEPAY_API_TOKEN') || SEPAY_API_TOKEN === 'YOUR_SEPAY_API_TOKEN') {
         $mockTxId = 'MOCK_TX_' . $requestId . '_' . time();
         
         try {

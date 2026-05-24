@@ -95,6 +95,32 @@ function getFallbackImage($categoryName) {
             font-weight: 700;
             margin-left: 6px;
         }
+        
+        /* Toast notification */
+        .toast-notification {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background-color: #10b981;
+            color: #ffffff;
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+        .toast-notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast-notification.toast-error {
+            background-color: #ef4444;
+        }
     </style>
 </head>
 <body>
@@ -113,7 +139,7 @@ function getFallbackImage($categoryName) {
                 <a href="topup.php" class="nav-link">Nạp tiền</a>
                 <a href="cart.php" class="cart-badge-indicator">
                     <span>Giỏ hàng</span>
-                    <span class="cart-count"><?= count($_SESSION['cart']) ?></span>
+                    <span class="cart-count" id="cartCount"><?= count($_SESSION['cart']) ?></span>
                 </a>
                 
                 <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
@@ -183,11 +209,11 @@ function getFallbackImage($categoryName) {
                         
                         <?php if ($acc['status'] === 'available'): ?>
                             <?php if (in_array($acc['id'], $_SESSION['cart'])): ?>
-                                <a href="cart.php" class="btn-buy" style="display: block; text-decoration: none; text-align: center; background: #059669; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);">
+                                <a href="cart.php" class="btn-buy" id="btn-buy-detail" style="display: block; text-decoration: none; text-align: center; background: #059669; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);">
                                     Xem giỏ hàng
                                 </a>
                             <?php else: ?>
-                                <a href="cart.php?action=add&id=<?= $acc['id'] ?>" class="btn-buy" style="display: block; text-decoration: none; text-align: center;">
+                                <a href="javascript:void(0)" onclick="addToCart(<?= $acc['id'] ?>, this)" class="btn-buy" id="btn-buy-detail" style="display: block; text-decoration: none; text-align: center;">
                                     Thêm vào giỏ
                                 </a>
                             <?php endif; ?>
@@ -215,5 +241,50 @@ function getFallbackImage($categoryName) {
         </div>
     </footer>
 
+    <div id="toastNotification" class="toast-notification">Da them vao gio hang thanh cong!</div>
+
+    <script>
+    function addToCart(accountId, element) {
+        fetch('cart.php?action=add&id=' + accountId + '&ajax=1')
+            .then(res => res.json())
+            .then(data => {
+                const toast = document.getElementById('toastNotification');
+                if (data.success) {
+                    // Update header badge count
+                    const cartCount = document.getElementById('cartCount');
+                    if (cartCount) {
+                        cartCount.textContent = data.cart_count;
+                    }
+                    
+                    // Update button UI
+                    element.textContent = 'Xem gio hang';
+                    element.style.background = '#059669';
+                    element.style.boxShadow = '0 4px 14px rgba(5, 150, 105, 0.3)';
+                    element.onclick = function() {
+                        window.location.href = 'cart.php';
+                    };
+                    
+                    // Show toast
+                    toast.textContent = 'Da them san pham vao gio hang!';
+                    toast.classList.remove('toast-error');
+                    toast.classList.add('show');
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 2500);
+                } else {
+                    // Show error toast
+                    toast.textContent = data.error || 'Co loi xay ra!';
+                    toast.classList.add('toast-error');
+                    toast.classList.add('show');
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 2500);
+                }
+            })
+            .catch(err => {
+                alert('Loi ket noi server!');
+            });
+    }
+    </script>
 </body>
 </html>
