@@ -1,15 +1,50 @@
 <?php
-require_once __DIR__ . '/admin/config/db.php';
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/flash.php';
 
 require_login();
 
 $userId = $_SESSION['user_id'];
-$success = '';
-$error = '';
 
-// Xử lý thông báo từ trang nạp tiền
+// Xử lý thông báo từ query URL cũ nếu có
 if (isset($_GET['success'])) {
-    $success = $_GET['success'];
+    set_flash('success', $_GET['success']);
+}
+
+// Xử lý đổi mật khẩu
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_change_password'])) {
+    verify_csrf();
+
+    $oldPassword = trim($_POST['old_password'] ?? '');
+    $newPassword = trim($_POST['new_password'] ?? '');
+    $confirmPassword = trim($_POST['confirm_password'] ?? '');
+
+    if (empty($oldPassword) || empty($newPassword) || empty($confirmPassword)) {
+        set_flash('error', 'Vui lòng điền đầy đủ thông tin để đổi mật khẩu.');
+    } elseif ($newPassword !== $confirmPassword) {
+        set_flash('error', 'Mật khẩu mới và xác nhận mật khẩu không khớp.');
+    } elseif (strlen($newPassword) < 6) {
+        set_flash('error', 'Mật khẩu mới phải từ 6 ký tự trở lên.');
+    } else {
+        $userQuery = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $userQuery->execute([$userId]);
+        $currUser = $userQuery->fetch();
+
+        if ($currUser && (password_verify($oldPassword, $currUser['password']) || $currUser['password'] === md5($oldPassword))) {
+            $newHashed = password_hash($newPassword, PASSWORD_BCRYPT);
+            $updatePwStmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+            if ($updatePwStmt->execute([$newHashed, $userId])) {
+                set_flash('success', 'Đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới của bạn.');
+                header('Location: profile.php');
+                exit;
+            } else {
+                set_flash('error', 'Có lỗi xảy ra khi cập nhật mật khẩu.');
+            }
+        } else {
+            set_flash('error', 'Mật khẩu hiện tại không chính xác.');
+        }
+    }
 }
 
 $userStmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
@@ -26,241 +61,150 @@ $ordersStmt = $pdo->prepare("
 ");
 $ordersStmt->execute([$userId]);
 $orders = $ordersStmt->fetchAll();
-?>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trang cá nhân & Lịch sử mua hàng - Account Shop</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-    <style>
+
+$pageTitle = 'Trang cá nhân & Lịch sử mua hàng - Account Shop';
+$extraCss = '
+    .profile-grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 32px;
+        margin-top: 40px;
+        margin-bottom: 60px;
+    }
+    .profile-sidebar-card, .profile-main-card {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 30px;
+    }
+    .user-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8b5cf6, #10b981);
+        color: white;
+        font-size: 2rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px auto;
+    }
+    .balance-box {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: var(--radius-sm);
+        padding: 16px;
+        text-align: center;
+        margin-bottom: 24px;
+    }
+    .credential-toggle {
+        background: none;
+        border: 1px solid rgba(167, 139, 250, 0.3);
+        color: #a78bfa;
+        padding: 4px 10px;
+        font-size: 0.78rem;
+        cursor: pointer;
+        border-radius: 4px;
+        margin-top: 8px;
+        transition: var(--transition);
+    }
+    .credential-toggle:hover {
+        background-color: rgba(167, 139, 250, 0.1);
+    }
+    .credential-hidden {
+        display: none;
+    }
+    .order-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        margin-top: 16px;
+    }
+    .order-table th {
+        padding: 12px 16px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        color: var(--text-gray);
+        border-bottom: 1px solid var(--border-color);
+    }
+    .order-table td {
+        padding: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 0.95rem;
+        color: #e5e7eb;
+        vertical-align: top;
+    }
+    .history-credentials {
+        background-color: #0f172a;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.85rem;
+        color: #34d399;
+        white-space: pre-wrap;
+        margin-top: 8px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+    @media (max-width: 900px) {
         .profile-grid {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 32px;
-            margin-top: 40px;
-            margin-bottom: 60px;
+            grid-template-columns: 1fr;
         }
-        .profile-sidebar-card {
-            background-color: var(--bg-card);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 30px;
-            height: fit-content;
-        }
-        .profile-main-card {
-            background-color: var(--bg-card);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 30px;
-        }
-        .user-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #8b5cf6, #10b981);
-            color: white;
-            font-size: 2rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px auto;
-        }
-        .user-info-text {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-        .user-info-text h3 {
-            font-size: 1.25rem;
-            color: var(--text-white);
-            font-weight: 700;
-        }
-        .user-info-text p {
-            color: var(--text-gray);
-            font-size: 0.9rem;
-            margin-top: 4px;
-        }
-        .balance-box {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: var(--radius-sm);
-            padding: 16px;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .balance-box label {
-            font-size: 0.85rem;
-            color: #34d399;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .balance-value {
-            font-size: 1.85rem;
-            font-weight: 800;
-            color: #10b981;
-            margin-top: 4px;
-        }
-        .deposit-section {
-            text-align: center;
-        }
-        .btn-topup-link {
-            display: block;
-            background-color: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            color: #34d399;
-            padding: 12px;
-            border-radius: var(--radius-sm);
-            font-weight: 600;
-            font-size: 0.95rem;
-            text-decoration: none;
-            transition: var(--transition);
-        }
-        .btn-topup-link:hover {
-            background-color: rgba(16, 185, 129, 0.2);
-            border-color: #10b981;
-        }
-        .credential-toggle {
-            background: none;
-            border: 1px solid rgba(167, 139, 250, 0.3);
-            color: #a78bfa;
-            padding: 4px 10px;
-            font-size: 0.78rem;
-            cursor: pointer;
-            border-radius: 4px;
-            margin-top: 8px;
-            transition: var(--transition);
-        }
-        .credential-toggle:hover {
-            background-color: rgba(167, 139, 250, 0.1);
-        }
-        .credential-hidden {
-            display: none;
-        }
-        .order-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            margin-top: 16px;
-        }
-        .order-table th {
-            padding: 12px 16px;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            color: var(--text-gray);
-            border-bottom: 1px solid var(--border-color);
-        }
-        .order-table td {
-            padding: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            font-size: 0.95rem;
-            color: #e5e7eb;
-            vertical-align: top;
-        }
-        .history-credentials {
-            background-color: #0f172a;
-            padding: 10px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 0.85rem;
-            color: #34d399;
-            white-space: pre-wrap;
-            margin-top: 8px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .btn-copy-sm {
-            background-color: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-white);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            margin-top: 6px;
-            display: inline-block;
-            transition: var(--transition);
-        }
-        .btn-copy-sm:hover {
-            background-color: var(--primary);
-        }
-        @media (max-width: 900px) {
-            .profile-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-    <script>
-        function copyText(id, btnId) {
-            var el = document.getElementById(id);
-            navigator.clipboard.writeText(el.innerText).then(function() {
-                var btn = document.getElementById(btnId);
-                btn.innerText = "Đã copy!";
-                setTimeout(function() {
-                    btn.innerText = "Sao chép";
-                }, 1500);
-            });
-        }
+    }
+';
 
-        function toggleCredential(orderId) {
-            var block = document.getElementById('credentialBlock_' + orderId);
-            var btn = block.previousElementSibling;
-            if (block.classList.contains('credential-hidden')) {
-                block.classList.remove('credential-hidden');
-                btn.innerText = 'Ẩn thông tin';
-            } else {
-                block.classList.add('credential-hidden');
-                btn.innerText = 'Xem thông tin đăng nhập';
-            }
-        }
-    </script>
-</head>
-<body>
+require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/navbar.php';
+?>
 
-    <header class="navbar">
-        <div class="container navbar-content">
-            <a href="index.php" class="logo">
-                AccountShop
-            </a>
-            <div class="nav-links">
-                <?php if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true): ?>
-                    <a href="admin/dashboard.php" class="btn-nav" style="border-color: #f59e0b; color: #f59e0b !important;">Quản trị viên</a>
-                <?php endif; ?>
-                <a href="index.php" class="nav-link">Trang chủ</a>
-                <a href="topup.php" class="nav-link">Nạp tiền</a>
-                <a href="cart.php" class="nav-link">Giỏ hàng</a>
-                <a href="logout.php" class="btn-nav" style="background: var(--danger);">Đăng xuất</a>
-            </div>
-        </div>
-    </header>
-
-    <div class="container">
-        <?php if ($success): ?>
-            <div class="frontend-alert" style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: #a7f3d0; margin-top: 24px;"><?= htmlspecialchars($success) ?></div>
-        <?php endif; ?>
-        <?php if ($error): ?>
-            <div class="frontend-alert frontend-alert-error" style="margin-top: 24px;"><?= htmlspecialchars($error) ?></div>
-        <?php endif; ?>
+    <div class="container" style="min-height: 70vh;">
+        <?= render_flash() ?>
 
         <div class="profile-grid">
-            <aside class="profile-sidebar-card">
+            <aside class="profile-sidebar-card" style="height: fit-content;">
                 <div class="user-avatar">
-                    <?= strtoupper(substr($user['fullname'], 0, 1)) ?>
+                    <?= strtoupper(substr($user['fullname'] ?? 'U', 0, 1)) ?>
                 </div>
-                <div class="user-info-text">
-                    <h3><?= htmlspecialchars($user['fullname']) ?></h3>
-                    <p>@<?= htmlspecialchars($user['username']) ?></p>
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <h3 style="font-size: 1.25rem; color: var(--text-white); font-weight: 700;"><?= htmlspecialchars($user['fullname'] ?? '') ?></h3>
+                    <p style="color: var(--text-gray); font-size: 0.9rem; margin-top: 4px;">@<?= htmlspecialchars($user['username'] ?? '') ?></p>
                 </div>
 
                 <div class="balance-box">
-                    <label>Số dư tài khoản</label>
-                    <div class="balance-value"><?= number_format($user['balance'], 0, ',', '.') ?>đ</div>
+                    <label style="font-size: 0.85rem; color: #34d399; font-weight: 600; text-transform: uppercase;">Số dư tài khoản</label>
+                    <div style="font-size: 1.85rem; font-weight: 800; color: #10b981; margin-top: 4px;"><?= number_format($user['balance'] ?? 0, 0, ',', '.') ?>đ</div>
                 </div>
 
-                <div class="deposit-section">
-                    <a href="topup.php" class="btn-topup-link">Nạp tiền tài khoản</a>
+                <div style="margin-bottom: 24px;">
+                    <a href="topup.php" class="btn-buy" style="display: block; text-align: center; text-decoration: none;">+ Nạp tiền tài khoản</a>
+                </div>
+
+                <hr style="border: none; border-top: 1px solid var(--border-color); margin: 24px 0;">
+
+                <!-- Form đổi mật khẩu -->
+                <div>
+                    <h4 style="font-size: 1rem; color: var(--text-white); font-weight: 700; margin-bottom: 16px;">Đổi mật khẩu</h4>
+                    <form method="POST">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="action_change_password" value="1">
+                        
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size: 0.8rem; color: var(--text-gray); display: block; margin-bottom: 4px;">Mật khẩu hiện tại</label>
+                            <input type="password" name="old_password" required placeholder="Nhập mật khẩu cũ" style="width: 100%; padding: 8px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-white); outline: none;">
+                        </div>
+
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size: 0.8rem; color: var(--text-gray); display: block; margin-bottom: 4px;">Mật khẩu mới</label>
+                            <input type="password" name="new_password" required placeholder="Tối thiểu 6 ký tự" style="width: 100%; padding: 8px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-white); outline: none;">
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-size: 0.8rem; color: var(--text-gray); display: block; margin-bottom: 4px;">Xác nhận mật khẩu mới</label>
+                            <input type="password" name="confirm_password" required placeholder="Nhập lại mật khẩu mới" style="width: 100%; padding: 8px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-white); outline: none;">
+                        </div>
+
+                        <button type="submit" class="tab-btn" style="width: 100%; text-align: center; border-radius: var(--radius-sm);">Cập nhật mật khẩu</button>
+                    </form>
                 </div>
             </aside>
 
@@ -296,7 +240,7 @@ $orders = $ordersStmt->fetchAll();
                                                 <button class="credential-toggle" onclick="toggleCredential(<?= $ord['id'] ?>)">Xem thông tin đăng nhập</button>
                                                 <div id="credentialBlock_<?= $ord['id'] ?>" class="credential-hidden">
                                                     <div id="credential_<?= $ord['id'] ?>" class="history-credentials"><?= htmlspecialchars($ord['account_detail']) ?></div>
-                                                    <button id="copyBtn_<?= $ord['id'] ?>" onclick="copyText('credential_<?= $ord['id'] ?>', 'copyBtn_<?= $ord['id'] ?>')" class="btn-copy-sm">Sao chép</button>
+                                                    <button id="copyBtn_<?= $ord['id'] ?>" onclick="copyText('credential_<?= $ord['id'] ?>', 'copyBtn_<?= $ord['id'] ?>')" class="btn-copy-sm" style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-white); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; margin-top: 6px;">Sao chép</button>
                                                 </div>
                                             </div>
                                         <?php endif; ?>
@@ -313,11 +257,33 @@ $orders = $ordersStmt->fetchAll();
         </div>
     </div>
 
-    <footer>
-        <div class="container footer-content">
-            <p>&copy; Nhóm 5. Bài tập lớn Lập trình web và ứng dụng.</p>
-        </div>
-    </footer>
+    <script>
+        function copyText(id, btnId) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            navigator.clipboard.writeText(el.innerText).then(function() {
+                var btn = document.getElementById(btnId);
+                if (btn) {
+                    btn.innerText = "Đã copy!";
+                    setTimeout(function() {
+                        btn.innerText = "Sao chép";
+                    }, 1500);
+                }
+            });
+        }
 
-</body>
-</html>
+        function toggleCredential(orderId) {
+            var block = document.getElementById('credentialBlock_' + orderId);
+            if (!block) return;
+            var btn = block.previousElementSibling;
+            if (block.classList.contains('credential-hidden')) {
+                block.classList.remove('credential-hidden');
+                if (btn) btn.innerText = 'Ẩn thông tin';
+            } else {
+                block.classList.add('credential-hidden');
+                if (btn) btn.innerText = 'Xem thông tin đăng nhập';
+            }
+        }
+    </script>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

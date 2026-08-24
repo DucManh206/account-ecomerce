@@ -1,5 +1,6 @@
 <?php
-require_once __DIR__ . '/admin/config/db.php';
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/flash.php';
 
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
@@ -21,16 +22,9 @@ $stmt->execute([$id]);
 $acc = $stmt->fetch();
 
 if (!$acc) {
-    $error = 'Tài khoản không tồn tại hoặc đã bị ẩn.';
+    set_flash('error', 'Tài khoản không tồn tại hoặc đã bị ẩn khỏi cửa hàng.');
 }
 
-$myBalance = 0;
-if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) {
-    $balStmt = $pdo->prepare("SELECT balance FROM users WHERE id = ?");
-    $balStmt->execute([$_SESSION['user_id']]);
-    $myBalance = $balStmt->fetchColumn();
-}
-// trả về ảnh dự phòng 
 function getFallbackImage($categoryName) {
     $categoryName = mb_strtolower($categoryName, 'UTF-8');
     if (strpos($categoryName, 'game') !== false || strpos($categoryName, 'lmht') !== false || strpos($categoryName, 'steam') !== false) {
@@ -42,133 +36,22 @@ function getFallbackImage($categoryName) {
     }
     return 'assets/images/default-product.png';
 }
+
+$pageTitle = ($acc ? $acc['name'] : 'Chi tiết tài khoản') . ' - Account Shop';
+require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/navbar.php';
 ?>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $acc ? htmlspecialchars($acc['name']) : 'Lỗi' ?> - Account Shop</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-    <style>
-        .balance-indicator {
-            background-color: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            color: #10b981;
-            padding: 6px 14px;
-            border-radius: var(--radius-sm);
-            font-size: 0.9rem;
-            font-weight: 700;
-            text-decoration: none;
-            transition: var(--transition);
-        }
-        .balance-indicator:hover {
-            background-color: rgba(16, 185, 129, 0.2);
-        }
-        .cart-badge-indicator {
-            position: relative;
-            display: flex;
-            align-items: center;
-            color: var(--text-white);
-            text-decoration: none;
-            font-weight: 600;
-            padding: 6px 12px;
-            border-radius: var(--radius-sm);
-            background-color: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            transition: var(--transition);
-        }
-        .cart-badge-indicator:hover {
-            background-color: var(--primary);
-            border-color: var(--primary);
-        }
-        .cart-count {
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
-            margin-left: 6px;
-        }
-        
-        /* Toast notification */
-        .toast-notification {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background-color: #10b981;
-            color: #ffffff;
-            padding: 12px 24px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            border-radius: var(--radius-sm);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            pointer-events: none;
-        }
-        .toast-notification.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .toast-notification.toast-error {
-            background-color: #ef4444;
-        }
-    </style>
-</head>
-<body>
 
-    <header class="navbar">
-        <div class="container navbar-content">
-            <a href="index.php" class="logo">
-                AccountShop
-            </a>
-            
-            <div class="nav-links">
-                <?php if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true): ?>
-                    <a href="admin/dashboard.php" class="btn-nav" style="border-color: #f59e0b; color: #f59e0b !important;">Quản trị viên</a>
-                <?php endif; ?>
-                <a href="index.php" class="nav-link">Trang chủ</a>
-                <a href="topup.php" class="nav-link">Nạp tiền</a>
-                <a href="cart.php" class="cart-badge-indicator">
-                    <span>Giỏ hàng</span>
-                    <span class="cart-count" id="cartCount"><?= count($_SESSION['cart']) ?></span>
-                </a>
-                
-                <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
-                    <a href="profile.php" class="balance-indicator">
-                        Số dư: <?= number_format($myBalance, 0, ',', '.') ?>đ
-                    </a>
-                    <a href="profile.php" class="nav-link" style="color: var(--text-white); font-weight: 600;">
-                        Hi, <?= htmlspecialchars($_SESSION['user_fullname']) ?>
-                    </a>
-                    <a href="logout.php" class="btn-nav" style="background: var(--danger);">Đăng xuất</a>
-                <?php else: ?>
-                    <a href="login.php" class="nav-link">Đăng nhập</a>
-                    <a href="register.php" class="btn-nav">Đăng ký</a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </header>
+    <div class="container" style="min-height: 70vh;">
+        <?= render_flash() ?>
 
-    <div class="container">
-        <?php if (isset($error) && !$acc): ?>
-            <div class="frontend-alert frontend-alert-error" style="margin-top: 40px;">
-                <?= htmlspecialchars($error) ?>
-            </div>
-            <div style="text-align: center; margin: 40px 0;">
-                <a href="index.php" class="tab-btn">Quay lại trang chủ</a>
+        <?php if (!$acc): ?>
+            <div style="text-align: center; margin: 60px 0;">
+                <a href="index.php" class="tab-btn">&larr; Quay lại trang chủ</a>
             </div>
         <?php else: ?>
             
-            <div class="detail-layout">
+            <div class="detail-layout" style="margin-top: 40px; margin-bottom: 60px;">
                 <main class="detail-main">
                     <div class="detail-img-container">
                         <?php 
@@ -226,7 +109,7 @@ function getFallbackImage($categoryName) {
                         </div>
                     </div>
                     
-                    <a href="index.php" class="tab-btn" style="text-align: center; text-decoration: none; display: block; border-radius: var(--radius-sm);">
+                    <a href="index.php" class="tab-btn" style="text-align: center; text-decoration: none; display: block; border-radius: var(--radius-sm); margin-top: 16px;">
                         &larr; Quay lại danh sách
                     </a>
                 </aside>
@@ -235,56 +118,4 @@ function getFallbackImage($categoryName) {
         <?php endif; ?>
     </div>
 
-    <footer>
-        <div class="container footer-content">
-            <p>&copy; Nhóm 5. Bài tập lớn Lập trình web và ứng dụng.</p>
-        </div>
-    </footer>
-
-    <div id="toastNotification" class="toast-notification">Da them vao gio hang thanh cong!</div>
-
-    <script>
-    function addToCart(accountId, element) {
-        fetch('cart.php?action=add&id=' + accountId + '&ajax=1')
-            .then(res => res.json())
-            .then(data => {
-                const toast = document.getElementById('toastNotification');
-                if (data.success) {
-                    // Update header badge count
-                    const cartCount = document.getElementById('cartCount');
-                    if (cartCount) {
-                        cartCount.textContent = data.cart_count;
-                    }
-                    
-                    // Update button UI
-                    element.textContent = 'Xem gio hang';
-                    element.style.background = '#059669';
-                    element.style.boxShadow = '0 4px 14px rgba(5, 150, 105, 0.3)';
-                    element.onclick = function() {
-                        window.location.href = 'cart.php';
-                    };
-                    
-                    // Show toast
-                    toast.textContent = 'Da them san pham vao gio hang!';
-                    toast.classList.remove('toast-error');
-                    toast.classList.add('show');
-                    setTimeout(() => {
-                        toast.classList.remove('show');
-                    }, 2500);
-                } else {
-                    // Show error toast
-                    toast.textContent = data.error || 'Co loi xay ra!';
-                    toast.classList.add('toast-error');
-                    toast.classList.add('show');
-                    setTimeout(() => {
-                        toast.classList.remove('show');
-                    }, 2500);
-                }
-            })
-            .catch(err => {
-                alert('Loi ket noi server!');
-            });
-    }
-    </script>
-</body>
-</html>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

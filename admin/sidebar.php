@@ -79,6 +79,6 @@ $isActiveSettings = (strpos($currentScript, 'crud/settings/') !== false) ? 'acti
         </a>
     </nav>
     <div class="sidebar-footer">
-        <p>Xin chào, <strong><?= htmlspecialchars($_SESSION['admin_fullname']) ?></strong></p>
+        <p>Xin chào, <strong><?= htmlspecialchars($_SESSION['admin_fullname'] ?? 'Quản trị viên') ?></strong></p>
     </div>
 </aside>

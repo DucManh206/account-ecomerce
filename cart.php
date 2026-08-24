@@ -1,14 +1,13 @@
 <?php
-require_once __DIR__ . '/admin/config/db.php';
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/flash.php';
 
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
 }
 
-$error = '';
-$success = '';
-
-// Them vao gio hang
+// Thêm vào giỏ hàng
 if (isset($_GET['action']) && $_GET['action'] === 'add') {
     $accountId = intval($_GET['id'] ?? 0);
     
@@ -24,39 +23,43 @@ if (isset($_GET['action']) && $_GET['action'] === 'add') {
                 echo json_encode(['success' => true, 'cart_count' => count($_SESSION['cart'])]);
                 exit;
             }
+            set_flash('success', 'Đã thêm tài khoản vào giỏ hàng!');
             header('Location: cart.php');
             exit;
         } else {
-            $error = 'San pham da co trong gio hang!';
+            $errMsg = 'Sản phẩm đã có trong giỏ hàng!';
             if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
                 header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'error' => $error]);
+                echo json_encode(['success' => false, 'error' => $errMsg]);
                 exit;
             }
+            set_flash('error', $errMsg);
         }
     } else {
-        $error = 'Tai khoan khong ton tai hoac da ban.';
+        $errMsg = 'Tài khoản không tồn tại hoặc đã bán.';
         if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
             header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => $error]);
+            echo json_encode(['success' => false, 'error' => $errMsg]);
             exit;
         }
+        set_flash('error', $errMsg);
     }
 }
 
-// Xoa khoi gio hang
+// Xóa khỏi giỏ hàng
 if (isset($_GET['action']) && $_GET['action'] === 'delete') {
     $accountId = intval($_GET['id'] ?? 0);
     $key = array_search($accountId, $_SESSION['cart']);
     if ($key !== false) {
         unset($_SESSION['cart'][$key]);
         $_SESSION['cart'] = array_values($_SESSION['cart']);
+        set_flash('success', 'Đã xóa tài khoản khỏi giỏ hàng.');
         header('Location: cart.php');
         exit;
     }
 }
 
-// Lay du lieu gio hang
+// Lấy dữ liệu giỏ hàng
 $cartAccounts = [];
 $totalPrice = 0;
 
@@ -76,8 +79,10 @@ if (!empty($_SESSION['cart'])) {
     }
 }
 
-// Thuc hien thanh toan
+// Thực hiện thanh toán
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
+    verify_csrf();
+
     if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
         header('Location: login.php');
         exit;
@@ -86,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
     $userId = $_SESSION['user_id'];
     
     if (empty($_SESSION['cart'])) {
-        $error = 'Giỏ hàng đang trống!';
+        set_flash('error', 'Giỏ hàng đang trống!');
     } else {
         try {
             // Sử dụng Transaction và khóa dòng (SELECT ... FOR UPDATE) để chống Race Condition tuyệt đối
@@ -121,10 +126,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
 
             if (!empty($soldItemNames)) {
                 $pdo->rollBack();
-                $error = 'Sản phẩm: ' . implode(', ', $soldItemNames) . ' đã bị người khác mua mất. Vui lòng xóa khỏi giỏ hàng để tiếp tục.';
+                set_flash('error', 'Sản phẩm: ' . implode(', ', $soldItemNames) . ' đã bị người khác mua mất. Vui lòng xóa khỏi giỏ hàng để tiếp tục.');
             } elseif ($userBalance < $realTotalPrice) {
                 $pdo->rollBack();
-                $error = 'Số dư tài khoản không đủ (Hiện có: ' . number_format($userBalance, 0, ',', '.') . 'đ, Cần: ' . number_format($realTotalPrice, 0, ',', '.') . 'đ). Vui lòng nạp thêm tiền!';
+                set_flash('error', 'Số dư tài khoản không đủ (Hiện có: ' . number_format($userBalance, 0, ',', '.') . 'đ, Cần: ' . number_format($realTotalPrice, 0, ',', '.') . 'đ). Vui lòng nạp thêm tiền!');
             } else {
                 // 3. Trừ số dư người mua
                 $deductStmt = $pdo->prepare("UPDATE users SET balance = balance - ? WHERE id = ?");
@@ -142,167 +147,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
                 $pdo->commit();
                 $_SESSION['cart'] = [];
 
-                header('Location: profile.php?success=' . urlencode('Mua tài khoản thành công! Xem thông tin đăng nhập ở bảng bên dưới.'));
+                set_flash('success', 'Mua tài khoản thành công! Xem thông tin đăng nhập ở bảng bên dưới.');
+                header('Location: profile.php');
                 exit;
             }
         } catch (Exception $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            $error = 'Lỗi hệ thống: ' . $e->getMessage();
+            set_flash('error', 'Lỗi hệ thống: ' . $e->getMessage());
         }
     }
 }
+
+$pageTitle = 'Giỏ hàng của bạn - Account Shop';
+require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/navbar.php';
 ?>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giỏ hàng của bạn - Account Shop</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-    <style>
-        .cart-layout {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 32px;
-            margin-top: 40px;
-            margin-bottom: 60px;
-        }
-        .cart-main-card {
-            background-color: var(--bg-card);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 30px;
-        }
-        .cart-summary-card {
-            background-color: var(--bg-card);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 24px;
-            height: fit-content;
-            position: sticky;
-            top: 100px;
-        }
-        .cart-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-        .cart-item:last-child {
-            border-bottom: none;
-        }
-        .cart-item-details {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .cart-item-img {
-            width: 70px;
-            height: 45px;
-            border-radius: var(--radius-sm);
-            object-fit: cover;
-            background-color: #1f2937;
-        }
-        .cart-item-title {
-            font-weight: 600;
-            color: var(--text-white);
-            font-size: 1rem;
-            text-decoration: none;
-            transition: var(--transition);
-        }
-        .cart-item-title:hover {
-            color: var(--primary);
-        }
-        .btn-cart-delete {
-            background-color: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            padding: 6px 12px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 0.8rem;
-            font-weight: 600;
-            transition: var(--transition);
-        }
-        
-        .cart-item-sold {
-            background-color: rgba(239, 68, 68, 0.05) !important;
-            border: 1px solid rgba(239, 68, 68, 0.3) !important;
-            padding: 16px !important;
-            margin-bottom: 8px;
-        }
-        .cart-item-sold .cart-item-title {
-            color: #ef4444 !important;
-        }
-        .cart-item-sold .sold-error-msg {
-            color: #ef4444;
-            font-size: 0.8rem;
-            font-weight: 700;
-            margin-top: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .btn-cart-delete:hover {
-            background-color: var(--danger);
-            color: white;
-        }
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            font-size: 0.95rem;
-            color: var(--text-gray);
-        }
-        .summary-total {
-            border-top: 1px solid rgba(255,255,255,0.08);
-            padding-top: 16px;
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: #10b981;
-            margin-top: 16px;
-        }
-        @media (max-width: 900px) {
-            .cart-layout {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
 
-    <header class="navbar">
-        <div class="container navbar-content">
-            <a href="index.php" class="logo">
-                AccountShop
-            </a>
-            <div class="nav-links">
-                <?php if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true): ?>
-                    <a href="admin/dashboard.php" class="btn-nav" style="border-color: #f59e0b; color: #f59e0b !important;">Quản trị viên</a>
-                <?php endif; ?>
-                <a href="index.php" class="nav-link">Trang chủ</a>
-                <a href="topup.php" class="nav-link">Nạp tiền</a>
-                <?php if (isset($_SESSION['user_logged_in'])): ?>
-                    <a href="profile.php" class="nav-link">Trang cá nhân</a>
-                <?php endif; ?>
-                <a href="cart.php" class="nav-link active">Giỏ hàng (<?= count($_SESSION['cart']) ?>)</a>
-            </div>
-        </div>
-    </header>
+    <div class="container" style="min-height: 70vh;">
+        <?= render_flash() ?>
 
-    <div class="container">
-        <?php if ($error): ?>
-            <div class="frontend-alert frontend-alert-error" style="margin-top: 24px;"><?= htmlspecialchars($error) ?></div>
-        <?php endif; ?>
-
-        <div class="cart-layout">
-            <main class="cart-main-card">
-                <h2 style="font-size: 1.5rem; color: var(--text-white); font-weight: 700; margin-bottom: 24px;">Giỏ hàng</h2>
+        <div class="cart-layout" style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px; margin-top: 40px; margin-bottom: 60px;">
+            <main class="cart-main-card" style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 30px;">
+                <h2 style="font-size: 1.5rem; color: var(--text-white); font-weight: 700; margin-bottom: 24px;">Giỏ hàng của bạn</h2>
                 
                 <?php if (empty($cartAccounts)): ?>
                     <div style="text-align: center; padding: 40px 0; color: var(--text-gray);">
@@ -315,20 +183,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
                             $img = !empty($acc['image']) ? $acc['image'] : 'assets/images/default-product.png';
                             $isSold = ($acc['status'] !== 'available');
                         ?>
-                            <div class="cart-item <?= $isSold ? 'cart-item-sold' : '' ?>">
-                                <div class="cart-item-details">
-                                    <img src="<?= htmlspecialchars($img) ?>" class="cart-item-img" alt="" onerror="this.src='assets/images/default-product.png'; this.onerror=null;">
+                            <div class="cart-item <?= $isSold ? 'cart-item-sold' : '' ?>" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                                <div class="cart-item-details" style="display: flex; align-items: center; gap: 16px;">
+                                    <img src="<?= htmlspecialchars($img) ?>" class="cart-item-img" style="width: 70px; height: 45px; object-fit: cover; background: #1f2937; border-radius: var(--radius-sm);" alt="" onerror="this.src='assets/images/default-product.png'; this.onerror=null;">
                                     <div>
-                                        <a href="chitiet.php?id=<?= $acc['id'] ?>" class="cart-item-title"><?= htmlspecialchars($acc['name']) ?></a>
+                                        <a href="chitiet.php?id=<?= $acc['id'] ?>" class="cart-item-title" style="font-weight: 600; color: var(--text-white); text-decoration: none;"><?= htmlspecialchars($acc['name']) ?></a>
                                         <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Danh mục: <?= htmlspecialchars($acc['category_name'] ?? 'Chưa phân loại') ?></div>
                                         <?php if ($isSold): ?>
-                                            <div class="sold-error-msg">Tai khoan nay da bi mua mat - Vui long xoa khoi gio</div>
+                                            <div style="color: #ef4444; font-size: 0.8rem; font-weight: 700; margin-top: 6px; text-transform: uppercase;">Tài khoản này đã bị mua mất - Vui lòng xóa khỏi giỏ</div>
                                         <?php endif; ?>
                                     </div>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 24px;">
                                     <span style="font-weight: 700; color: #10b981;"><?= number_format($acc['price'], 0, ',', '.') ?>đ</span>
-                                    <a href="cart.php?action=delete&id=<?= $acc['id'] ?>" class="btn-cart-delete">Xóa</a>
+                                    <a href="cart.php?action=delete&id=<?= $acc['id'] ?>" class="btn-cart-delete" style="background-color: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; text-decoration: none;">Xóa</a>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -336,15 +204,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
                 <?php endif; ?>
             </main>
 
-            <aside class="cart-summary-card">
+            <aside class="cart-summary-card" style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 24px; height: fit-content; position: sticky; top: 100px;">
                 <h3 style="font-size: 1.15rem; color: var(--text-white); font-weight: 700; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">Đơn hàng</h3>
                 
-                <div class="summary-row">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 0.95rem; color: var(--text-gray);">
                     <span>Số lượng:</span>
                     <span style="color: var(--text-white); font-weight: 600;"><?= count($_SESSION['cart']) ?></span>
                 </div>
                 
-                <div class="summary-row summary-total">
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px; font-size: 1.25rem; font-weight: 800; color: #10b981; margin-top: 16px;">
                     <span>Tổng tiền:</span>
                     <span><?= number_format($totalPrice, 0, ',', '.') ?>đ</span>
                 </div>
@@ -354,17 +222,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
                     $balStmt->execute([$_SESSION['user_id']]);
                     $myBalance = $balStmt->fetchColumn();
                 ?>
-                    <div class="summary-row" style="margin-top: 20px; font-size: 0.85rem;">
-                        <span>Số dư của bạn:</span>
+                    <div style="display: flex; justify-content: space-between; margin-top: 20px; font-size: 0.85rem; color: var(--text-gray);">
+                        <span>Số dư hiện tại:</span>
                         <span style="font-weight: 600; color: #34d399;"><?= number_format($myBalance, 0, ',', '.') ?>đ</span>
                     </div>
                     
                     <form method="POST" style="margin-top: 20px;">
+                        <?= csrf_field() ?>
                         <input type="hidden" name="action_checkout" value="1">
                         <?php if (count($_SESSION['cart']) > 0): ?>
-                            <button type="submit" class="btn-buy">Thanh toán bằng số dư</button>
+                            <button type="submit" class="btn-buy" style="width: 100%;">Thanh toán bằng số dư</button>
                         <?php else: ?>
-                            <button type="button" class="btn-buy" disabled>Giỏ hàng trống</button>
+                            <button type="button" class="btn-buy" style="width: 100%; opacity: 0.5;" disabled>Giỏ hàng trống</button>
                         <?php endif; ?>
                     </form>
                 <?php else: ?>
@@ -381,11 +250,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
         </div>
     </div>
 
-    <footer>
-        <div class="container footer-content">
-            <p>&copy; Nhóm 5. Bài tập lớn Lập trình web và ứng dụng.</p>
-        </div>
-    </footer>
-
-</body>
-</html>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -1,5 +1,6 @@
 <?php
-require_once __DIR__ . '/admin/config/db.php';
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/flash.php';
 
 require_login();
 
@@ -16,478 +17,218 @@ $expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
 $stmtHistory = $pdo->prepare("SELECT * FROM topup_requests WHERE user_id = ? ORDER BY id DESC LIMIT 10");
 $stmtHistory->execute([$userId]);
 $topupHistory = $stmtHistory->fetchAll();
+
+$pageTitle = 'Nạp tiền tài khoản - ' . SITE_NAME;
+$extraCss = '
+    .topup-container {
+        max-width: 900px;
+        margin: 40px auto;
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 32px;
+    }
+    .topup-card, .qr-side, .history-card {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        padding: 32px;
+    }
+    .topup-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-white);
+        margin-bottom: 24px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .amount-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .amount-btn {
+        background-color: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border-color);
+        color: var(--text-white);
+        padding: 14px 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        transition: var(--transition);
+    }
+    .amount-btn:hover, .amount-btn.active {
+        border-color: #ffffff;
+        background-color: #ffffff;
+        color: #0a0a0a !important;
+    }
+    .form-group-topup {
+        margin-bottom: 24px;
+    }
+    .form-group-topup label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-gray);
+        font-weight: 600;
+    }
+    .form-group-topup input {
+        width: 100%;
+        background-color: rgba(255, 255, 255, 0.01);
+        border: 1px solid var(--border-color);
+        padding: 12px 16px;
+        color: var(--text-white);
+        font-size: 1.1rem;
+        font-weight: 700;
+        outline: none;
+        transition: var(--transition);
+    }
+    .qr-side {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    .qr-relative-container {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 20px;
+    }
+    .qr-wrapper {
+        background: #ffffff;
+        padding: 16px;
+        display: inline-block;
+        border: 1px solid var(--border-color);
+    }
+    .qr-image {
+        width: 220px;
+        height: 220px;
+        display: block;
+    }
+    .qr-expired-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        backdrop-filter: blur(5px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #ef4444;
+        font-weight: 800;
+        font-size: 1.1rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .qr-expired-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .timer-wrapper {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border-color);
+    }
+    .timer-container {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+        height: 6px;
+        margin-top: 8px;
+    }
+    .timer-bar {
+        height: 100%;
+        width: 100%;
+        background: #ffffff;
+        transition: width 1s linear;
+    }
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        width: 100%;
+        font-size: 0.95rem;
+    }
+    .info-row:last-of-type {
+        border-bottom: none;
+        margin-bottom: 16px;
+    }
+    .info-label { color: var(--text-gray); }
+    .info-value { color: var(--text-white); font-weight: 700; font-family: monospace; }
+    .btn-copy-small {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-color);
+        color: var(--text-gray);
+        padding: 2px 8px;
+        font-size: 0.75rem;
+        cursor: pointer;
+    }
+    .btn-copy-small:hover { background: #ffffff; color: #000000; }
+    .polling-status {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--text-gray);
+        font-size: 0.85rem;
+        margin-top: 12px;
+    }
+    .polling-status.expired { color: #ef4444; }
+    .polling-status.success { color: #10b981; }
+    .spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-top-color: #ffffff;
+        border-radius: 50% !important;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .mock-alert {
+        background-color: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border-color);
+        color: var(--text-gray);
+        padding: 14px;
+        font-size: 0.85rem;
+        margin-top: 20px;
+        text-align: left;
+        line-height: 1.5;
+    }
+    .history-card { margin-top: 40px; margin-bottom: 60px; }
+    .history-table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 16px; }
+    .history-table th { padding: 12px 16px; font-size: 0.85rem; text-transform: uppercase; color: var(--text-gray); border-bottom: 1px solid var(--border-color); }
+    .history-table td { padding: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.95rem; color: #e5e7eb; vertical-align: middle; }
+    .status-badge { display: inline-block; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+    .status-success { background-color: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid var(--success); }
+    .status-pending { background-color: rgba(255, 255, 255, 0.05); color: var(--text-gray); border: 1px solid var(--border-color); }
+    .status-expired { background-color: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+    @media (max-width: 900px) { .topup-container { grid-template-columns: 1fr; } }
+';
+
+require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/navbar.php';
 ?>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nạp tiền tài khoản - <?= SITE_NAME ?></title>
-    <link rel="stylesheet" href="assets/css/style.css">
-    <style>
-        /* Force square borders to match current minimalist theme */
-        * {
-            border-radius: 0 !important;
-        }
 
-        /* Nav Indicators Styles & Visited Color Fix */
-        .cart-badge-indicator {
-            position: relative;
-            display: flex;
-            align-items: center;
-            color: var(--text-white) !important;
-            text-decoration: none;
-            font-weight: 600;
-            padding: 6px 12px;
-            background-color: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            transition: var(--transition);
-        }
-        .cart-badge-indicator:hover {
-            background-color: var(--primary);
-            border-color: var(--primary);
-            color: #0a0a0a !important;
-        }
-        .cart-badge-indicator:visited {
-            color: var(--text-white) !important;
-        }
-        .balance-indicator {
-            background-color: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            color: #10b981 !important;
-            padding: 6px 14px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            text-decoration: none;
-            transition: var(--transition);
-        }
-        .balance-indicator:hover {
-            background-color: rgba(16, 185, 129, 0.2);
-        }
-        .balance-indicator:visited {
-            color: #10b981 !important;
-        }
-        .cart-count {
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50% !important; /* Keep circle shape for cart badge count */
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
-            margin-left: 6px;
-        }
+    <div class="container" style="min-height: 70vh;">
+        <?= render_flash() ?>
 
-        /* Top-up layouts */
-        .topup-container {
-            max-width: 900px;
-            margin: 40px auto;
-            display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 32px;
-        }
-
-        .topup-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            padding: 32px;
-        }
-
-        .topup-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-white);
-            margin-bottom: 24px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .amount-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .amount-btn {
-            background-color: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-color);
-            color: var(--text-white);
-            padding: 14px 8px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-align: center;
-            transition: var(--transition);
-        }
-
-        .amount-btn:hover, .amount-btn.active {
-            border-color: #ffffff;
-            background-color: #ffffff;
-            color: #0a0a0a !important;
-        }
-
-        .form-group-topup {
-            margin-bottom: 24px;
-        }
-
-        .form-group-topup label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-gray);
-            font-weight: 600;
-        }
-
-        .form-group-topup input {
-            width: 100%;
-            background-color: rgba(255, 255, 255, 0.01);
-            border: 1px solid var(--border-color);
-            padding: 12px 16px;
-            color: var(--text-white);
-            font-size: 1.1rem;
-            font-weight: 700;
-            outline: none;
-            transition: var(--transition);
-        }
-
-        .form-group-topup input:focus {
-            border-color: #ffffff;
-        }
-
-        /* QR block side */
-        .qr-side {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            padding: 32px;
-        }
-
-        .qr-relative-container {
-            position: relative;
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-
-        .qr-wrapper {
-            background: #ffffff;
-            padding: 16px;
-            display: inline-block;
-            border: 1px solid var(--border-color);
-            transition: var(--transition);
-        }
-
-        .qr-image {
-            width: 220px;
-            height: 220px;
-            display: block;
-            transition: filter 0.3s ease;
-        }
-
-        .qr-expired-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(5px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #ef4444;
-            font-weight: 800;
-            font-size: 1.1rem;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-
-        .qr-expired-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .qr-expired-overlay svg {
-            margin-bottom: 12px;
-            width: 44px;
-            height: 44px;
-            stroke: #ef4444;
-        }
-
-        /* Countdown timer styling */
-        .timer-container {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            overflow: hidden;
-            height: 6px;
-            margin-top: 8px;
-            position: relative;
-        }
-
-        .timer-bar {
-            height: 100%;
-            width: 100%;
-            background: #ffffff;
-            transition: width 1s linear;
-        }
-
-        .timer-text {
-            color: #ffffff;
-            font-size: 0.9rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            letter-spacing: 0.5px;
-            transition: color 0.3s ease;
-        }
-
-        .timer-text.expired {
-            color: #ef4444;
-        }
-
-        .timer-wrapper {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-color);
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            width: 100%;
-            font-size: 0.95rem;
-        }
-
-        .info-row:last-of-type {
-            border-bottom: none;
-            margin-bottom: 16px;
-        }
-
-        .info-label {
-            color: var(--text-gray);
-        }
-
-        .info-value-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .info-value {
-            color: var(--text-white);
-            font-weight: 700;
-            font-family: monospace;
-        }
-
-        .btn-copy-small {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            color: var(--text-gray);
-            padding: 2px 8px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .btn-copy-small:hover {
-            background: #ffffff;
-            color: #000000;
-        }
-
-        .polling-status {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            color: var(--text-gray);
-            font-size: 0.85rem;
-            margin-top: 12px;
-            font-weight: 500;
-        }
-
-        .polling-status.expired {
-            color: #ef4444;
-        }
-
-        .polling-status.success {
-            color: #10b981;
-        }
-
-        .spinner {
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-top-color: #ffffff;
-            border-radius: 50% !important; /* Spinner retains roundness to spin correctly */
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .mock-alert {
-            background-color: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-color);
-            color: var(--text-gray);
-            padding: 14px;
-            font-size: 0.85rem;
-            margin-top: 20px;
-            text-align: left;
-            line-height: 1.5;
-        }
-
-        /* Custom Button verifying exactly matching index theme */
-        #btn_verify {
-            background-color: #ffffff;
-            color: #0a0a0a;
-            border: 1px solid #ffffff;
-            width: 100%;
-            padding: 16px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: var(--transition);
-        }
-
-        #btn_verify:hover {
-            background-color: transparent;
-            color: #ffffff;
-        }
-
-        #btn_verify:disabled {
-            background-color: #262626;
-            border-color: #262626;
-            color: #737373;
-            cursor: not-allowed;
-        }
-
-        /* History layout */
-        .history-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            padding: 32px;
-            margin-top: 40px;
-            margin-bottom: 60px;
-        }
-
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            margin-top: 16px;
-        }
-
-        .history-table th {
-            padding: 12px 16px;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            color: var(--text-gray);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .history-table td {
-            padding: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            font-size: 0.95rem;
-            color: #e5e7eb;
-            vertical-align: middle;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            border: 1px solid transparent;
-            text-transform: uppercase;
-        }
-
-        .status-success {
-            background-color: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-            border-color: var(--success);
-        }
-
-        .status-pending {
-            background-color: rgba(255, 255, 255, 0.05);
-            color: var(--text-gray);
-            border-color: var(--border-color);
-        }
-
-        .status-expired {
-            background-color: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border-color: var(--danger);
-        }
-
-        @media (max-width: 900px) {
-            .topup-container {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-
-    <header class="navbar">
-        <div class="container navbar-content">
-            <a href="index.php" class="logo">
-                AccountShop
-            </a>
-            
-            <div class="nav-links">
-                <?php if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true): ?>
-                    <a href="admin/dashboard.php" class="btn-nav" style="border-color: #f59e0b; color: #f59e0b !important;">Quản trị viên</a>
-                <?php endif; ?>
-                <a href="index.php" class="nav-link">Trang chủ</a>
-                <a href="topup.php" class="nav-link active">Nạp tiền</a>
-                <a href="cart.php" class="cart-badge-indicator">
-                    <span>Giỏ hàng</span>
-                    <span class="cart-count"><?= count($_SESSION['cart']) ?></span>
-                </a>
-                
-                <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
-                    <a href="profile.php" class="balance-indicator">
-                        Số dư: <?= number_format($myBalance, 0, ',', '.') ?>đ
-                    </a>
-                    <a href="profile.php" class="nav-link" style="color: var(--text-white); font-weight: 600;">
-                        Hi, <?= htmlspecialchars($_SESSION['user_fullname']) ?>
-                    </a>
-                    <a href="logout.php" class="btn-nav" style="background: var(--danger);">Đăng xuất</a>
-                <?php else: ?>
-                    <a href="login.php" class="nav-link">Đăng nhập</a>
-                    <a href="register.php" class="btn-nav">Đăng ký</a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </header>
-
-    <div class="container">
         <div class="topup-container">
             
             <!-- Cột trái: Form nhập số tiền -->
@@ -528,7 +269,7 @@ $topupHistory = $stmtHistory->fetchAll();
                         <img src="" alt="VietQR" class="qr-image" id="qr_img">
                     </div>
                     <div class="qr-expired-overlay" id="qr_expired_overlay">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px;">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                         </svg>
@@ -538,12 +279,12 @@ $topupHistory = $stmtHistory->fetchAll();
 
                 <!-- Thanh hiển thị đếm ngược thời gian -->
                 <div class="timer-wrapper" id="timer_wrapper">
-                    <div class="timer-text" id="timer_text">
-                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
+                    <div id="timer_text" style="color: #ffffff; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
-                        <span>Thời gian thanh toán còn lại: <strong id="countdown_timer">04:00</strong></span>
+                        <span>Thời gian còn lại: <strong id="countdown_timer">04:00</strong></span>
                     </div>
                     <div class="timer-container">
                         <div class="timer-bar" id="timer_bar"></div>
@@ -556,7 +297,7 @@ $topupHistory = $stmtHistory->fetchAll();
                 </div>
                 <div class="info-row">
                     <span class="info-label">Số tài khoản</span>
-                    <div class="info-value-group">
+                    <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="info-value" id="val_acc"><?= SEPAY_BANK_NUM ?></span>
                         <button class="btn-copy-small" onclick="copyVal('val_acc')">Copy</button>
                     </div>
@@ -567,14 +308,14 @@ $topupHistory = $stmtHistory->fetchAll();
                 </div>
                 <div class="info-row">
                     <span class="info-label">Số tiền</span>
-                    <div class="info-value-group">
+                    <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="info-value" id="val_money">50,000đ</span>
                         <button class="btn-copy-small" onclick="copyValRaw('val_money_raw')">Copy</button>
                     </div>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Nội dung chuyển</span>
-                    <div class="info-value-group">
+                    <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="info-value" id="val_memo"><?= $expectedMemo ?></span>
                         <button class="btn-copy-small" onclick="copyVal('val_memo')">Copy</button>
                     </div>
@@ -582,7 +323,7 @@ $topupHistory = $stmtHistory->fetchAll();
 
                 <input type="hidden" id="val_money_raw" value="50000">
 
-                <button type="button" id="btn_verify" class="btn btn-primary" style="margin-top: 10px;" onclick="manualCheck()">Kiểm tra giao dịch</button>
+                <button type="button" id="btn_verify" class="btn-buy" style="width: 100%; margin-top: 12px;" onclick="manualCheck()">Kiểm tra giao dịch</button>
                 
                 <div class="polling-status" id="polling_status">
                     <div class="spinner" id="polling_spinner"></div>
@@ -591,7 +332,7 @@ $topupHistory = $stmtHistory->fetchAll();
 
                 <?php if (!SEPAY_ENABLED || SEPAY_API_TOKEN === 'YOUR_SEPAY_API_TOKEN'): ?>
                     <div class="mock-alert" id="mock_alert_box">
-                        <strong>Chế độ chạy thử đang bật<?= !SEPAY_ENABLED ? ' (SePay đã tắt)' : '' ?>:</strong> Bạn chỉ cần click nút <strong>"Kiểm tra giao dịch"</strong> phía trên, hệ thống sẽ tự động giả lập cộng số tiền bạn chọn vào tài khoản để chấm điểm bài làm mà không cần giao dịch ngân hàng thực tế.
+                        <strong>Chế độ chạy thử đang bật:</strong> Bạn chỉ cần click nút <strong>"Kiểm tra giao dịch"</strong> phía trên, hệ thống sẽ tự động giả lập cộng số tiền bạn chọn vào tài khoản để chấm điểm bài làm mà không cần chuyển khoản thực tế.
                     </div>
                 <?php endif; ?>
             </div>
@@ -656,12 +397,10 @@ $topupHistory = $stmtHistory->fetchAll();
         let isSuccessState = false;
 
         function updateQR(amount, memo) {
-            // Định dạng hiển thị số tiền
             document.getElementById('val_money').innerText = amount.toLocaleString('vi-VN') + 'đ';
             document.getElementById('val_money_raw').value = amount;
             document.getElementById('val_memo').innerText = memo;
 
-            // Cập nhật link VietQR
             const qrImg = document.getElementById('qr_img');
             const qrUrl = `https://img.vietqr.io/image/${bankCode}-${bankNum}-compact.jpg?amount=${amount}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(bankName)}`;
             
@@ -673,15 +412,12 @@ $topupHistory = $stmtHistory->fetchAll();
         }
 
         function createTopUpRequest(amount) {
-            // Xóa các interval cũ
             clearInterval(countdownTimerInterval);
             clearInterval(pollingInterval);
             
-            // Đưa UI về trạng thái chờ
             document.getElementById('qr_expired_overlay').classList.remove('active');
             document.getElementById('btn_verify').disabled = false;
             document.getElementById('btn_verify').innerText = "Kiểm tra giao dịch";
-            document.getElementById('timer_text').classList.remove('expired');
             document.getElementById('polling_spinner').style.display = 'block';
             document.getElementById('polling_status').className = 'polling-status';
             document.getElementById('polling_text').innerText = "Đang chờ bạn quét mã thanh toán...";
@@ -698,32 +434,28 @@ $topupHistory = $stmtHistory->fetchAll();
                         updateQR(currentAmount, currentMemo);
                         startCountdown();
                         
-                        // Bắt đầu tự động kiểm tra sau mỗi 4 giây
                         pollingInterval = setInterval(checkPayment, 4000);
                     } else {
-                        alert(data.message || 'Lỗi khởi tạo yêu cầu nạp tiền.');
+                        showToast(data.message || 'Lỗi khởi tạo yêu cầu nạp tiền.', true);
                     }
                 })
                 .catch(err => {
-                    console.error("Lỗi kết nối API:", err);
-                    alert("Không thể khởi tạo yêu cầu nạp tiền. Vui lòng thử lại.");
+                    showToast("Không thể khởi tạo yêu cầu nạp tiền.", true);
                 });
         }
 
         function startCountdown() {
             const timerBar = document.getElementById('timer_bar');
             const countdownEl = document.getElementById('countdown_timer');
-            const maxSeconds = 240; // 4 phút
+            const maxSeconds = 240;
 
             function updateUI() {
                 if (countdownSecs <= 0) {
                     clearInterval(countdownTimerInterval);
                     clearInterval(pollingInterval);
                     
-                    // Cập nhật trạng thái hết hạn trên UI
                     document.getElementById('qr_expired_overlay').classList.add('active');
                     document.getElementById('btn_verify').disabled = true;
-                    document.getElementById('timer_text').classList.add('expired');
                     countdownEl.innerText = "00:00";
                     timerBar.style.width = "0%";
                     
@@ -731,17 +463,14 @@ $topupHistory = $stmtHistory->fetchAll();
                     document.getElementById('polling_status').className = 'polling-status expired';
                     document.getElementById('polling_text').innerText = "Giao dịch đã hết thời gian (4 phút) và đã tự động hủy.";
                     
-                    // Gọi API để cập nhật trạng thái hết hạn trong DB
                     fetch(`check_topup.php?request_id=${currentRequestId}`).catch(err => console.error(err));
                     return;
                 }
 
-                // Cập nhật thời gian
                 const mins = Math.floor(countdownSecs / 60);
                 const secs = countdownSecs % 60;
                 countdownEl.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
                 
-                // Thay đổi màu đếm ngược khi sắp hết giờ (dưới 60s)
                 if (countdownSecs <= 60) {
                     document.getElementById('timer_text').style.color = '#ef4444';
                     timerBar.style.background = '#ef4444';
@@ -750,7 +479,6 @@ $topupHistory = $stmtHistory->fetchAll();
                     timerBar.style.background = '#ffffff';
                 }
                 
-                // Cập nhật thanh bar
                 const pct = (countdownSecs / maxSeconds) * 100;
                 timerBar.style.width = `${pct}%`;
                 
@@ -765,12 +493,10 @@ $topupHistory = $stmtHistory->fetchAll();
             currentAmount = value;
             document.getElementById('custom_amount').value = value;
             
-            // Xử lý active state của nút
             document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
             if(btn) {
                 btn.classList.add('active');
             } else {
-                // Tự động active nút tương ứng
                 document.querySelectorAll('.amount-btn').forEach(b => {
                     const btnVal = parseInt(b.innerText.replace(/\./g, '')) || 0;
                     if (btnVal === currentAmount) {
@@ -787,7 +513,6 @@ $topupHistory = $stmtHistory->fetchAll();
             if (amount >= 1000) {
                 currentAmount = amount;
                 
-                // Cập nhật trạng thái active cho nút chọn nhanh
                 document.querySelectorAll('.amount-btn').forEach(b => {
                     const btnVal = parseInt(b.innerText.replace(/\./g, '')) || 0;
                     if (btnVal !== currentAmount) {
@@ -799,25 +524,24 @@ $topupHistory = $stmtHistory->fetchAll();
 
                 createTopUpRequest(currentAmount);
             } else {
-                alert("Số tiền nạp tối thiểu là 1.000đ");
+                showToast("Số tiền nạp tối thiểu là 1.000đ", true);
             }
         }
 
         function copyVal(id) {
             const txt = document.getElementById(id).innerText;
             navigator.clipboard.writeText(txt).then(function() {
-                alert('Đã sao chép: ' + txt);
+                showToast('Đã sao chép: ' + txt, false);
             });
         }
 
         function copyValRaw(id) {
             const txt = document.getElementById(id).value;
             navigator.clipboard.writeText(txt).then(function() {
-                alert('Đã sao chép số tiền: ' + txt);
+                showToast('Đã sao chép số tiền: ' + parseInt(txt).toLocaleString('vi-VN') + 'đ', false);
             });
         }
 
-        // Tự động kiểm tra nạp tiền qua AJAX (polling)
         function checkPayment() {
             if (currentRequestId <= 0 || isSuccessState) return;
             
@@ -833,15 +557,16 @@ $topupHistory = $stmtHistory->fetchAll();
                         document.getElementById('polling_status').className = 'polling-status success';
                         document.getElementById('polling_text').innerText = "Thanh toán thành công!";
                         
-                        alert(data.message);
-                        window.location.href = 'profile.php?success=' + encodeURIComponent(data.message);
+                        showToast(data.message, false);
+                        setTimeout(() => {
+                            window.location.href = 'profile.php';
+                        }, 1200);
                     } else if (data.status === 'expired') {
                         clearInterval(countdownTimerInterval);
                         clearInterval(pollingInterval);
                         
                         document.getElementById('qr_expired_overlay').classList.add('active');
                         document.getElementById('btn_verify').disabled = true;
-                        document.getElementById('timer_text').classList.add('expired');
                         document.getElementById('polling_spinner').style.display = 'none';
                         document.getElementById('polling_status').className = 'polling-status expired';
                         document.getElementById('polling_text').innerText = data.message;
@@ -869,32 +594,33 @@ $topupHistory = $stmtHistory->fetchAll();
                         clearInterval(countdownTimerInterval);
                         clearInterval(pollingInterval);
                         
-                        alert(data.message);
-                        window.location.href = 'profile.php?success=' + encodeURIComponent(data.message);
+                        showToast(data.message, false);
+                        setTimeout(() => {
+                            window.location.href = 'profile.php';
+                        }, 1200);
                     } else if (data.status === 'expired') {
                         clearInterval(countdownTimerInterval);
                         clearInterval(pollingInterval);
                         
                         document.getElementById('qr_expired_overlay').classList.add('active');
                         btn.disabled = true;
-                        document.getElementById('timer_text').classList.add('expired');
                         document.getElementById('polling_spinner').style.display = 'none';
                         document.getElementById('polling_status').className = 'polling-status expired';
                         document.getElementById('polling_text').innerText = data.message;
-                        alert(data.message);
+                        showToast(data.message, true);
                     } else {
-                        alert(data.message);
+                        showToast(data.message, true);
                     }
                 })
                 .catch(err => {
                     btn.disabled = false;
                     btn.innerText = originalText;
-                    alert("Có lỗi xảy ra khi kiểm tra giao dịch.");
+                    showToast("Có lỗi xảy ra khi kiểm tra giao dịch.", true);
                 });
         }
 
-        // Khởi tạo trang lần đầu với số tiền mặc định 50,000
+        // Khởi tạo yêu cầu nạp mặc định 50.000đ
         selectAmount(50000, null);
     </script>
-</body>
-</html>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

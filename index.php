@@ -1,32 +1,55 @@
 <?php
-require_once __DIR__ . '/admin/config/db.php';
-
-if (!isset($_SESSION['cart'])) {
-    $_SESSION['cart'] = [];
-}
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/flash.php';
 
 $search = trim($_GET['search'] ?? '');
 $categoryId = trim($_GET['category'] ?? '');
+$priceRange = trim($_GET['price_range'] ?? '');
 $sort = $_GET['sort'] ?? 'newest';
+$page = max(1, intval($_GET['page'] ?? 1));
+$limit = 12;
+$offset = ($page - 1) * $limit;
 
 $categories = $pdo->query("SELECT * FROM categories ORDER BY id ASC")->fetchAll();
 
-$sql = "SELECT accounts.*, categories.name AS category_name 
-        FROM accounts 
-        LEFT JOIN categories ON accounts.category_id = categories.id 
-        WHERE accounts.hidden = 0";
+$whereClauses = ["accounts.hidden = 0"];
 $params = [];
 
 if ($categoryId !== '') {
-    $sql .= " AND accounts.category_id = ?";
+    $whereClauses[] = "accounts.category_id = ?";
     $params[] = $categoryId;
 }
 
 if ($search !== '') {
-    $sql .= " AND (accounts.name LIKE ? OR accounts.description LIKE ?)";
+    $whereClauses[] = "(accounts.name LIKE ? OR accounts.description LIKE ?)";
     $params[] = '%' . $search . '%';
     $params[] = '%' . $search . '%';
 }
+
+if ($priceRange !== '') {
+    if ($priceRange === 'under_100k') {
+        $whereClauses[] = "accounts.price < 100000";
+    } elseif ($priceRange === '100k_300k') {
+        $whereClauses[] = "accounts.price BETWEEN 100000 AND 300000";
+    } elseif ($priceRange === '300k_500k') {
+        $whereClauses[] = "accounts.price BETWEEN 300000 AND 500000";
+    } elseif ($priceRange === 'over_500k') {
+        $whereClauses[] = "accounts.price > 500000";
+    }
+}
+
+$whereSql = implode(" AND ", $whereClauses);
+
+// Đếm tổng số sản phẩm để phân trang
+$countStmt = $pdo->prepare("SELECT COUNT(*) FROM accounts LEFT JOIN categories ON accounts.category_id = categories.id WHERE $whereSql");
+$countStmt->execute($params);
+$totalProducts = $countStmt->fetchColumn();
+$totalPages = ceil($totalProducts / $limit);
+
+$sql = "SELECT accounts.*, categories.name AS category_name 
+        FROM accounts 
+        LEFT JOIN categories ON accounts.category_id = categories.id 
+        WHERE $whereSql";
 
 switch ($sort) {
     case 'price_asc':
@@ -41,27 +64,11 @@ switch ($sort) {
         break;
 }
 
+$sql .= " LIMIT $limit OFFSET $offset";
+
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $accounts = $stmt->fetchAll();
-
-$myBalance = 0;
-if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) {
-    $balStmt = $pdo->prepare("SELECT balance FROM users WHERE id = ?");
-    $balStmt->execute([$_SESSION['user_id']]);
-    $myBalance = $balStmt->fetchColumn();
-}
-
-// Live client store telemetry
-$availCount = 0;
-$soldCount = 0;
-try {
-    $availCount = $pdo->query("SELECT COUNT(*) FROM accounts WHERE status='available'")->fetchColumn();
-    $soldCount = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
-} catch (Exception $e) {
-    $availCount = 0;
-    $soldCount = 0;
-}
 
 // Lấy ảnh default nếu chưa up ảnh
 function getFallbackImage($categoryName) {
@@ -75,163 +82,11 @@ function getFallbackImage($categoryName) {
     }
     return 'assets/images/default-product.png';
 }
-?>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Shop - Hệ thống bán tài khoản tự động</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-    <style>
-        .header-user-badge {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .balance-indicator {
-            background-color: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            color: #10b981;
-            padding: 6px 14px;
-            border-radius: var(--radius-sm);
-            font-size: 0.9rem;
-            font-weight: 700;
-            text-decoration: none;
-            transition: var(--transition);
-        }
-        .balance-indicator:hover {
-            background-color: rgba(16, 185, 129, 0.2);
-        }
-        .cart-badge-indicator {
-            position: relative;
-            display: flex;
-            align-items: center;
-            color: var(--text-white);
-            text-decoration: none;
-            font-weight: 600;
-            padding: 6px 12px;
-            border-radius: var(--radius-sm);
-            background-color: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            transition: var(--transition);
-        }
-        .cart-badge-indicator:hover {
-            background-color: var(--primary);
-            border-color: var(--primary);
-        }
-        .cart-count {
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
-            margin-left: 6px;
-        }
-        .card-actions-wrapper {
-            display: flex;
-            gap: 8px;
-            margin-top: auto;
-            padding-top: 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .btn-add-cart {
-            background-color: #ffffff;
-            color: #000000;
-            border: 1px solid #ffffff;
-            padding: 8px 14px;
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 700;
-            cursor: pointer;
-            flex: 1;
-            text-align: center;
-            transition: var(--transition);
-        }
-        .btn-add-cart:hover {
-            background-color: transparent;
-            color: #ffffff;
-            border-color: #ffffff;
-        }
-        .btn-add-cart-disabled {
-            background-color: #4b5563;
-            color: #9ca3af;
-            border: none;
-            padding: 8px 14px;
-            border-radius: var(--radius-sm);
-            font-size: 0.85rem;
-            font-weight: 600;
-            flex: 1;
-            text-align: center;
-            cursor: not-allowed;
-        }
-        
-        /* Toast notification */
-        .toast-notification {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background-color: #10b981;
-            color: #ffffff;
-            padding: 12px 24px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            border-radius: var(--radius-sm);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            pointer-events: none;
-        }
-        .toast-notification.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .toast-notification.toast-error {
-            background-color: #ef4444;
-        }
-    </style>
-</head>
-<body>
 
-    <header class="navbar">
-        <div class="container navbar-content">
-            <a href="index.php" class="logo">
-                AccountShop
-            </a>
-            
-            <div class="nav-links">
-                <?php if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true): ?>
-                    <a href="admin/dashboard.php" class="btn-nav" style="border-color: #f59e0b; color: #f59e0b !important;">Quản trị viên</a>
-                <?php endif; ?>
-                <a href="index.php" class="nav-link">Trang chủ</a>
-                <a href="topup.php" class="nav-link">Nạp tiền</a>
-                <a href="cart.php" class="cart-badge-indicator">
-                    <span>Giỏ hàng</span>
-                    <span class="cart-count" id="cartCount"><?= count($_SESSION['cart']) ?></span>
-                </a>
-                
-                <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
-                    <a href="profile.php" class="balance-indicator">
-                        Số dư: <?= number_format($myBalance, 0, ',', '.') ?>đ
-                    </a>
-                    <a href="profile.php" class="nav-link" style="color: var(--text-white); font-weight: 600;">
-                        Hi, <?= htmlspecialchars($_SESSION['user_fullname']) ?>
-                    </a>
-                    <a href="logout.php" class="btn-nav" style="background: var(--danger);">Đăng xuất</a>
-                <?php else: ?>
-                    <a href="login.php" class="nav-link">Đăng nhập</a>
-                    <a href="register.php" class="btn-nav">Đăng ký</a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </header>
+$pageTitle = 'Account Shop - Hệ thống bán tài khoản tự động';
+require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/navbar.php';
+?>
 
     <section class="hero">
         <div class="container">
@@ -242,6 +97,9 @@ function getFallbackImage($categoryName) {
                 <input type="text" name="search" placeholder="Tìm tài khoản cần mua..." value="<?= htmlspecialchars($search) ?>">
                 <?php if ($categoryId): ?>
                     <input type="hidden" name="category" value="<?= htmlspecialchars($categoryId) ?>">
+                <?php endif; ?>
+                <?php if ($priceRange): ?>
+                    <input type="hidden" name="price_range" value="<?= htmlspecialchars($priceRange) ?>">
                 <?php endif; ?>
                 <?php if ($sort): ?>
                     <input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>">
@@ -255,27 +113,36 @@ function getFallbackImage($categoryName) {
         <div class="container">
             <div class="filter-wrapper">
                 <div class="categories-tabs">
-                    <a href="index.php?category=&search=<?= urlencode($search) ?>&sort=<?= $sort ?>" 
+                    <a href="index.php?category=&search=<?= urlencode($search) ?>&price_range=<?= urlencode($priceRange) ?>&sort=<?= $sort ?>" 
                        class="tab-btn <?= $categoryId === '' ? 'active' : '' ?>">
                         Tất cả
                     </a>
                     <?php foreach ($categories as $cat): ?>
-                        <a href="index.php?category=<?= $cat['id'] ?>&search=<?= urlencode($search) ?>&sort=<?= $sort ?>" 
+                        <a href="index.php?category=<?= $cat['id'] ?>&search=<?= urlencode($search) ?>&price_range=<?= urlencode($priceRange) ?>&sort=<?= $sort ?>" 
                            class="tab-btn <?= (string)$categoryId === (string)$cat['id'] ? 'active' : '' ?>">
                             <?= htmlspecialchars($cat['name']) ?>
                         </a>
                     <?php endforeach; ?>
                 </div>
 
-                <div class="sort-select">
-                    <form action="index.php" method="GET" id="sortForm">
+                <div class="sort-select" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <form action="index.php" method="GET" id="filterForm" style="display: flex; gap: 10px;">
                         <?php if ($categoryId): ?>
                             <input type="hidden" name="category" value="<?= htmlspecialchars($categoryId) ?>">
                         <?php endif; ?>
                         <?php if ($search): ?>
                             <input type="hidden" name="search" value="<?= htmlspecialchars($search) ?>">
                         <?php endif; ?>
-                        <select name="sort" onchange="document.getElementById('sortForm').submit();">
+                        
+                        <select name="price_range" onchange="document.getElementById('filterForm').submit();">
+                            <option value="" <?= $priceRange === '' ? 'selected' : '' ?>>Tất cả mức giá</option>
+                            <option value="under_100k" <?= $priceRange === 'under_100k' ? 'selected' : '' ?>>Dưới 100.000đ</option>
+                            <option value="100k_300k" <?= $priceRange === '100k_300k' ? 'selected' : '' ?>>100.000đ - 300.000đ</option>
+                            <option value="300k_500k" <?= $priceRange === '300k_500k' ? 'selected' : '' ?>>300.000đ - 500.000đ</option>
+                            <option value="over_500k" <?= $priceRange === 'over_500k' ? 'selected' : '' ?>>Trên 500.000đ</option>
+                        </select>
+
+                        <select name="sort" onchange="document.getElementById('filterForm').submit();">
                             <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>Mới nhất</option>
                             <option value="price_asc" <?= $sort === 'price_asc' ? 'selected' : '' ?>>Giá từ thấp đến cao</option>
                             <option value="price_desc" <?= $sort === 'price_desc' ? 'selected' : '' ?>>Giá từ cao đến thấp</option>
@@ -287,6 +154,8 @@ function getFallbackImage($categoryName) {
     </section>
 
     <main class="container">
+        <?= render_flash() ?>
+
         <div class="accounts-grid">
             <?php foreach ($accounts as $acc): 
                 $img = !empty($acc['image']) ? $acc['image'] : getFallbackImage($acc['category_name'] ?? '');
@@ -328,61 +197,20 @@ function getFallbackImage($categoryName) {
         <?php if (empty($accounts)): ?>
             <div class="empty" style="text-align: center; margin: 40px 0; color: var(--text-gray);">
                 <p style="font-size: 1.2rem;">Không tìm thấy tài khoản phù hợp.</p>
-                <a href="index.php" class="tab-btn" style="display: inline-block; margin-top: 16px;">Xem tất cả</a>
+                <a href="index.php" class="tab-btn" style="display: inline-block; margin-top: 16px;">Xem tất cả sản phẩm</a>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($totalPages > 1): ?>
+            <div class="pagination" style="display: flex; justify-content: center; gap: 8px; margin: 40px 0;">
+                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                    <a href="index.php?category=<?= urlencode($categoryId) ?>&search=<?= urlencode($search) ?>&price_range=<?= urlencode($priceRange) ?>&sort=<?= urlencode($sort) ?>&page=<?= $i ?>" 
+                       class="tab-btn <?= $page === $i ? 'active' : '' ?>" style="padding: 8px 16px;">
+                        <?= $i ?>
+                    </a>
+                <?php endfor; ?>
             </div>
         <?php endif; ?>
     </main>
 
-    <footer>
-        <div class="container footer-content">
-            <p>&copy; Nhóm 5. Bài tập lớn Lập trình web và ứng dụng.</p>
-            <p>Thành viên: Võ Anh Kiệt Hoàng, Trần Gia Bảo, Nguyễn Đức Mạnh, Nguyễn Hoàng Thái.</p>
-        </div>
-    </footer>
-
-    <div id="toastNotification" class="toast-notification">Da them vao gio hang thanh cong!</div>
-
-    <script>
-    function addToCart(accountId, element) {
-        fetch('cart.php?action=add&id=' + accountId + '&ajax=1')
-            .then(res => res.json())
-            .then(data => {
-                const toast = document.getElementById('toastNotification');
-                if (data.success) {
-                    // Update header badge count
-                    const cartCount = document.getElementById('cartCount');
-                    if (cartCount) {
-                        cartCount.textContent = data.cart_count;
-                    }
-                    
-                    // Update button UI
-                    element.textContent = 'Da them';
-                    element.style.backgroundColor = '#059669';
-                    element.onclick = function() {
-                        window.location.href = 'cart.php';
-                    };
-                    
-                    // Show toast
-                    toast.textContent = 'Da them san pham vao gio hang!';
-                    toast.classList.remove('toast-error');
-                    toast.classList.add('show');
-                    setTimeout(() => {
-                        toast.classList.remove('show');
-                    }, 2500);
-                } else {
-                    // Show error toast
-                    toast.textContent = data.error || 'Co loi xay ra!';
-                    toast.classList.add('toast-error');
-                    toast.classList.add('show');
-                    setTimeout(() => {
-                        toast.classList.remove('show');
-                    }, 2500);
-                }
-            })
-            .catch(err => {
-                alert('Loi ket noi server!');
-            });
-    }
-    </script>
-</body>
-</html>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>
