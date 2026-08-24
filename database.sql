@@ -5,6 +5,7 @@ USE account_shop;
 DROP TABLE IF EXISTS sepay_transactions;
 DROP TABLE IF EXISTS topup_requests;
 DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS templates;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS categories;
@@ -145,3 +146,21 @@ INSERT INTO settings (setting_key, setting_value) VALUES
 ('sepay_bank_num', '0398687777'),
 ('sepay_bank_name', 'NGUYEN VAN A'),
 ('sepay_memo_prefix', 'NAP');
+
+-- Bảng templates (mẫu cấu hình nhanh tài khoản)
+CREATE TABLE IF NOT EXISTS templates (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  price DECIMAL(15,0) NOT NULL DEFAULT 0,
+  category_id INT DEFAULT NULL,
+  image VARCHAR(255) DEFAULT NULL,
+  description TEXT DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO templates (name, price, category_id, description) VALUES
+('Netflix Ultra HD 4K - 6 Tháng', 350000, 2, 'Gói Ultra HD 4K xem 4 thiết bị, bảo hành 6 tháng'),
+('Spotify Premium - 1 Năm', 200000, 2, 'Tài khoản Spotify Premium cá nhân nghe nhạc không quảng cáo'),
+('Office 365 Personal - 1 Năm', 500000, 3, 'Bản quyền Microsoft 365 Personal chính hãng kèm 1TB OneDrive');
+

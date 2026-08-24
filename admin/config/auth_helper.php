@@ -32,6 +32,9 @@ function login_user($user) {
         session_start();
     }
     
+    // Tái tạo Session ID để phòng chống Session Fixation Attack
+    session_regenerate_id(true);
+    
     $_SESSION['user_logged_in'] = true;
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['user_username'] = $user['username'];

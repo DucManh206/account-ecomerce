@@ -85,53 +85,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
     
     $userId = $_SESSION['user_id'];
     
-    $userStmt = $pdo->prepare("SELECT balance FROM users WHERE id = ?");
-    $userStmt->execute([$userId]);
-    $userBalance = $userStmt->fetchColumn();
-    
     if (empty($_SESSION['cart'])) {
         $error = 'Giỏ hàng đang trống!';
-    } elseif ($userBalance < $totalPrice) {
-        $error = 'Số dư tài khoản không đủ. Vui lòng nạp thêm tiền!';
     } else {
-        // Kiem tra xem co acc nao bi nguoi khac mua truoc chua
-        $placeholders = implode(',', array_fill(0, count($_SESSION['cart']), '?'));
-        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM accounts WHERE id IN ($placeholders) AND status != 'available'");
-        $checkStmt->execute($_SESSION['cart']);
-        $soldCount = $checkStmt->fetchColumn();
-        
-        if ($soldCount > 0) {
-            $error = 'Có tài khoản đã bị người khác mua mất. Vui lòng xóa khỏi giỏ hàng để tiếp tục.';
-        } else {
-            // Dung transaction dam bao an toan dong thoi
-            try {
-                $pdo->beginTransaction();
-                
+        try {
+            // Sử dụng Transaction và khóa dòng (SELECT ... FOR UPDATE) để chống Race Condition tuyệt đối
+            $pdo->beginTransaction();
+
+            // 1. Khóa và kiểm tra số dư người dùng
+            $userStmt = $pdo->prepare("SELECT balance FROM users WHERE id = ? FOR UPDATE");
+            $userStmt->execute([$userId]);
+            $userBalance = $userStmt->fetchColumn();
+
+            if ($userBalance === false) {
+                throw new Exception('Không tìm thấy thông tin tài khoản người dùng.');
+            }
+
+            // 2. Khóa và kiểm tra từng sản phẩm trong giỏ hàng
+            $lockedAccounts = [];
+            $realTotalPrice = 0;
+            $soldItemNames = [];
+
+            $accCheckStmt = $pdo->prepare("SELECT id, name, price, status FROM accounts WHERE id = ? FOR UPDATE");
+            foreach ($_SESSION['cart'] as $accId) {
+                $accCheckStmt->execute([$accId]);
+                $accData = $accCheckStmt->fetch();
+
+                if (!$accData || $accData['status'] !== 'available') {
+                    $soldItemNames[] = $accData ? $accData['name'] : ("ID #" . $accId);
+                } else {
+                    $lockedAccounts[] = $accData;
+                    $realTotalPrice += floatval($accData['price']);
+                }
+            }
+
+            if (!empty($soldItemNames)) {
+                $pdo->rollBack();
+                $error = 'Sản phẩm: ' . implode(', ', $soldItemNames) . ' đã bị người khác mua mất. Vui lòng xóa khỏi giỏ hàng để tiếp tục.';
+            } elseif ($userBalance < $realTotalPrice) {
+                $pdo->rollBack();
+                $error = 'Số dư tài khoản không đủ (Hiện có: ' . number_format($userBalance, 0, ',', '.') . 'đ, Cần: ' . number_format($realTotalPrice, 0, ',', '.') . 'đ). Vui lòng nạp thêm tiền!';
+            } else {
+                // 3. Trừ số dư người mua
                 $deductStmt = $pdo->prepare("UPDATE users SET balance = balance - ? WHERE id = ?");
-                $deductStmt->execute([$totalPrice, $userId]);
-                
+                $deductStmt->execute([$realTotalPrice, $userId]);
+
+                // 4. Tạo đơn hàng và đổi trạng thái tài khoản
                 $orderStmt = $pdo->prepare("INSERT INTO orders (user_id, account_id, price) VALUES (?, ?, ?)");
                 $updateStatusStmt = $pdo->prepare("UPDATE accounts SET status = 'sold', hidden = 1 WHERE id = ?");
-                
-                foreach ($_SESSION['cart'] as $accId) {
-                    $priceStmt = $pdo->prepare("SELECT price FROM accounts WHERE id = ?");
-                    $priceStmt->execute([$accId]);
-                    $price = $priceStmt->fetchColumn();
-                    
-                    $orderStmt->execute([$userId, $accId, $price]);
-                    $updateStatusStmt->execute([$accId]);
+
+                foreach ($lockedAccounts as $accItem) {
+                    $orderStmt->execute([$userId, $accItem['id'], $accItem['price']]);
+                    $updateStatusStmt->execute([$accItem['id']]);
                 }
-                
+
                 $pdo->commit();
                 $_SESSION['cart'] = [];
-                
+
                 header('Location: profile.php?success=' . urlencode('Mua tài khoản thành công! Xem thông tin đăng nhập ở bảng bên dưới.'));
                 exit;
-                
-            } catch (Exception $e) {
-                $pdo->rollBack();
-                $error = 'Lỗi hệ thống: ' . $e->getMessage();
             }
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $error = 'Lỗi hệ thống: ' . $e->getMessage();
         }
     }
 }
@@ -229,6 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
             margin-top: 6px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
         .btn-cart-delete:hover {
             background-color: var(--danger);
             color: white;

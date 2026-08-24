@@ -42,28 +42,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fileTmpPath = $_FILES['image_file']['tmp_name'];
         $fileName = $_FILES['image_file']['name'];
         $fileSize = $_FILES['image_file']['size'];
-        $fileType = $_FILES['image_file']['type'];
-        $fileNameCmps = explode(".", $fileName);
-        $fileExtension = strtolower(end($fileNameCmps));
+        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
         
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-        if (in_array($fileExtension, $allowedExtensions)) {
-            // Tao thu muc uploads neu chua co
-            $uploadFileDir = __DIR__ . '/../../../assets/images/uploads/';
-            if (!is_dir($uploadFileDir)) {
-                mkdir($uploadFileDir, 0755, true);
-            }
-            
-            $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
-            $dest_path = $uploadFileDir . $newFileName;
-            
-            if (move_uploaded_file($fileTmpPath, $dest_path)) {
-                $imagePath = 'assets/images/uploads/' . $newFileName;
-            } else {
-                $error = 'Co loi xay ra khi di chuyen file upload.';
-            }
+        
+        // Kiểm tra dung lượng file (tối đa 5MB)
+        if ($fileSize > 5 * 1024 * 1024) {
+            $error = 'Dung lượng file ảnh quá lớn (tối đa 5MB).';
+        } elseif (!in_array($fileExtension, $allowedExtensions)) {
+            $error = 'Định dạng file ảnh không hợp lệ. Chỉ chấp nhận JPG, JPEG, PNG, WEBP, GIF.';
         } else {
-            $error = 'Dinh dang file anh khong hop le. Chi chap nhan JPG, JPEG, PNG, WEBP, GIF.';
+            // Xác thực nội dung file thực tế bằng getimagesize
+            $imageInfo = @getimagesize($fileTmpPath);
+            if ($imageInfo === false) {
+                $error = 'File tải lên không phải là định dạng hình ảnh hợp lệ.';
+            } else {
+                // Tạo thư mục uploads nếu chưa có
+                $uploadFileDir = __DIR__ . '/../../../assets/images/uploads/';
+                if (!is_dir($uploadFileDir)) {
+                    mkdir($uploadFileDir, 0755, true);
+                }
+                
+                // Đặt tên file ngẫu nhiên bảo mật, chống ghi đè và path traversal
+                $newFileName = bin2hex(random_bytes(16)) . '.' . $fileExtension;
+                $dest_path = $uploadFileDir . $newFileName;
+                
+                if (move_uploaded_file($fileTmpPath, $dest_path)) {
+                    $imagePath = 'assets/images/uploads/' . $newFileName;
+                } else {
+                    $error = 'Có lỗi xảy ra khi lưu file upload lên máy chủ.';
+                }
+            }
         }
     }
 

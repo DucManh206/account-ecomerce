@@ -73,43 +73,56 @@ try {
         try {
             $pdo->beginTransaction();
             
-            // kiểm tra giao dịch mock
-            $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM sepay_transactions WHERE sepay_transaction_id = ?");
-            $stmtCheck->execute([$mockTxId]);
-            if ($stmtCheck->fetchColumn() == 0) {
-                
-                // Cập nhật trạng thái yêu cầu
-                $stmtReq = $pdo->prepare("UPDATE topup_requests SET status = 'completed' WHERE id = ?");
-                $stmtReq->execute([$requestId]);
+            // Khóa dòng yêu cầu nạp tiền để chống cộng tiền 2 lần khi bấm nhiều lần đồng thời
+            $stmtLock = $pdo->prepare("SELECT status, amount FROM topup_requests WHERE id = ? AND user_id = ? FOR UPDATE");
+            $stmtLock->execute([$requestId, $userId]);
+            $lockedReq = $stmtLock->fetch();
 
-                // Thêm vào bảng sepay_transactions
-                $stmtInsert = $pdo->prepare("INSERT INTO sepay_transactions (sepay_transaction_id, user_id, amount, transaction_date, content) VALUES (?, ?, ?, NOW(), ?)");
-                $stmtInsert->execute([$mockTxId, $userId, $amount, $expectedMemo]);
-                
-                // 3. Cộng số dư tài khoản
-                $stmtUpdate = $pdo->prepare("UPDATE users SET balance = balance + ? WHERE id = ?");
-                $stmtUpdate->execute([$amount, $userId]);
-                
-                $pdo->commit();
-
-                // Cập nhật số dư trong session
-                $_SESSION['user_balance'] = $pdo->query("SELECT balance FROM users WHERE id = $userId")->fetchColumn();
-                
+            if (!$lockedReq || $lockedReq['status'] === 'completed') {
+                $pdo->rollBack();
                 echo json_encode([
                     'status' => 'success',
-                    'message' => 'Nạp tiền thành công! Đã cộng ' . number_format($amount, 0, ',', '.') . 'đ vào tài khoản (Chế độ chạy thử).',
+                    'message' => 'Yêu cầu nạp tiền này đã được xử lý hoàn tất trước đó.',
                     'amount' => $amount
                 ]);
                 exit;
             }
+            
+            // Cập nhật trạng thái yêu cầu
+            $stmtReq = $pdo->prepare("UPDATE topup_requests SET status = 'completed' WHERE id = ?");
+            $stmtReq->execute([$requestId]);
+
+            // Thêm vào bảng sepay_transactions
+            $stmtInsert = $pdo->prepare("INSERT INTO sepay_transactions (sepay_transaction_id, user_id, amount, transaction_date, content) VALUES (?, ?, ?, NOW(), ?)");
+            $stmtInsert->execute([$mockTxId, $userId, $amount, $expectedMemo]);
+            
+            // Cộng số dư tài khoản
+            $stmtUpdate = $pdo->prepare("UPDATE users SET balance = balance + ? WHERE id = ?");
+            $stmtUpdate->execute([$amount, $userId]);
+            
+            $pdo->commit();
+
+            // Cập nhật số dư trong session
+            $stmtBal = $pdo->prepare("SELECT balance FROM users WHERE id = ?");
+            $stmtBal->execute([$userId]);
+            $_SESSION['user_balance'] = $stmtBal->fetchColumn();
+            
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'Nạp tiền thành công! Đã cộng ' . number_format($amount, 0, ',', '.') . 'đ vào tài khoản (Chế độ chạy thử).',
+                'amount' => $amount
+            ]);
+            exit;
         } catch (Exception $e) {
-            $pdo->rollBack();
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             echo json_encode(['status' => 'error', 'message' => 'Lỗi xử lý giao dịch giả lập: ' . $e->getMessage()]);
             exit;
         }
     }
 
-    //   thực tế   
+    // Thực tế qua cổng SePay API
     $url = 'https://my.sepay.vn/userapi/transactions/list?limit=50';
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -161,6 +174,18 @@ try {
                     try {
                         $pdo->beginTransaction();
 
+                        // Khóa dòng yêu cầu nạp tiền kiểm tra lại
+                        $stmtLock = $pdo->prepare("SELECT status FROM topup_requests WHERE id = ? FOR UPDATE");
+                        $stmtLock->execute([$requestId]);
+                        $reqStatus = $stmtLock->fetchColumn();
+
+                        if ($reqStatus === 'completed') {
+                            $pdo->rollBack();
+                            $success = true;
+                            $creditedAmount = $txAmount;
+                            break;
+                        }
+
                         // Cập nhật trạng thái yêu cầu thành completed
                         $stmtReq = $pdo->prepare("UPDATE topup_requests SET status = 'completed' WHERE id = ?");
                         $stmtReq->execute([$requestId]);
@@ -182,13 +207,17 @@ try {
                         $pdo->commit();
 
                         // Cập nhật số dư trong session
-                        $_SESSION['user_balance'] = $pdo->query("SELECT balance FROM users WHERE id = $userId")->fetchColumn();
+                        $stmtBal = $pdo->prepare("SELECT balance FROM users WHERE id = ?");
+                        $stmtBal->execute([$userId]);
+                        $_SESSION['user_balance'] = $stmtBal->fetchColumn();
                         
                         $success = true;
                         $creditedAmount = $txAmount;
                         break; // Dừng vòng lặp sau khi xử lý thành công giao dịch đầu tiên
                     } catch (Exception $e) {
-                        $pdo->rollBack();
+                        if ($pdo->inTransaction()) {
+                            $pdo->rollBack();
+                        }
                         echo json_encode(['status' => 'error', 'message' => 'Lỗi cập nhật CSDL: ' . $e->getMessage()]);
                         exit;
                     }

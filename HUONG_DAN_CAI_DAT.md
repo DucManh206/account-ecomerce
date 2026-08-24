@@ -24,17 +24,19 @@ Giải nén và copy toàn bộ thư mục dự án `account-ecomerce` vào thư
 5. Chọn tệp tin `database.sql` trong thư mục gốc của dự án và nhấn **Nhập** (Import) để hoàn thành.
 
 ### Bước 3: Cấu hình kết nối CSDL
-Nếu dùng tài khoản MySQL khác mặc định, mở tệp tin `admin/config/db.php` và sửa thông số:
+Mở tệp tin `admin/config/db.php` và điều chỉnh thông số kết nối MySQL phù hợp với máy của bạn:
 ```php
 $host = 'localhost';
 $dbname = 'account_shop';
-$username = 'web'; // Tài khoản MySQL (mặc định XAMPP thường là root)
+$username = 'web'; // Tài khoản MySQL (mặc định XAMPP thường là 'root')
 $password = '123'; // Mật khẩu MySQL (mặc định XAMPP thường để trống '')
 ```
+*(Nếu dùng XAMPP mặc định, đổi `$username = 'root';` và `$password = '';`)*
 
 ### Bước 4: Chạy thử hệ thống
 * Giao diện mua hàng dành cho khách hàng: `http://localhost/account-ecomerce/index.php`
-* Giao diện trang quản trị viên (Admin): `http://localhost/account-ecomerce/admin/login.php`
+* Giao diện đăng nhập hệ thống: `http://localhost/account-ecomerce/login.php`
+  *(Đăng nhập tài khoản quyền Admin sẽ tự động chuyển hướng vào trang quản trị `admin/dashboard.php`)*
 
 ---
 

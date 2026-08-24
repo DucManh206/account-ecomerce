@@ -25,6 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if ($user && (password_verify($password, $user['password']) || $user['password'] === md5($password))) {
+            // Tự động nâng cấp hash mật khẩu lên Bcrypt an toàn nếu đang dùng MD5 hoặc hash lỗi thời
+            if ($user['password'] === md5($password) || password_needs_rehash($user['password'], PASSWORD_BCRYPT)) {
+                $newHash = password_hash($password, PASSWORD_BCRYPT);
+                $updateHashStmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+                $updateHashStmt->execute([$newHash, $user['id']]);
+            }
+
             login_user($user);
             
             if ($user['role'] === 'admin') {

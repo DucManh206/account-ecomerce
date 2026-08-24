@@ -78,18 +78,30 @@ function getCategories($pdo) {
 
 // Templates functions
 function getTemplates($pdo) {
-    return $pdo->query("SELECT templates.*, categories.name AS category_name FROM templates LEFT JOIN categories ON templates.category_id = categories.id ORDER BY templates.id DESC")->fetchAll();
+    try {
+        return $pdo->query("SELECT templates.*, categories.name AS category_name FROM templates LEFT JOIN categories ON templates.category_id = categories.id ORDER BY templates.id DESC")->fetchAll();
+    } catch (Exception $e) {
+        return [];
+    }
 }
 
 function addTemplate($pdo, $data) {
-    $stmt = $pdo->prepare("INSERT INTO templates (name, price, category_id, image, description) VALUES (?, ?, ?, ?, ?)");
-    return $stmt->execute([
-        $data['name'], $data['price'], $data['category_id'] ?: null, $data['image'], $data['description']
-    ]);
+    try {
+        $stmt = $pdo->prepare("INSERT INTO templates (name, price, category_id, image, description) VALUES (?, ?, ?, ?, ?)");
+        return $stmt->execute([
+            $data['name'], $data['price'], $data['category_id'] ?: null, $data['image'], $data['description']
+        ]);
+    } catch (Exception $e) {
+        return false;
+    }
 }
 
 function deleteTemplate($pdo, $id) {
-    $stmt = $pdo->prepare("DELETE FROM templates WHERE id = ?");
-    return $stmt->execute([$id]);
+    try {
+        $stmt = $pdo->prepare("DELETE FROM templates WHERE id = ?");
+        return $stmt->execute([$id]);
+    } catch (Exception $e) {
+        return false;
+    }
 }
 ?>
