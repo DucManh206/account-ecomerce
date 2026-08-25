@@ -87,13 +87,13 @@ require_once __DIR__ . '/includes/navbar.php';
                         <?php foreach ($orders as $order): ?>
                             <article class="purchase-item">
                                 <div class="purchase-item-head">
-                                    <div><span>Đơn #<?= $order['id'] ?> · <?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></span><h3><?= htmlspecialchars($order['account_name'] ?? 'Sản phẩm không còn dữ liệu') ?></h3><p><?= htmlspecialchars($order['category_name'] ?? 'Chưa phân loại') ?></p></div>
+                                        <div><span>Đơn #<?= $order['id'] ?> · <?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></span><h3><?= htmlspecialchars(order_product_name($order)) ?></h3><p><?= htmlspecialchars(order_product_category($order)) ?></p></div>
                                     <strong><?= number_format($order['price'], 0, ',', '.') ?>đ</strong>
                                 </div>
-                                <?php if (!empty($order['account_detail'])): ?>
+                                <?php $credentials = order_delivered_credentials($order); if ($credentials !== ''): ?>
                                     <details class="credential-panel">
                                         <summary>Xem thông tin đăng nhập</summary>
-                                        <div class="credential-content"><pre id="credential-<?= $order['id'] ?>"><?= htmlspecialchars($order['account_detail']) ?></pre><button type="button" data-copy-target="credential-<?= $order['id'] ?>">Sao chép</button></div>
+                                        <div class="credential-content"><pre id="credential-<?= $order['id'] ?>"><?= htmlspecialchars($credentials) ?></pre><button type="button" data-copy-target="credential-<?= $order['id'] ?>">Sao chép</button></div>
                                     </details>
                                 <?php endif; ?>
                             </article>

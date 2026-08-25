@@ -93,25 +93,31 @@ INSERT INTO accounts (name, description, price, category_id, account_detail, sta
 
 -- Users mặc định (mã hóa Bcrypt)
 INSERT INTO users (username, password, fullname, balance) VALUES
-('member', '$2y$10$O5LWmKFO.SdalD94XiOnE.tX6ENhMEr2GXQR5AWT3om1suK771W1y', 'Nguyễn Văn Thành viên', 500000),
-('khachhang', '$2y$10$5D4eoHaRJ9LnpSBq80Qh8uDI6G20bgp.jqxz2bzHBjCQo.UuVkXay', 'Trần Thị Khách Hàng', 150000);
+('member', '$2y$10$D4HpbbL3.EOG0XKPSLE5DOpU.WbkMlptOUucmRtd/uarrN/xfU3mm', 'Nguyễn Văn Thành viên', 500000),
+('khachhang', '$2y$10$D4HpbbL3.EOG0XKPSLE5DOpU.WbkMlptOUucmRtd/uarrN/xfU3mm', 'Trần Thị Khách Hàng', 150000);
 
--- Bảng orders
+-- Bảng orders: lưu snapshot tên/thông tin giao tại thời điểm mua để lịch sử không phụ thuộc kho hiện tại.
 CREATE TABLE orders (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   account_id INT NOT NULL,
   price DECIMAL(15,0) NOT NULL,
+  product_name VARCHAR(200) DEFAULT NULL,
+  product_category VARCHAR(100) DEFAULT NULL,
+  delivered_credentials TEXT DEFAULT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_orders_account (account_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+  FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-UPDATE accounts SET status = 'sold' WHERE id IN (4, 5);
+UPDATE accounts SET status = 'sold', hidden = 1 WHERE id IN (4, 5);
 
-INSERT INTO orders (user_id, account_id, price) VALUES
-(2, 4, 200000),
-(3, 5, 500000);
+INSERT INTO orders (user_id, account_id, price, product_name, product_category, delivered_credentials) VALUES
+(2, 4, 200000, 'Spotify Premium - 1 năm', 'Streaming',
+ 'Email: spoti_acc1@gmail.com\nMật khẩu: sp_pass456\nHạn sử dụng: 12 tháng\nLoại: Individual'),
+(3, 5, 500000, 'Office 365 Personal - 1 năm', 'Software',
+ 'Email: office_acc1@outlook.com\nMật khẩu: off_pass789\nProduct Key: XXXXX-YYYYY-ZZZZZ-WWWWW-VVVVV\nHạn: 12 tháng');
 
 -- Bảng sepay_transactions
 CREATE TABLE IF NOT EXISTS sepay_transactions (
@@ -168,7 +174,7 @@ INSERT INTO settings (setting_key, setting_value) VALUES
 ('max_topup_amount', '100000000'),
 ('topup_presets', '20000,50000,100000,200000,500000,1000000'),
 ('topup_expiry_minutes', '15'),
-('schema_version', '4');
+('schema_version', '5');
 
 -- Sổ biến động số dư: mọi khoản nạp, mua hàng và điều chỉnh thủ công đều có dấu vết.
 CREATE TABLE IF NOT EXISTS balance_transactions (

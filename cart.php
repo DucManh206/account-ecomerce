@@ -15,23 +15,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cart_action'])) {
     $cartAction = $_POST['cart_action'];
 
     if ($cartAction === 'add') {
+        $buyNow = ($_POST['buy_now'] ?? '') === '1';
         $stmt = $pdo->prepare("SELECT id FROM accounts WHERE id = ? AND status = 'available' AND hidden = 0");
         $stmt->execute([$accountId]);
         $account = $stmt->fetch();
-    
-        if ($account && !in_array($accountId, $_SESSION['cart'], true)) {
-            $_SESSION['cart'][] = $accountId;
+
+        if ($account) {
+            if (!cart_contains($accountId)) {
+                $_SESSION['cart'][] = $accountId;
+            }
             if ($isAjax) {
                 header('Content-Type: application/json');
-                echo json_encode(['success' => true, 'cart_count' => count($_SESSION['cart'])]);
+                echo json_encode(['success' => true, 'cart_count' => count($_SESSION['cart'])], JSON_UNESCAPED_UNICODE);
                 exit;
             }
-            set_flash('success', 'Đã thêm sản phẩm vào giỏ hàng.');
+            set_flash('success', $buyNow ? 'Sản phẩm đã sẵn sàng trong giỏ. Hãy hoàn tất thanh toán.' : 'Đã thêm sản phẩm vào giỏ hàng.');
             header('Location: cart.php');
             exit;
         }
 
-        $errorMessage = $account ? 'Sản phẩm đã có trong giỏ hàng.' : 'Sản phẩm không tồn tại, đã bán hoặc đang bị ẩn.';
+        $errorMessage = 'Sản phẩm không tồn tại, đã bán hoặc đang bị ẩn.';
         if ($isAjax) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'error' => $errorMessage], JSON_UNESCAPED_UNICODE);
@@ -54,6 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cart_action'])) {
 // Lấy dữ liệu giỏ hàng
 $cartAccounts = [];
 $totalPrice = 0;
+$payableTotal = 0;
+$unavailableCount = 0;
 
 if (!empty($_SESSION['cart'])) {
     $placeholders = implode(',', array_fill(0, count($_SESSION['cart']), '?'));
@@ -73,6 +78,11 @@ if (!empty($_SESSION['cart'])) {
     
     foreach ($cartAccounts as $acc) {
         $totalPrice += $acc['price'];
+        if ($acc['status'] !== 'available' || (int) $acc['hidden'] === 1) {
+            $unavailableCount++;
+        } else {
+            $payableTotal += $acc['price'];
+        }
     }
 }
 
@@ -94,52 +104,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
             // Sử dụng Transaction và khóa dòng (SELECT ... FOR UPDATE) để chống Race Condition tuyệt đối
             $pdo->beginTransaction();
 
-            // 1. Khóa và kiểm tra số dư người dùng
-            $userStmt = $pdo->prepare("SELECT balance FROM users WHERE id = ? FOR UPDATE");
+            // 1. Khóa và kiểm tra số dư + trạng thái tài khoản người dùng
+            $userStmt = $pdo->prepare("SELECT id, balance, is_active FROM users WHERE id = ? FOR UPDATE");
             $userStmt->execute([$userId]);
-            $userBalance = $userStmt->fetchColumn();
+            $lockedUser = $userStmt->fetch();
 
-            if ($userBalance === false) {
+            if (!$lockedUser) {
                 throw new Exception('Không tìm thấy thông tin tài khoản người dùng.');
             }
+            if (!(int) $lockedUser['is_active']) {
+                throw new Exception('Tài khoản đang bị tạm khóa nên không thể thanh toán.');
+            }
+            $userBalance = (float) $lockedUser['balance'];
 
             // 2. Khóa và kiểm tra từng sản phẩm trong giỏ hàng
             $lockedAccounts = [];
             $realTotalPrice = 0;
             $soldItemNames = [];
 
-            $accCheckStmt = $pdo->prepare("SELECT id, name, price, status FROM accounts WHERE id = ? FOR UPDATE");
+            $accCheckStmt = $pdo->prepare(
+                "SELECT a.id, a.name, a.price, a.status, a.hidden, a.account_detail, c.name AS category_name
+                 FROM accounts a
+                 LEFT JOIN categories c ON c.id = a.category_id
+                 WHERE a.id = ?
+                 FOR UPDATE"
+            );
             foreach ($_SESSION['cart'] as $accId) {
                 $accCheckStmt->execute([$accId]);
                 $accData = $accCheckStmt->fetch();
 
-                if (!$accData || $accData['status'] !== 'available') {
+                if (!$accData || $accData['status'] !== 'available' || (int) $accData['hidden'] === 1) {
                     $soldItemNames[] = $accData ? $accData['name'] : ("ID #" . $accId);
                 } else {
                     $lockedAccounts[] = $accData;
-                    $realTotalPrice += floatval($accData['price']);
+                    $realTotalPrice += (float) $accData['price'];
                 }
             }
 
             if (!empty($soldItemNames)) {
                 $pdo->rollBack();
-                set_flash('error', 'Sản phẩm: ' . implode(', ', $soldItemNames) . ' đã bị người khác mua mất. Vui lòng xóa khỏi giỏ hàng để tiếp tục.');
+                set_flash('error', 'Sản phẩm: ' . implode(', ', $soldItemNames) . ' không còn bán. Vui lòng xóa khỏi giỏ hàng để tiếp tục.');
             } elseif ($userBalance < $realTotalPrice) {
                 $pdo->rollBack();
                 $missing = $realTotalPrice - $userBalance;
                 set_flash('error', 'Số dư không đủ. Bạn còn thiếu ' . number_format($missing, 0, ',', '.') . 'đ. Vui lòng nạp thêm tiền!');
             } else {
-                // 3. Trừ số dư người mua
                 $deductStmt = $pdo->prepare("UPDATE users SET balance = balance - ? WHERE id = ?");
                 $deductStmt->execute([$realTotalPrice, $userId]);
 
-                // 4. Tạo đơn hàng và đổi trạng thái tài khoản
-                $orderStmt = $pdo->prepare("INSERT INTO orders (user_id, account_id, price) VALUES (?, ?, ?)");
+                $orderStmt = $pdo->prepare(
+                    "INSERT INTO orders (user_id, account_id, price, product_name, product_category, delivered_credentials)
+                     VALUES (?, ?, ?, ?, ?, ?)"
+                );
                 $updateStatusStmt = $pdo->prepare("UPDATE accounts SET status = 'sold', hidden = 1 WHERE id = ?");
-                $balanceAfter = (float) $userBalance - $realTotalPrice;
+                $runningBalance = $userBalance;
 
                 foreach ($lockedAccounts as $accItem) {
-                    $orderStmt->execute([$userId, $accItem['id'], $accItem['price']]);
+                    $runningBalance -= (float) $accItem['price'];
+                    $orderStmt->execute([
+                        $userId,
+                        $accItem['id'],
+                        $accItem['price'],
+                        $accItem['name'],
+                        $accItem['category_name'] ?: 'Chưa phân loại',
+                        $accItem['account_detail'],
+                    ]);
                     $orderId = (int) $pdo->lastInsertId();
                     $updateStatusStmt->execute([$accItem['id']]);
                     record_balance_transaction(
@@ -147,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
                         (int) $userId,
                         'purchase',
                         -(float) $accItem['price'],
-                        $balanceAfter,
+                        $runningBalance,
                         'order',
                         $orderId,
                         'Thanh toán đơn hàng #' . $orderId
@@ -195,12 +224,12 @@ require_once __DIR__ . '/includes/navbar.php';
                 <?php else: ?>
                     <div class="cart-items-list">
                         <?php foreach ($cartAccounts as $acc): 
-                            $img = !empty($acc['image']) ? $acc['image'] : 'assets/images/default-product.png';
-                            $isSold = ($acc['status'] !== 'available');
+                            $img = product_image_url($acc['image'] ?? '');
+                            $isSold = ($acc['status'] !== 'available' || (int) $acc['hidden'] === 1);
                         ?>
                             <div class="cart-item <?= $isSold ? 'cart-item-sold' : '' ?>" style="display: flex; align-items: center; justify-content: space-between; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
                                 <div class="cart-item-details" style="display: flex; align-items: center; gap: 16px;">
-                                    <img src="<?= htmlspecialchars($img) ?>" class="cart-item-img" style="width: 76px; height: 48px; object-fit: cover; background: #1f2937; border-radius: var(--radius-sm);" alt="" onerror="this.src='assets/images/default-product.png'; this.onerror=null;">
+                                    <img src="<?= htmlspecialchars($img) ?>" class="cart-item-img" style="width: 76px; height: 48px; object-fit: cover; background: #1f2937; border-radius: var(--radius-sm);" alt="" onerror="this.src='<?= htmlspecialchars(default_product_image()) ?>'; this.onerror=null;">
                                     <div>
                                         <a href="chitiet.php?id=<?= $acc['id'] ?>" class="cart-item-title" style="font-weight: 600; color: var(--text-white); text-decoration: none; font-size: 1rem;"><?= htmlspecialchars($acc['name']) ?></a>
                                         <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Danh mục: <?= htmlspecialchars($acc['category_name'] ?? 'Chưa phân loại') ?></div>
@@ -234,15 +263,15 @@ require_once __DIR__ . '/includes/navbar.php';
                 
                 <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px; font-size: 1.3rem; font-weight: 800; color: #10b981; margin-top: 14px;">
                     <span>Tổng thanh toán:</span>
-                    <span><?= number_format($totalPrice, 0, ',', '.') ?>đ</span>
+                    <span><?= number_format($payableTotal, 0, ',', '.') ?>đ</span>
                 </div>
 
                 <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): 
                     $balStmt = $pdo->prepare("SELECT balance FROM users WHERE id = ?");
                     $balStmt->execute([$_SESSION['user_id']]);
                     $myBalance = floatval($balStmt->fetchColumn() ?: 0);
-                    $hasEnoughBalance = ($myBalance >= $totalPrice);
-                    $missingBalance = $totalPrice - $myBalance;
+                    $hasEnoughBalance = ($unavailableCount === 0 && $payableTotal > 0 && $myBalance >= $payableTotal);
+                    $missingBalance = max(0, $payableTotal - $myBalance);
                 ?>
                     <div style="margin-top: 20px; padding: 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-gray);">
@@ -250,11 +279,15 @@ require_once __DIR__ . '/includes/navbar.php';
                             <span style="font-weight: 700; color: <?= $hasEnoughBalance ? '#34d399' : '#ef4444' ?>;"><?= number_format($myBalance, 0, ',', '.') ?>đ</span>
                         </div>
 
-                        <?php if ($hasEnoughBalance && $totalPrice > 0): ?>
-                            <div style="font-size: 0.8rem; color: #34d399; margin-top: 8px;">
-                                ✓ Số dư đủ để thanh toán đơn hàng này. (Còn lại sau mua: <?= number_format($myBalance - $totalPrice, 0, ',', '.') ?>đ)
+                        <?php if ($unavailableCount > 0): ?>
+                            <div style="font-size: 0.8rem; color: #ef4444; margin-top: 8px;">
+                                ⚠️ Có <?= $unavailableCount ?> sản phẩm không còn bán. Hãy xóa khỏi giỏ trước khi thanh toán.
                             </div>
-                        <?php elseif (!$hasEnoughBalance && $totalPrice > 0): ?>
+                        <?php elseif ($hasEnoughBalance && $payableTotal > 0): ?>
+                            <div style="font-size: 0.8rem; color: #34d399; margin-top: 8px;">
+                                ✓ Số dư đủ để thanh toán đơn hàng này. (Còn lại sau mua: <?= number_format($myBalance - $payableTotal, 0, ',', '.') ?>đ)
+                            </div>
+                        <?php elseif (!$hasEnoughBalance && $payableTotal > 0): ?>
                             <div style="font-size: 0.8rem; color: #ef4444; margin-top: 8px;">
                                 ⚠️ Số dư còn thiếu: <strong><?= number_format($missingBalance, 0, ',', '.') ?>đ</strong>
                             </div>
@@ -267,7 +300,9 @@ require_once __DIR__ . '/includes/navbar.php';
                     <form method="POST" style="margin-top: 20px;">
                         <?= csrf_field() ?>
                         <input type="hidden" name="action_checkout" value="1">
-                        <?php if (count($_SESSION['cart']) > 0 && $hasEnoughBalance): ?>
+                        <?php if (count($_SESSION['cart']) > 0 && $unavailableCount > 0): ?>
+                            <button type="button" class="btn-buy" style="width: 100%; opacity: 0.5; cursor: not-allowed;" disabled>Cần xóa sản phẩm đã bán</button>
+                        <?php elseif (count($_SESSION['cart']) > 0 && $hasEnoughBalance): ?>
                             <button type="submit" class="btn-buy" style="width: 100%; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">Thanh toán bằng số dư</button>
                         <?php elseif (count($_SESSION['cart']) > 0 && !$hasEnoughBalance): ?>
                             <button type="button" class="btn-buy" style="width: 100%; opacity: 0.5; cursor: not-allowed;" title="Vui lòng nạp thêm tiền" disabled>Số dư không đủ thanh toán</button>

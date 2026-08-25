@@ -8,6 +8,8 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) 
     exit;
 }
 
+$redirectTarget = safe_internal_path($_GET['redirect'] ?? ($_POST['redirect'] ?? ''), '');
+
 if (isset($_GET['registered'])) {
     set_flash('success', 'Đăng ký tài khoản thành công! Hãy đăng nhập để tiếp tục.');
 }
@@ -36,16 +38,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             login_user($user);
-            
+
             if ($user['role'] === 'admin') {
                 set_flash('success', 'Đăng nhập Quản trị viên thành công!');
                 header('Location: admin/dashboard.php');
                 exit;
-            } else {
-                set_flash('success', 'Đăng nhập thành công!');
-                header('Location: index.php');
-                exit;
             }
+
+            set_flash('success', 'Đăng nhập thành công!');
+            header('Location: ' . ($redirectTarget !== '' ? $redirectTarget : 'index.php'));
+            exit;
         } else {
             set_flash('error', 'Tài khoản hoặc mật khẩu không chính xác.');
         }
@@ -68,6 +70,9 @@ require_once __DIR__ . '/includes/navbar.php';
 
             <form method="POST">
                 <?= csrf_field() ?>
+                <?php if ($redirectTarget !== ''): ?>
+                    <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirectTarget) ?>">
+                <?php endif; ?>
 
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
                     <label for="username" style="font-weight: 600; font-size: 0.9rem; color: var(--text-white);">Tên đăng nhập</label>

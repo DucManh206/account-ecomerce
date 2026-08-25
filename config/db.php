@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/auth_helper.php';
 require_once __DIR__ . '/schema.php';
+require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/settings.php';
 require_once __DIR__ . '/../includes/ledger.php';
 

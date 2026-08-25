@@ -14,7 +14,8 @@ function is_admin_logged_in() {
 // Bắt buộc đăng nhập
 function require_login() {
     if (!is_logged_in()) {
-        header('Location: ' . BASE_PATH . 'login.php');
+        $returnPath = $_SERVER['REQUEST_URI'] ?? (BASE_PATH . 'index.php');
+        header('Location: ' . BASE_PATH . 'login.php?redirect=' . rawurlencode($returnPath));
         exit;
     }
 }

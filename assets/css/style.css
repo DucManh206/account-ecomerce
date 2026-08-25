@@ -1720,3 +1720,21 @@ button:active,
     .profile-monogram { width: 52px; height: 52px; }
     .purchase-item-head { flex-direction: column; gap: 8px; }
 }
+
+.buy-now-form {
+    margin: 0;
+}
+
+.detail-add-cart {
+    width: 100%;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.related-section {
+    margin: 0 0 64px;
+}
+
+.related-grid {
+    margin-top: 20px;
+}
