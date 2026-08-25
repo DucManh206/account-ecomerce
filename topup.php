@@ -11,7 +11,22 @@ $stmtUser = $pdo->prepare("SELECT balance FROM users WHERE id = ?");
 $stmtUser->execute([$userId]);
 $myBalance = $stmtUser->fetchColumn() ?: 0;
 
-$expectedMemo = SEPAY_MEMO_PREFIX . ' ' . $userId;
+$minimumTopup = app_setting_int('min_topup_amount', 10000, 1000);
+$maximumTopup = app_setting_int('max_topup_amount', 100000000, $minimumTopup);
+$expiryMinutes = app_setting_int('topup_expiry_minutes', 15, 5, 60);
+$presetSource = (string) app_setting('topup_presets', '20000,50000,100000,200000,500000,1000000');
+$topupPresets = array_values(array_unique(array_filter(
+    array_map('intval', explode(',', $presetSource)),
+    fn($value) => $value >= $minimumTopup && $value <= $maximumTopup
+)));
+if (!$topupPresets) {
+    $topupPresets = [$minimumTopup];
+}
+$requestedAmount = (int) ($_GET['amount'] ?? 0);
+$initialAmount = $requestedAmount >= $minimumTopup && $requestedAmount <= $maximumTopup
+    ? $requestedAmount
+    : ($topupPresets[min(1, count($topupPresets) - 1)] ?? $minimumTopup);
+$expectedMemo = 'Tạo yêu cầu để nhận nội dung';
 
 // Lấy lịch sử yêu cầu nạp tiền của khách hàng
 $stmtHistory = $pdo->prepare("SELECT * FROM topup_requests WHERE user_id = ? ORDER BY id DESC LIMIT 10");
@@ -226,7 +241,7 @@ require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/navbar.php';
 ?>
 
-    <div class="container" style="min-height: 70vh;">
+    <main id="main-content" class="container" style="min-height: 70vh;">
         <?= render_flash() ?>
 
         <div class="topup-container">
@@ -238,26 +253,26 @@ require_once __DIR__ . '/includes/navbar.php';
                 <div class="form-group-topup">
                     <label>Chọn nhanh số tiền nạp</label>
                     <div class="amount-grid">
-                        <button type="button" class="amount-btn" onclick="selectAmount(20000, this)">20.000đ</button>
-                        <button type="button" class="amount-btn active" onclick="selectAmount(50000, this)">50.000đ</button>
-                        <button type="button" class="amount-btn" onclick="selectAmount(100000, this)">100.000đ</button>
-                        <button type="button" class="amount-btn" onclick="selectAmount(200000, this)">200.000đ</button>
-                        <button type="button" class="amount-btn" onclick="selectAmount(500000, this)">500.000đ</button>
-                        <button type="button" class="amount-btn" onclick="selectAmount(1000000, this)">1.000.000đ</button>
+                        <?php foreach ($topupPresets as $preset): ?>
+                            <button type="button" class="amount-btn <?= $preset === $initialAmount ? 'active' : '' ?>" onclick="selectAmount(<?= $preset ?>, this)">
+                                <?= number_format($preset, 0, ',', '.') ?>đ
+                            </button>
+                        <?php endforeach; ?>
                     </div>
                 </div>
 
                 <div class="form-group-topup">
                     <label for="custom_amount">Hoặc nhập số tiền mong muốn (đ)</label>
-                    <input type="number" id="custom_amount" min="1000" step="1000" value="50000" onchange="updateCustomAmount(this.value)">
+                    <input type="number" id="custom_amount" min="<?= $minimumTopup ?>" max="<?= $maximumTopup ?>" step="1000" value="<?= $initialAmount ?>" onchange="updateCustomAmount(this.value)">
+                    <small>Tối thiểu <?= number_format($minimumTopup, 0, ',', '.') ?>đ · Tối đa <?= number_format($maximumTopup, 0, ',', '.') ?>đ</small>
                 </div>
 
                 <div style="font-size: 0.85rem; color: var(--text-gray); line-height: 1.6; margin-top: 16px;">
                     <p style="color: var(--text-white); font-weight: 600; margin-bottom: 6px;">Lưu ý quan trọng:</p>
                     <ul style="padding-left: 16px;">
                         <li>Vui lòng chuyển khoản đúng số tiền và nội dung để hệ thống tự động cộng tiền.</li>
-                        <li>Yêu cầu chuyển khoản có hiệu lực tối đa là 4 phút. Sau 4 phút không khớp giao dịch sẽ tự động bị huỷ bỏ.</li>
-                        <li>Nội dung chuyển khoản viết liền không dấu, có chứa ID thành viên của bạn (Hệ thống đã tạo sẵn chuẩn xác).</li>
+                        <li>Yêu cầu chuyển khoản có hiệu lực trong <strong><?= $expiryMinutes ?> phút</strong>.</li>
+                        <li>Mỗi yêu cầu có nội dung riêng. Vui lòng sao chép chính xác cả mã yêu cầu.</li>
                     </ul>
                 </div>
             </div>
@@ -284,7 +299,7 @@ require_once __DIR__ . '/includes/navbar.php';
                             <circle cx="12" cy="12" r="10"></circle>
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
-                        <span>Thời gian còn lại: <strong id="countdown_timer">04:00</strong></span>
+                        <span>Thời gian còn lại: <strong id="countdown_timer">15:00</strong></span>
                     </div>
                     <div class="timer-container">
                         <div class="timer-bar" id="timer_bar"></div>
@@ -299,7 +314,7 @@ require_once __DIR__ . '/includes/navbar.php';
                     <span class="info-label">Số tài khoản</span>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="info-value" id="val_acc"><?= SEPAY_BANK_NUM ?></span>
-                        <button class="btn-copy-small" onclick="copyVal('val_acc')">Copy</button>
+                        <button class="btn-copy-small" onclick="copyVal('val_acc', this)">Copy</button>
                     </div>
                 </div>
                 <div class="info-row">
@@ -310,18 +325,18 @@ require_once __DIR__ . '/includes/navbar.php';
                     <span class="info-label">Số tiền</span>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="info-value" id="val_money">50,000đ</span>
-                        <button class="btn-copy-small" onclick="copyValRaw('val_money_raw')">Copy</button>
+                        <button class="btn-copy-small" onclick="copyValRaw('val_money_raw', this)">Copy</button>
                     </div>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Nội dung chuyển</span>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="info-value" id="val_memo"><?= $expectedMemo ?></span>
-                        <button class="btn-copy-small" onclick="copyVal('val_memo')">Copy</button>
+                        <button class="btn-copy-small" onclick="copyVal('val_memo', this)">Copy</button>
                     </div>
                 </div>
 
-                <input type="hidden" id="val_money_raw" value="50000">
+                <input type="hidden" id="val_money_raw" value="<?= $initialAmount ?>">
 
                 <button type="button" id="btn_verify" class="btn-buy" style="width: 100%; margin-top: 12px;" onclick="manualCheck()">Kiểm tra giao dịch</button>
                 
@@ -330,10 +345,12 @@ require_once __DIR__ . '/includes/navbar.php';
                     <span id="polling_text">Đang chờ bạn quét mã thanh toán...</span>
                 </div>
 
-                <?php if (!SEPAY_ENABLED || SEPAY_API_TOKEN === 'YOUR_SEPAY_API_TOKEN'): ?>
+                <?php if (SEPAY_MOCK_MODE): ?>
                     <div class="mock-alert" id="mock_alert_box">
-                        <strong>Chế độ chạy thử đang bật:</strong> Bạn chỉ cần click nút <strong>"Kiểm tra giao dịch"</strong> phía trên, hệ thống sẽ tự động giả lập cộng số tiền bạn chọn vào tài khoản để chấm điểm bài làm mà không cần chuyển khoản thực tế.
+                        <strong>Chế độ kiểm thử đang bật.</strong> Nút “Kiểm tra giao dịch” sẽ ghi nhận số dư thử nghiệm mà không gọi ngân hàng.
                     </div>
+                <?php elseif (!SEPAY_ENABLED): ?>
+                    <div class="mock-alert"><strong>Cổng nạp tiền đang tạm dừng.</strong> Yêu cầu sẽ không được ghi nhận cho đến khi quản trị viên bật lại kết nối.</div>
                 <?php endif; ?>
             </div>
 
@@ -370,7 +387,9 @@ require_once __DIR__ . '/includes/navbar.php';
                                         <?php if ($h['status'] === 'completed'): ?>
                                             <span class="status-badge status-success">Thành công</span>
                                         <?php elseif ($h['status'] === 'expired'): ?>
-                                            <span class="status-badge status-expired">Đã hủy / Hết hạn</span>
+                                            <span class="status-badge status-expired">Hết hạn</span>
+                                        <?php elseif (in_array($h['status'], ['rejected', 'cancelled'], true)): ?>
+                                            <span class="status-badge status-expired">Đã từ chối</span>
                                         <?php else: ?>
                                             <span class="status-badge status-pending">Đang chờ</span>
                                         <?php endif; ?>
@@ -382,13 +401,17 @@ require_once __DIR__ . '/includes/navbar.php';
                 </div>
             <?php endif; ?>
         </div>
-    </div>
+    </main>
 
     <script>
         const bankCode = "<?= SEPAY_BANK_CODE ?>";
         const bankNum = "<?= SEPAY_BANK_NUM ?>";
         const bankName = "<?= SEPAY_BANK_NAME ?>";
-        let currentAmount = 50000;
+        const csrfToken = <?= json_encode(csrf_token(), JSON_UNESCAPED_UNICODE) ?>;
+        const minimumTopup = <?= $minimumTopup ?>;
+        const maximumTopup = <?= $maximumTopup ?>;
+        const requestLifetimeSeconds = <?= $expiryMinutes * 60 ?>;
+        let currentAmount = <?= $initialAmount ?>;
         let currentRequestId = 0;
         let currentMemo = "";
         let countdownSecs = 0;
@@ -422,7 +445,11 @@ require_once __DIR__ . '/includes/navbar.php';
             document.getElementById('polling_status').className = 'polling-status';
             document.getElementById('polling_text').innerText = "Đang chờ bạn quét mã thanh toán...";
 
-            fetch(`create_topup_request.php?amount=${amount}`)
+            fetch('create_topup_request.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'},
+                body: new URLSearchParams({amount: String(amount), csrf_token: csrfToken})
+            })
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
@@ -447,7 +474,7 @@ require_once __DIR__ . '/includes/navbar.php';
         function startCountdown() {
             const timerBar = document.getElementById('timer_bar');
             const countdownEl = document.getElementById('countdown_timer');
-            const maxSeconds = 240;
+            const maxSeconds = requestLifetimeSeconds;
 
             function updateUI() {
                 if (countdownSecs <= 0) {
@@ -461,7 +488,7 @@ require_once __DIR__ . '/includes/navbar.php';
                     
                     document.getElementById('polling_spinner').style.display = 'none';
                     document.getElementById('polling_status').className = 'polling-status expired';
-                    document.getElementById('polling_text').innerText = "Giao dịch đã hết thời gian (4 phút) và đã tự động hủy.";
+                    document.getElementById('polling_text').innerText = "Giao dịch đã hết thời gian (15 phút) và đã tự động hủy.";
                     
                     fetch(`check_topup.php?request_id=${currentRequestId}`).catch(err => console.error(err));
                     return;
@@ -510,7 +537,7 @@ require_once __DIR__ . '/includes/navbar.php';
 
         function updateCustomAmount(value) {
             const amount = parseInt(value) || 0;
-            if (amount >= 1000) {
+            if (amount >= minimumTopup && amount <= maximumTopup) {
                 currentAmount = amount;
                 
                 document.querySelectorAll('.amount-btn').forEach(b => {
@@ -524,28 +551,58 @@ require_once __DIR__ . '/includes/navbar.php';
 
                 createTopUpRequest(currentAmount);
             } else {
-                showToast("Số tiền nạp tối thiểu là 1.000đ", true);
+                showToast(`Số tiền phải từ ${minimumTopup.toLocaleString('vi-VN')}đ đến ${maximumTopup.toLocaleString('vi-VN')}đ`, true, "Số tiền không hợp lệ");
             }
         }
 
-        function copyVal(id) {
-            const txt = document.getElementById(id).innerText;
+        function copyVal(id, btnElement) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const txt = el.innerText;
             navigator.clipboard.writeText(txt).then(function() {
-                showToast('Đã sao chép: ' + txt, false);
+                showToast('Đã sao chép: ' + txt, false, 'Đã sao chép');
+                if (btnElement) {
+                    const oldText = btnElement.innerText;
+                    btnElement.innerText = "✓ Copy";
+                    btnElement.style.background = "#10b981";
+                    btnElement.style.color = "#000000";
+                    setTimeout(() => {
+                        btnElement.innerText = oldText;
+                        btnElement.style.background = "";
+                        btnElement.style.color = "";
+                    }, 1200);
+                }
             });
         }
 
-        function copyValRaw(id) {
-            const txt = document.getElementById(id).value;
+        function copyValRaw(id, btnElement) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const txt = el.value;
             navigator.clipboard.writeText(txt).then(function() {
-                showToast('Đã sao chép số tiền: ' + parseInt(txt).toLocaleString('vi-VN') + 'đ', false);
+                showToast('Đã sao chép số tiền: ' + parseInt(txt).toLocaleString('vi-VN') + 'đ', false, 'Đã sao chép');
+                if (btnElement) {
+                    const oldText = btnElement.innerText;
+                    btnElement.innerText = "✓ Copy";
+                    btnElement.style.background = "#10b981";
+                    btnElement.style.color = "#000000";
+                    setTimeout(() => {
+                        btnElement.innerText = oldText;
+                        btnElement.style.background = "";
+                        btnElement.style.color = "";
+                    }, 1200);
+                }
             });
         }
 
         function checkPayment() {
             if (currentRequestId <= 0 || isSuccessState) return;
             
-            fetch(`check_topup.php?request_id=${currentRequestId}`)
+            fetch('check_topup.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'},
+                body: new URLSearchParams({request_id: String(currentRequestId), csrf_token: csrfToken})
+            })
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
@@ -557,7 +614,7 @@ require_once __DIR__ . '/includes/navbar.php';
                         document.getElementById('polling_status').className = 'polling-status success';
                         document.getElementById('polling_text').innerText = "Thanh toán thành công!";
                         
-                        showToast(data.message, false);
+                        showToast(data.message, false, 'Nạp tiền thành công');
                         setTimeout(() => {
                             window.location.href = 'profile.php';
                         }, 1200);
@@ -583,7 +640,11 @@ require_once __DIR__ . '/includes/navbar.php';
             btn.disabled = true;
             btn.innerText = "Đang kiểm tra...";
 
-            fetch(`check_topup.php?request_id=${currentRequestId}`)
+            fetch('check_topup.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'},
+                body: new URLSearchParams({request_id: String(currentRequestId), csrf_token: csrfToken})
+            })
                 .then(res => res.json())
                 .then(data => {
                     btn.disabled = false;
@@ -594,7 +655,7 @@ require_once __DIR__ . '/includes/navbar.php';
                         clearInterval(countdownTimerInterval);
                         clearInterval(pollingInterval);
                         
-                        showToast(data.message, false);
+                        showToast(data.message, false, 'Nạp tiền thành công');
                         setTimeout(() => {
                             window.location.href = 'profile.php';
                         }, 1200);
@@ -607,20 +668,20 @@ require_once __DIR__ . '/includes/navbar.php';
                         document.getElementById('polling_spinner').style.display = 'none';
                         document.getElementById('polling_status').className = 'polling-status expired';
                         document.getElementById('polling_text').innerText = data.message;
-                        showToast(data.message, true);
+                        showToast(data.message, true, 'Hết hạn giao dịch');
                     } else {
-                        showToast(data.message, true);
+                        showToast(data.message, true, 'Chưa nhận được');
                     }
                 })
                 .catch(err => {
                     btn.disabled = false;
                     btn.innerText = originalText;
-                    showToast("Có lỗi xảy ra khi kiểm tra giao dịch.", true);
+                    showToast("Có lỗi xảy ra khi kiểm tra giao dịch.", true, 'Lỗi kiểm tra');
                 });
         }
 
-        // Khởi tạo yêu cầu nạp mặc định 50.000đ
-        selectAmount(50000, null);
+        const initialAmount = <?= $initialAmount ?>;
+        selectAmount(initialAmount, null);
     </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

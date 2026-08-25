@@ -2,23 +2,64 @@
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../auth.php';
 
-function getAllOrders($pdo) {
-    $sql = "SELECT orders.*, users.username, users.fullname AS user_fullname, accounts.name AS account_name
-            FROM orders
-            LEFT JOIN users ON orders.user_id = users.id
-            LEFT JOIN accounts ON orders.account_id = accounts.id
-            ORDER BY orders.id DESC";
-    return $pdo->query($sql)->fetchAll();
+function buildOrderFilters(string $search, string $dateFrom, string $dateTo): array
+{
+    $where = [];
+    $params = [];
+    if ($search !== '') {
+        $conditions = ['u.username LIKE ?', 'u.fullname LIKE ?', 'a.name LIKE ?'];
+        $term = '%' . $search . '%';
+        array_push($params, $term, $term, $term);
+        if (ctype_digit($search)) {
+            $conditions[] = 'o.id = ?';
+            $params[] = (int) $search;
+        }
+        $where[] = '(' . implode(' OR ', $conditions) . ')';
+    }
+    if ($dateFrom !== '') {
+        $where[] = 'o.created_at >= ?';
+        $params[] = $dateFrom . ' 00:00:00';
+    }
+    if ($dateTo !== '') {
+        $where[] = 'o.created_at <= ?';
+        $params[] = $dateTo . ' 23:59:59';
+    }
+    return [$where ? ' WHERE ' . implode(' AND ', $where) : '', $params];
 }
 
-function getOrderById($pdo, $id) {
-    $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ?");
+function getFilteredOrders(PDO $pdo, string $search, string $dateFrom, string $dateTo, int $limit, int $offset): array
+{
+    [$whereSql, $params] = buildOrderFilters($search, $dateFrom, $dateTo);
+    $fromSql = ' FROM orders o LEFT JOIN users u ON o.user_id = u.id LEFT JOIN accounts a ON o.account_id = a.id ';
+
+    $summaryStmt = $pdo->prepare('SELECT COUNT(*) AS total, COALESCE(SUM(o.price), 0) AS revenue, COALESCE(AVG(o.price), 0) AS average' . $fromSql . $whereSql);
+    $summaryStmt->execute($params);
+    $summary = $summaryStmt->fetch();
+
+    $stmt = $pdo->prepare(
+        'SELECT o.*, u.username, u.fullname AS user_fullname, a.name AS account_name, a.account_detail' .
+        $fromSql . $whereSql . ' ORDER BY o.id DESC LIMIT ' . $limit . ' OFFSET ' . $offset
+    );
+    $stmt->execute($params);
+    return ['rows' => $stmt->fetchAll(), 'summary' => $summary];
+}
+
+function getOrdersForExport(PDO $pdo, string $search, string $dateFrom, string $dateTo): array
+{
+    [$whereSql, $params] = buildOrderFilters($search, $dateFrom, $dateTo);
+    $stmt = $pdo->prepare(
+        'SELECT o.id, o.created_at, o.price, u.username, u.fullname AS user_fullname, a.name AS account_name
+         FROM orders o
+         LEFT JOIN users u ON o.user_id = u.id
+         LEFT JOIN accounts a ON o.account_id = a.id' . $whereSql . ' ORDER BY o.id DESC'
+    );
+    $stmt->execute($params);
+    return $stmt->fetchAll();
+}
+
+function getOrderById(PDO $pdo, int $id): ?array
+{
+    $stmt = $pdo->prepare('SELECT * FROM orders WHERE id = ?');
     $stmt->execute([$id]);
-    return $stmt->fetch();
+    return $stmt->fetch() ?: null;
 }
-
-function deleteOrder($pdo, $id) {
-    $stmt = $pdo->prepare("DELETE FROM orders WHERE id = ?");
-    return $stmt->execute([$id]);
-}
-?>

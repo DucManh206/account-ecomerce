@@ -1,5 +1,12 @@
 <?php
-require_once __DIR__ . '/admin/config/config.php';
+require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/includes/csrf.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: ' . BASE_PATH . 'index.php');
+    exit;
+}
+verify_csrf();
 
 $_SESSION = [];
 if (ini_get("session.use_cookies")) {
@@ -11,6 +18,6 @@ if (ini_get("session.use_cookies")) {
 }
 session_destroy();
 
-header('Location: index.php');
+header('Location: ' . BASE_PATH . 'index.php');
 exit;
 ?>

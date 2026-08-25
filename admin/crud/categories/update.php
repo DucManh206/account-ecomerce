@@ -16,6 +16,7 @@ if (!$category) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $data = [
         'name' => trim($_POST['name'] ?? ''),
         'description' => trim($_POST['description'] ?? '')
@@ -57,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             
             <form method="POST" class="form-card">
+                <?= csrf_field() ?>
                 <div class="form-group">
                     <label for="name">Tên danh mục</label>
                     <input type="text" id="name" name="name" value="<?= htmlspecialchars($category['name']) ?>" required>

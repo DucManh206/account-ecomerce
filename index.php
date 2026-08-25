@@ -3,214 +3,216 @@ require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/includes/flash.php';
 
 $search = trim($_GET['search'] ?? '');
-$categoryId = trim($_GET['category'] ?? '');
-$priceRange = trim($_GET['price_range'] ?? '');
-$sort = $_GET['sort'] ?? 'newest';
-$page = max(1, intval($_GET['page'] ?? 1));
-$limit = 12;
-$offset = ($page - 1) * $limit;
+$categoryId = max(0, (int) ($_GET['category'] ?? 0));
+$minPrice = max(0, (int) ($_GET['min_price'] ?? 0));
+$maxPrice = max(0, (int) ($_GET['max_price'] ?? 0));
+if ($maxPrice > 0 && $minPrice > $maxPrice) {
+    [$minPrice, $maxPrice] = [$maxPrice, $minPrice];
+}
+$allowedSorts = ['newest', 'price_asc', 'price_desc', 'name'];
+$requestedSort = $_GET['sort'] ?? 'newest';
+$sort = in_array($requestedSort, $allowedSorts, true) ? $requestedSort : 'newest';
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$limit = app_setting_int('storefront_page_size', 12, 6, 48);
 
-$categories = $pdo->query("SELECT * FROM categories ORDER BY id ASC")->fetchAll();
+$categories = $pdo->query(
+    "SELECT c.*, COALESCE(SUM(a.status = 'available' AND a.hidden = 0), 0) AS available_count
+     FROM categories c LEFT JOIN accounts a ON a.category_id = c.id
+     GROUP BY c.id ORDER BY c.name"
+)->fetchAll();
 
-$whereClauses = ["accounts.hidden = 0"];
+$where = ['a.hidden = 0'];
 $params = [];
-
-if ($categoryId !== '') {
-    $whereClauses[] = "accounts.category_id = ?";
+if ($categoryId > 0) {
+    $where[] = 'a.category_id = ?';
     $params[] = $categoryId;
 }
-
 if ($search !== '') {
-    $whereClauses[] = "(accounts.name LIKE ? OR accounts.description LIKE ?)";
-    $params[] = '%' . $search . '%';
-    $params[] = '%' . $search . '%';
+    $where[] = '(a.name LIKE ? OR a.description LIKE ? OR c.name LIKE ?)';
+    $term = '%' . $search . '%';
+    array_push($params, $term, $term, $term);
 }
-
-if ($priceRange !== '') {
-    if ($priceRange === 'under_100k') {
-        $whereClauses[] = "accounts.price < 100000";
-    } elseif ($priceRange === '100k_300k') {
-        $whereClauses[] = "accounts.price BETWEEN 100000 AND 300000";
-    } elseif ($priceRange === '300k_500k') {
-        $whereClauses[] = "accounts.price BETWEEN 300000 AND 500000";
-    } elseif ($priceRange === 'over_500k') {
-        $whereClauses[] = "accounts.price > 500000";
-    }
+if ($minPrice > 0) {
+    $where[] = 'a.price >= ?';
+    $params[] = $minPrice;
 }
+if ($maxPrice > 0) {
+    $where[] = 'a.price <= ?';
+    $params[] = $maxPrice;
+}
+$whereSql = implode(' AND ', $where);
 
-$whereSql = implode(" AND ", $whereClauses);
-
-// Đếm tổng số sản phẩm để phân trang
-$countStmt = $pdo->prepare("SELECT COUNT(*) FROM accounts LEFT JOIN categories ON accounts.category_id = categories.id WHERE $whereSql");
+$countStmt = $pdo->prepare('SELECT COUNT(*) FROM accounts a LEFT JOIN categories c ON c.id = a.category_id WHERE ' . $whereSql);
 $countStmt->execute($params);
-$totalProducts = $countStmt->fetchColumn();
-$totalPages = ceil($totalProducts / $limit);
+$totalProducts = (int) $countStmt->fetchColumn();
+$totalPages = max(1, (int) ceil($totalProducts / $limit));
+$page = min($page, $totalPages);
+$offset = ($page - 1) * $limit;
 
-$sql = "SELECT accounts.*, categories.name AS category_name 
-        FROM accounts 
-        LEFT JOIN categories ON accounts.category_id = categories.id 
-        WHERE $whereSql";
-
-switch ($sort) {
-    case 'price_asc':
-        $sql .= " ORDER BY accounts.price ASC";
-        break;
-    case 'price_desc':
-        $sql .= " ORDER BY accounts.price DESC";
-        break;
-    case 'newest':
-    default:
-        $sql .= " ORDER BY accounts.id DESC";
-        break;
-}
-
-$sql .= " LIMIT $limit OFFSET $offset";
-
-$stmt = $pdo->prepare($sql);
+$orderSql = match ($sort) {
+    'price_asc' => 'a.price ASC, a.id DESC',
+    'price_desc' => 'a.price DESC, a.id DESC',
+    'name' => 'a.name ASC, a.id DESC',
+    default => 'a.id DESC',
+};
+$stmt = $pdo->prepare(
+    'SELECT a.*, c.name AS category_name
+     FROM accounts a LEFT JOIN categories c ON c.id = a.category_id
+     WHERE ' . $whereSql . ' ORDER BY ' . $orderSql . ' LIMIT ' . $limit . ' OFFSET ' . $offset
+);
 $stmt->execute($params);
 $accounts = $stmt->fetchAll();
 
-// Lấy ảnh default nếu chưa up ảnh
-function getFallbackImage($categoryName) {
-    $categoryName = mb_strtolower($categoryName, 'UTF-8');
-    if (strpos($categoryName, 'game') !== false || strpos($categoryName, 'lmht') !== false || strpos($categoryName, 'steam') !== false) {
-        return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop';
-    } elseif (strpos($categoryName, 'streaming') !== false || strpos($categoryName, 'netflix') !== false || strpos($categoryName, 'spotify') !== false) {
-        return 'https://images.unsplash.com/photo-1574375927938-d5a98e8edd86?q=80&w=600&auto=format&fit=crop';
-    } elseif (strpos($categoryName, 'software') !== false || strpos($categoryName, 'office') !== false || strpos($categoryName, 'adobe') !== false) {
-        return 'https://images.unsplash.com/photo-1618401471353-b98aedd07871?q=80&w=600&auto=format&fit=crop';
+$catalogStats = $pdo->query(
+    "SELECT SUM(status = 'available' AND hidden = 0) AS available,
+            COUNT(DISTINCT CASE WHEN status = 'available' AND hidden = 0 THEN category_id END) AS categories
+     FROM accounts"
+)->fetch();
+
+$selectedCategory = null;
+foreach ($categories as $category) {
+    if ((int) $category['id'] === $categoryId) {
+        $selectedCategory = $category;
+        break;
     }
-    return 'assets/images/default-product.png';
 }
 
-$pageTitle = 'Account Shop - Hệ thống bán tài khoản tự động';
+$baseFilters = [
+    'search' => $search,
+    'category' => $categoryId ?: '',
+    'min_price' => $minPrice ?: '',
+    'max_price' => $maxPrice ?: '',
+    'sort' => $sort,
+];
+$pageTitle = SITE_NAME;
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/navbar.php';
 ?>
 
-    <section class="hero">
-        <div class="container">
-            <h1>Mua tài khoản <span>Premium</span> tự động</h1>
-            <p>Chuyên cung cấp tài khoản Game, Netflix, Spotify, Key Office giá rẻ, uy tín. Nhận thông tin acc ngay lập tức.</p>
-            
-            <form action="index.php" method="GET" class="search-box">
-                <input type="text" name="search" placeholder="Tìm tài khoản cần mua..." value="<?= htmlspecialchars($search) ?>">
-                <?php if ($categoryId): ?>
-                    <input type="hidden" name="category" value="<?= htmlspecialchars($categoryId) ?>">
-                <?php endif; ?>
-                <?php if ($priceRange): ?>
-                    <input type="hidden" name="price_range" value="<?= htmlspecialchars($priceRange) ?>">
-                <?php endif; ?>
-                <?php if ($sort): ?>
-                    <input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>">
-                <?php endif; ?>
-                <button type="submit">Tìm kiếm</button>
-            </form>
+<main id="main-content">
+    <?php if ($notice = trim((string) app_setting('storefront_notice', ''))): ?>
+        <div class="store-notice"><div class="container"><span>Thông báo</span><p><?= htmlspecialchars($notice) ?></p></div></div>
+    <?php endif; ?>
+
+    <section class="hero storefront-hero">
+        <div class="container hero-layout">
+            <div class="hero-copy">
+                <span class="hero-kicker"><?= htmlspecialchars((string) app_setting('site_tagline', 'Tài khoản số, giao ngay sau thanh toán')) ?></span>
+                <h1><?= htmlspecialchars((string) app_setting('storefront_heading', 'Mua tài khoản Premium tự động')) ?></h1>
+                <p><?= htmlspecialchars((string) app_setting('storefront_description', 'Chọn sản phẩm phù hợp, thanh toán bằng số dư và nhận thông tin đăng nhập ngay trong tài khoản.')) ?></p>
+                <form action="index.php" method="GET" class="search-box storefront-search">
+                    <label class="sr-only" for="store-search">Tìm sản phẩm</label>
+                    <input id="store-search" type="search" name="search" placeholder="Tìm Netflix, Spotify, Steam..." value="<?= htmlspecialchars($search) ?>">
+                    <?php if ($categoryId): ?><input type="hidden" name="category" value="<?= $categoryId ?>"><?php endif; ?>
+                    <?php if ($minPrice): ?><input type="hidden" name="min_price" value="<?= $minPrice ?>"><?php endif; ?>
+                    <?php if ($maxPrice): ?><input type="hidden" name="max_price" value="<?= $maxPrice ?>"><?php endif; ?>
+                    <button type="submit">Tìm kiếm</button>
+                </form>
+            </div>
+            <div class="hero-stats" aria-label="Thống kê cửa hàng">
+                <div><strong><?= number_format($catalogStats['available']) ?></strong><span>sản phẩm sẵn sàng</span></div>
+                <div><strong><?= number_format($catalogStats['categories']) ?></strong><span>danh mục đang bán</span></div>
+                <div><strong>24/7</strong><span>giao thông tin tự động</span></div>
+            </div>
         </div>
     </section>
 
-    <section class="search-filter-section">
+    <section class="catalog-section">
         <div class="container">
-            <div class="filter-wrapper">
-                <div class="categories-tabs">
-                    <a href="index.php?category=&search=<?= urlencode($search) ?>&price_range=<?= urlencode($priceRange) ?>&sort=<?= $sort ?>" 
-                       class="tab-btn <?= $categoryId === '' ? 'active' : '' ?>">
-                        Tất cả
-                    </a>
-                    <?php foreach ($categories as $cat): ?>
-                        <a href="index.php?category=<?= $cat['id'] ?>&search=<?= urlencode($search) ?>&price_range=<?= urlencode($priceRange) ?>&sort=<?= $sort ?>" 
-                           class="tab-btn <?= (string)$categoryId === (string)$cat['id'] ? 'active' : '' ?>">
-                            <?= htmlspecialchars($cat['name']) ?>
-                        </a>
-                    <?php endforeach; ?>
+            <?= render_flash() ?>
+
+            <div class="catalog-header">
+                <div>
+                    <span class="section-kicker">Danh mục sản phẩm</span>
+                    <h2><?= $selectedCategory ? htmlspecialchars($selectedCategory['name']) : 'Tất cả tài khoản' ?></h2>
+                    <p><?= number_format($totalProducts) ?> kết quả<?= $search !== '' ? ' cho “' . htmlspecialchars($search) . '”' : '' ?></p>
                 </div>
+                <div class="catalog-sort">
+                    <label for="sort">Sắp xếp</label>
+                    <select id="sort" name="sort" form="catalogFilters" onchange="this.form.submit()">
+                        <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>Mới cập nhật</option>
+                        <option value="price_asc" <?= $sort === 'price_asc' ? 'selected' : '' ?>>Giá thấp trước</option>
+                        <option value="price_desc" <?= $sort === 'price_desc' ? 'selected' : '' ?>>Giá cao trước</option>
+                        <option value="name" <?= $sort === 'name' ? 'selected' : '' ?>>Tên A–Z</option>
+                    </select>
+                </div>
+            </div>
 
-                <div class="sort-select" style="display: flex; gap: 12px; flex-wrap: wrap;">
-                    <form action="index.php" method="GET" id="filterForm" style="display: flex; gap: 10px;">
-                        <?php if ($categoryId): ?>
-                            <input type="hidden" name="category" value="<?= htmlspecialchars($categoryId) ?>">
-                        <?php endif; ?>
-                        <?php if ($search): ?>
-                            <input type="hidden" name="search" value="<?= htmlspecialchars($search) ?>">
-                        <?php endif; ?>
-                        
-                        <select name="price_range" onchange="document.getElementById('filterForm').submit();">
-                            <option value="" <?= $priceRange === '' ? 'selected' : '' ?>>Tất cả mức giá</option>
-                            <option value="under_100k" <?= $priceRange === 'under_100k' ? 'selected' : '' ?>>Dưới 100.000đ</option>
-                            <option value="100k_300k" <?= $priceRange === '100k_300k' ? 'selected' : '' ?>>100.000đ - 300.000đ</option>
-                            <option value="300k_500k" <?= $priceRange === '300k_500k' ? 'selected' : '' ?>>300.000đ - 500.000đ</option>
-                            <option value="over_500k" <?= $priceRange === 'over_500k' ? 'selected' : '' ?>>Trên 500.000đ</option>
-                        </select>
-
-                        <select name="sort" onchange="document.getElementById('filterForm').submit();">
-                            <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>Mới nhất</option>
-                            <option value="price_asc" <?= $sort === 'price_asc' ? 'selected' : '' ?>>Giá từ thấp đến cao</option>
-                            <option value="price_desc" <?= $sort === 'price_desc' ? 'selected' : '' ?>>Giá từ cao đến thấp</option>
-                        </select>
+            <div class="catalog-layout">
+                <aside class="catalog-filters">
+                    <form action="index.php" method="GET" id="catalogFilters">
+                        <input type="hidden" name="search" value="<?= htmlspecialchars($search) ?>">
+                        <input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>">
+                        <fieldset>
+                            <legend>Danh mục</legend>
+                            <label class="filter-radio"><input type="radio" name="category" value="" <?= $categoryId === 0 ? 'checked' : '' ?> onchange="this.form.submit()"><span>Tất cả</span></label>
+                            <?php foreach ($categories as $category): ?>
+                                <label class="filter-radio"><input type="radio" name="category" value="<?= $category['id'] ?>" <?= $categoryId === (int) $category['id'] ? 'checked' : '' ?> onchange="this.form.submit()"><span><?= htmlspecialchars($category['name']) ?></span><small><?= number_format($category['available_count']) ?></small></label>
+                            <?php endforeach; ?>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Khoảng giá</legend>
+                            <div class="price-range-fields">
+                                <label>Từ<input type="number" name="min_price" min="0" step="1000" value="<?= $minPrice ?: '' ?>" placeholder="0"></label>
+                                <label>Đến<input type="number" name="max_price" min="0" step="1000" value="<?= $maxPrice ?: '' ?>" placeholder="Không giới hạn"></label>
+                            </div>
+                            <button type="submit" class="filter-apply">Áp dụng giá</button>
+                        </fieldset>
+                        <?php if ($search || $categoryId || $minPrice || $maxPrice): ?><a class="clear-filters" href="index.php">Xóa tất cả bộ lọc</a><?php endif; ?>
                     </form>
+                </aside>
+
+                <div class="catalog-results">
+                    <div class="accounts-grid">
+                        <?php foreach ($accounts as $account):
+                            $image = !empty($account['image']) ? $account['image'] : 'assets/images/default-product.png';
+                            $inCart = in_array((int) $account['id'], array_map('intval', $_SESSION['cart'] ?? []), true);
+                        ?>
+                            <article class="account-card <?= $account['status'] !== 'available' ? 'is-sold' : '' ?>">
+                                <a href="chitiet.php?id=<?= $account['id'] ?>" class="card-image-wrapper" aria-label="Xem <?= htmlspecialchars($account['name']) ?>">
+                                    <img src="<?= htmlspecialchars($image) ?>" alt="<?= htmlspecialchars($account['name']) ?>" loading="lazy" onerror="this.src='assets/images/default-product.png'; this.onerror=null;">
+                                    <span class="card-badge"><?= htmlspecialchars($account['category_name'] ?? 'Chưa phân loại') ?></span>
+                                    <span class="card-status <?= $account['status'] === 'available' ? 'status-available' : 'status-sold' ?>"><?= $account['status'] === 'available' ? 'Sẵn sàng' : 'Đã bán' ?></span>
+                                </a>
+                                <div class="card-body">
+                                    <h3 class="card-title"><a href="chitiet.php?id=<?= $account['id'] ?>"><?= htmlspecialchars($account['name']) ?></a></h3>
+                                    <p class="card-desc"><?= htmlspecialchars($account['description'] ?: 'Chưa có mô tả chi tiết.') ?></p>
+                                    <div class="card-purchase-row">
+                                        <strong><?= number_format($account['price'], 0, ',', '.') ?>đ</strong>
+                                        <span>Giao ngay</span>
+                                    </div>
+                                    <div class="card-actions-wrapper">
+                                        <a href="chitiet.php?id=<?= $account['id'] ?>" class="btn-view">Chi tiết</a>
+                                        <?php if ($account['status'] === 'available'): ?>
+                                            <?php if ($inCart): ?>
+                                                <a href="cart.php" class="btn-add-cart is-added" id="btn-cart-<?= $account['id'] ?>">Trong giỏ</a>
+                                            <?php else: ?>
+                                                <button type="button" onclick="addToCart(<?= $account['id'] ?>, this)" class="btn-add-cart" id="btn-cart-<?= $account['id'] ?>">Thêm giỏ</button>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <button class="btn-add-cart-disabled" disabled>Đã bán</button>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <?php if (!$accounts): ?>
+                        <div class="catalog-empty"><span>Không có kết quả</span><h3>Chưa tìm thấy tài khoản phù hợp</h3><p>Hãy thử từ khóa ngắn hơn hoặc bỏ bớt điều kiện giá.</p><a href="index.php" class="tab-btn">Xem toàn bộ cửa hàng</a></div>
+                    <?php endif; ?>
+
+                    <?php if ($totalPages > 1): ?>
+                        <nav class="pagination" aria-label="Phân trang sản phẩm">
+                            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                                <a href="?<?= http_build_query(array_merge($baseFilters, ['page' => $i])) ?>" class="tab-btn <?= $page === $i ? 'active' : '' ?>"><?= $i ?></a>
+                            <?php endfor; ?>
+                        </nav>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
     </section>
-
-    <main class="container">
-        <?= render_flash() ?>
-
-        <div class="accounts-grid">
-            <?php foreach ($accounts as $acc): 
-                $img = !empty($acc['image']) ? $acc['image'] : getFallbackImage($acc['category_name'] ?? '');
-            ?>
-                <article class="account-card">
-                    <div class="card-image-wrapper">
-                        <img src="<?= htmlspecialchars($img) ?>" alt="<?= htmlspecialchars($acc['name']) ?>" onerror="this.src='assets/images/default-product.png'; this.onerror=null;">
-                        <span class="card-badge"><?= htmlspecialchars($acc['category_name'] ?? 'Chưa phân loại') ?></span>
-                        <span class="card-status <?= $acc['status'] === 'available' ? 'status-available' : 'status-sold' ?>">
-                            <?= $acc['status'] === 'available' ? 'Đang bán' : 'Đã bán' ?>
-                        </span>
-                    </div>
-                    <div class="card-body">
-                        <h2 class="card-title"><?= htmlspecialchars($acc['name']) ?></h2>
-                        <p class="card-desc"><?= htmlspecialchars($acc['description'] ?? 'Chưa có mô tả chi tiết.') ?></p>
-                        
-                        <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin-bottom: 12px;">
-                            <?= number_format($acc['price'], 0, ',', '.') ?>đ
-                        </div>
-                        
-                        <div class="card-actions-wrapper">
-                            <a href="chitiet.php?id=<?= $acc['id'] ?>" class="btn-view" style="flex: 1; text-align: center;">Chi tiết</a>
-                            
-                            <?php if ($acc['status'] === 'available'): ?>
-                                <?php if (in_array($acc['id'], $_SESSION['cart'])): ?>
-                                    <a href="cart.php" class="btn-add-cart" id="btn-cart-<?= $acc['id'] ?>" style="background-color: #059669;">Đã thêm</a>
-                                <?php else: ?>
-                                    <a href="javascript:void(0)" onclick="addToCart(<?= $acc['id'] ?>, this)" class="btn-add-cart" id="btn-cart-<?= $acc['id'] ?>">+ Thêm giỏ</a>
-                                <?php endif; ?>
-                            <?php else: ?>
-                                <button class="btn-add-cart-disabled" disabled>Đã bán</button>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </article>
-            <?php endforeach; ?>
-        </div>
-
-        <?php if (empty($accounts)): ?>
-            <div class="empty" style="text-align: center; margin: 40px 0; color: var(--text-gray);">
-                <p style="font-size: 1.2rem;">Không tìm thấy tài khoản phù hợp.</p>
-                <a href="index.php" class="tab-btn" style="display: inline-block; margin-top: 16px;">Xem tất cả sản phẩm</a>
-            </div>
-        <?php endif; ?>
-
-        <?php if ($totalPages > 1): ?>
-            <div class="pagination" style="display: flex; justify-content: center; gap: 8px; margin: 40px 0;">
-                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                    <a href="index.php?category=<?= urlencode($categoryId) ?>&search=<?= urlencode($search) ?>&price_range=<?= urlencode($priceRange) ?>&sort=<?= urlencode($sort) ?>&page=<?= $i ?>" 
-                       class="tab-btn <?= $page === $i ? 'active' : '' ?>" style="padding: 8px 16px;">
-                        <?= $i ?>
-                    </a>
-                <?php endfor; ?>
-            </div>
-        <?php endif; ?>
-    </main>
+</main>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

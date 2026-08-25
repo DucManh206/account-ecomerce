@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/categories.php';
+require_once __DIR__ . '/../../../includes/flash.php';
 $categories = getAllCategories($pdo);
 $success = $_GET['success'] ?? '';
 $error = $_GET['error'] ?? '';
@@ -23,6 +24,7 @@ $error = $_GET['error'] ?? '';
         </header>
         
         <div class="content-body">
+            <?= render_flash() ?>
             <?php if ($success): ?>
                 <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
             <?php endif; ?>
@@ -50,7 +52,11 @@ $error = $_GET['error'] ?? '';
                             <td><?= date('d/m/Y', strtotime($cat['created_at'])) ?></td>
                             <td class="actions">
                                 <a href="update.php?id=<?= $cat['id'] ?>" class="btn btn-small btn-edit">Sửa</a>
-                                <a href="delete.php?id=<?= $cat['id'] ?>" class="btn btn-small btn-delete" onclick="return confirm('Bạn chắc chắn muốn xóa danh mục này? Các tài khoản thuộc danh mục này sẽ chuyển về trạng thái Chưa phân loại.')">Xóa</a>
+                                <form method="POST" action="delete.php" class="inline-form" onsubmit="return confirm('Chỉ có thể xóa danh mục không còn sản phẩm. Tiếp tục?')">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="id" value="<?= $cat['id'] ?>">
+                                    <button type="submit" class="btn btn-small btn-delete">Xóa</button>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>

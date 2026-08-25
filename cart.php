@@ -7,53 +7,45 @@ if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
 }
 
-// Thêm vào giỏ hàng
-if (isset($_GET['action']) && $_GET['action'] === 'add') {
-    $accountId = intval($_GET['id'] ?? 0);
+// Thay đổi giỏ hàng qua POST để tránh các liên kết ngoài tự ý làm thay đổi phiên người dùng.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cart_action'])) {
+    $isAjax = ($_POST['ajax'] ?? '') === '1';
+    verify_csrf($isAjax);
+    $accountId = (int) ($_POST['id'] ?? 0);
+    $cartAction = $_POST['cart_action'];
+
+    if ($cartAction === 'add') {
+        $stmt = $pdo->prepare("SELECT id FROM accounts WHERE id = ? AND status = 'available' AND hidden = 0");
+        $stmt->execute([$accountId]);
+        $account = $stmt->fetch();
     
-    $stmt = $pdo->prepare("SELECT * FROM accounts WHERE id = ? AND status = 'available'");
-    $stmt->execute([$accountId]);
-    $account = $stmt->fetch();
-    
-    if ($account) {
-        if (!in_array($accountId, $_SESSION['cart'])) {
+        if ($account && !in_array($accountId, $_SESSION['cart'], true)) {
             $_SESSION['cart'][] = $accountId;
-            if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+            if ($isAjax) {
                 header('Content-Type: application/json');
                 echo json_encode(['success' => true, 'cart_count' => count($_SESSION['cart'])]);
                 exit;
             }
-            set_flash('success', 'Đã thêm tài khoản vào giỏ hàng!');
+            set_flash('success', 'Đã thêm sản phẩm vào giỏ hàng.');
             header('Location: cart.php');
             exit;
-        } else {
-            $errMsg = 'Sản phẩm đã có trong giỏ hàng!';
-            if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'error' => $errMsg]);
-                exit;
-            }
-            set_flash('error', $errMsg);
         }
-    } else {
-        $errMsg = 'Tài khoản không tồn tại hoặc đã bán.';
-        if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+
+        $errorMessage = $account ? 'Sản phẩm đã có trong giỏ hàng.' : 'Sản phẩm không tồn tại, đã bán hoặc đang bị ẩn.';
+        if ($isAjax) {
             header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => $errMsg]);
+            echo json_encode(['success' => false, 'error' => $errorMessage], JSON_UNESCAPED_UNICODE);
             exit;
         }
-        set_flash('error', $errMsg);
+        set_flash('error', $errorMessage);
     }
-}
 
-// Xóa khỏi giỏ hàng
-if (isset($_GET['action']) && $_GET['action'] === 'delete') {
-    $accountId = intval($_GET['id'] ?? 0);
-    $key = array_search($accountId, $_SESSION['cart']);
-    if ($key !== false) {
-        unset($_SESSION['cart'][$key]);
-        $_SESSION['cart'] = array_values($_SESSION['cart']);
-        set_flash('success', 'Đã xóa tài khoản khỏi giỏ hàng.');
+    if ($cartAction === 'remove') {
+        $_SESSION['cart'] = array_values(array_filter(
+            $_SESSION['cart'],
+            fn($id) => (int) $id !== $accountId
+        ));
+        set_flash('success', 'Đã xóa sản phẩm khỏi giỏ hàng.');
         header('Location: cart.php');
         exit;
     }
@@ -73,6 +65,11 @@ if (!empty($_SESSION['cart'])) {
     ");
     $stmt->execute($_SESSION['cart']);
     $cartAccounts = $stmt->fetchAll();
+    $existingIds = array_map(fn($account) => (int) $account['id'], $cartAccounts);
+    $_SESSION['cart'] = array_values(array_filter(
+        array_map('intval', $_SESSION['cart']),
+        fn($id) => in_array($id, $existingIds, true)
+    ));
     
     foreach ($cartAccounts as $acc) {
         $totalPrice += $acc['price'];
@@ -129,7 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
                 set_flash('error', 'Sản phẩm: ' . implode(', ', $soldItemNames) . ' đã bị người khác mua mất. Vui lòng xóa khỏi giỏ hàng để tiếp tục.');
             } elseif ($userBalance < $realTotalPrice) {
                 $pdo->rollBack();
-                set_flash('error', 'Số dư tài khoản không đủ (Hiện có: ' . number_format($userBalance, 0, ',', '.') . 'đ, Cần: ' . number_format($realTotalPrice, 0, ',', '.') . 'đ). Vui lòng nạp thêm tiền!');
+                $missing = $realTotalPrice - $userBalance;
+                set_flash('error', 'Số dư không đủ. Bạn còn thiếu ' . number_format($missing, 0, ',', '.') . 'đ. Vui lòng nạp thêm tiền!');
             } else {
                 // 3. Trừ số dư người mua
                 $deductStmt = $pdo->prepare("UPDATE users SET balance = balance - ? WHERE id = ?");
@@ -138,16 +136,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
                 // 4. Tạo đơn hàng và đổi trạng thái tài khoản
                 $orderStmt = $pdo->prepare("INSERT INTO orders (user_id, account_id, price) VALUES (?, ?, ?)");
                 $updateStatusStmt = $pdo->prepare("UPDATE accounts SET status = 'sold', hidden = 1 WHERE id = ?");
+                $balanceAfter = (float) $userBalance - $realTotalPrice;
 
                 foreach ($lockedAccounts as $accItem) {
                     $orderStmt->execute([$userId, $accItem['id'], $accItem['price']]);
+                    $orderId = (int) $pdo->lastInsertId();
                     $updateStatusStmt->execute([$accItem['id']]);
+                    record_balance_transaction(
+                        $pdo,
+                        (int) $userId,
+                        'purchase',
+                        -(float) $accItem['price'],
+                        $balanceAfter,
+                        'order',
+                        $orderId,
+                        'Thanh toán đơn hàng #' . $orderId
+                    );
                 }
 
                 $pdo->commit();
                 $_SESSION['cart'] = [];
 
-                set_flash('success', 'Mua tài khoản thành công! Xem thông tin đăng nhập ở bảng bên dưới.');
+                set_flash('success', 'Mua tài khoản thành công! Thông tin đăng nhập đã sẵn sàng trong tài khoản của bạn.');
                 header('Location: profile.php');
                 exit;
             }
@@ -155,27 +165,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_checkout'])) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            set_flash('error', 'Lỗi hệ thống: ' . $e->getMessage());
+            error_log('checkout failed: ' . $e->getMessage());
+            set_flash('error', 'Không thể hoàn tất thanh toán lúc này. Vui lòng thử lại.');
         }
     }
 }
 
-$pageTitle = 'Giỏ hàng của bạn - Account Shop';
+$pageTitle = 'Giỏ hàng của bạn - ' . SITE_NAME;
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/navbar.php';
 ?>
 
-    <div class="container" style="min-height: 70vh;">
+    <main id="main-content" class="container" style="min-height: 70vh;">
         <?= render_flash() ?>
 
         <div class="cart-layout" style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px; margin-top: 40px; margin-bottom: 60px;">
-            <main class="cart-main-card" style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 30px;">
-                <h2 style="font-size: 1.5rem; color: var(--text-white); font-weight: 700; margin-bottom: 24px;">Giỏ hàng của bạn</h2>
+            <section class="cart-main-card" aria-labelledby="cart-heading" style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 16px;">
+                    <h2 id="cart-heading" style="font-size: 1.4rem; color: var(--text-white); font-weight: 700;">Giỏ hàng của bạn</h2>
+                    <span style="font-size: 0.9rem; color: var(--text-gray);"><?= count($_SESSION['cart']) ?> tài khoản đã chọn</span>
+                </div>
                 
                 <?php if (empty($cartAccounts)): ?>
-                    <div style="text-align: center; padding: 40px 0; color: var(--text-gray);">
-                        <p style="font-size: 1.15rem; font-style: italic;">Giỏ hàng của bạn đang trống.</p>
-                        <a href="index.php" class="tab-btn" style="display: inline-block; margin-top: 16px;">Tiếp tục xem sản phẩm</a>
+                    <div style="text-align: center; padding: 60px 0; color: var(--text-gray);">
+                        <p style="font-size: 1.15rem; font-style: italic; margin-bottom: 8px;">Giỏ hàng của bạn hiện đang trống.</p>
+                        <p style="font-size: 0.9rem; color: var(--text-muted);">Hãy chọn các tài khoản ưng ý từ trang chủ và thêm vào giỏ.</p>
+                        <a href="index.php" class="tab-btn" style="display: inline-block; margin-top: 20px;">Khám phá sản phẩm ngay</a>
                     </div>
                 <?php else: ?>
                     <div class="cart-items-list">
@@ -183,55 +198,79 @@ require_once __DIR__ . '/includes/navbar.php';
                             $img = !empty($acc['image']) ? $acc['image'] : 'assets/images/default-product.png';
                             $isSold = ($acc['status'] !== 'available');
                         ?>
-                            <div class="cart-item <?= $isSold ? 'cart-item-sold' : '' ?>" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                            <div class="cart-item <?= $isSold ? 'cart-item-sold' : '' ?>" style="display: flex; align-items: center; justify-content: space-between; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
                                 <div class="cart-item-details" style="display: flex; align-items: center; gap: 16px;">
-                                    <img src="<?= htmlspecialchars($img) ?>" class="cart-item-img" style="width: 70px; height: 45px; object-fit: cover; background: #1f2937; border-radius: var(--radius-sm);" alt="" onerror="this.src='assets/images/default-product.png'; this.onerror=null;">
+                                    <img src="<?= htmlspecialchars($img) ?>" class="cart-item-img" style="width: 76px; height: 48px; object-fit: cover; background: #1f2937; border-radius: var(--radius-sm);" alt="" onerror="this.src='assets/images/default-product.png'; this.onerror=null;">
                                     <div>
-                                        <a href="chitiet.php?id=<?= $acc['id'] ?>" class="cart-item-title" style="font-weight: 600; color: var(--text-white); text-decoration: none;"><?= htmlspecialchars($acc['name']) ?></a>
-                                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Danh mục: <?= htmlspecialchars($acc['category_name'] ?? 'Chưa phân loại') ?></div>
+                                        <a href="chitiet.php?id=<?= $acc['id'] ?>" class="cart-item-title" style="font-weight: 600; color: var(--text-white); text-decoration: none; font-size: 1rem;"><?= htmlspecialchars($acc['name']) ?></a>
+                                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Danh mục: <?= htmlspecialchars($acc['category_name'] ?? 'Chưa phân loại') ?></div>
                                         <?php if ($isSold): ?>
-                                            <div style="color: #ef4444; font-size: 0.8rem; font-weight: 700; margin-top: 6px; text-transform: uppercase;">Tài khoản này đã bị mua mất - Vui lòng xóa khỏi giỏ</div>
+                                            <div style="color: #ef4444; font-size: 0.8rem; font-weight: 700; margin-top: 6px; text-transform: uppercase;">● Tài khoản này đã bị người khác mua mất - Vui lòng xóa khỏi giỏ</div>
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 24px;">
-                                    <span style="font-weight: 700; color: #10b981;"><?= number_format($acc['price'], 0, ',', '.') ?>đ</span>
-                                    <a href="cart.php?action=delete&id=<?= $acc['id'] ?>" class="btn-cart-delete" style="background-color: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; text-decoration: none;">Xóa</a>
+                                <div style="display: flex; align-items: center; gap: 20px;">
+                                    <span style="font-weight: 800; color: #10b981; font-size: 1.1rem;"><?= number_format($acc['price'], 0, ',', '.') ?>đ</span>
+                                    <form method="POST">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="cart_action" value="remove">
+                                        <input type="hidden" name="id" value="<?= $acc['id'] ?>">
+                                        <button type="submit" class="btn-cart-delete" title="Xóa khỏi giỏ">Xóa</button>
+                                    </form>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
-            </main>
+            </section>
 
-            <aside class="cart-summary-card" style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 24px; height: fit-content; position: sticky; top: 100px;">
-                <h3 style="font-size: 1.15rem; color: var(--text-white); font-weight: 700; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">Đơn hàng</h3>
+            <aside class="cart-summary-card" style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 26px; height: fit-content; position: sticky; top: 100px;">
+                <h3 style="font-size: 1.15rem; color: var(--text-white); font-weight: 700; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">Tóm tắt đơn hàng</h3>
                 
-                <div style="display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 0.95rem; color: var(--text-gray);">
-                    <span>Số lượng:</span>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 14px; font-size: 0.95rem; color: var(--text-gray);">
+                    <span>Tổng sản phẩm:</span>
                     <span style="color: var(--text-white); font-weight: 600;"><?= count($_SESSION['cart']) ?></span>
                 </div>
                 
-                <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px; font-size: 1.25rem; font-weight: 800; color: #10b981; margin-top: 16px;">
-                    <span>Tổng tiền:</span>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px; font-size: 1.3rem; font-weight: 800; color: #10b981; margin-top: 14px;">
+                    <span>Tổng thanh toán:</span>
                     <span><?= number_format($totalPrice, 0, ',', '.') ?>đ</span>
                 </div>
 
                 <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): 
                     $balStmt = $pdo->prepare("SELECT balance FROM users WHERE id = ?");
                     $balStmt->execute([$_SESSION['user_id']]);
-                    $myBalance = $balStmt->fetchColumn();
+                    $myBalance = floatval($balStmt->fetchColumn() ?: 0);
+                    $hasEnoughBalance = ($myBalance >= $totalPrice);
+                    $missingBalance = $totalPrice - $myBalance;
                 ?>
-                    <div style="display: flex; justify-content: space-between; margin-top: 20px; font-size: 0.85rem; color: var(--text-gray);">
-                        <span>Số dư hiện tại:</span>
-                        <span style="font-weight: 600; color: #34d399;"><?= number_format($myBalance, 0, ',', '.') ?>đ</span>
+                    <div style="margin-top: 20px; padding: 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-gray);">
+                            <span>Số dư khả dụng:</span>
+                            <span style="font-weight: 700; color: <?= $hasEnoughBalance ? '#34d399' : '#ef4444' ?>;"><?= number_format($myBalance, 0, ',', '.') ?>đ</span>
+                        </div>
+
+                        <?php if ($hasEnoughBalance && $totalPrice > 0): ?>
+                            <div style="font-size: 0.8rem; color: #34d399; margin-top: 8px;">
+                                ✓ Số dư đủ để thanh toán đơn hàng này. (Còn lại sau mua: <?= number_format($myBalance - $totalPrice, 0, ',', '.') ?>đ)
+                            </div>
+                        <?php elseif (!$hasEnoughBalance && $totalPrice > 0): ?>
+                            <div style="font-size: 0.8rem; color: #ef4444; margin-top: 8px;">
+                                ⚠️ Số dư còn thiếu: <strong><?= number_format($missingBalance, 0, ',', '.') ?>đ</strong>
+                            </div>
+                            <a href="topup.php?amount=<?= ceil($missingBalance) ?>" class="btn-buy" style="display: block; text-align: center; text-decoration: none; margin-top: 10px; padding: 8px; font-size: 0.85rem; background: #ffffff; color: #000000;">
+                                + Nạp nhanh <?= number_format($missingBalance, 0, ',', '.') ?>đ
+                            </a>
+                        <?php endif; ?>
                     </div>
                     
                     <form method="POST" style="margin-top: 20px;">
                         <?= csrf_field() ?>
                         <input type="hidden" name="action_checkout" value="1">
-                        <?php if (count($_SESSION['cart']) > 0): ?>
-                            <button type="submit" class="btn-buy" style="width: 100%;">Thanh toán bằng số dư</button>
+                        <?php if (count($_SESSION['cart']) > 0 && $hasEnoughBalance): ?>
+                            <button type="submit" class="btn-buy" style="width: 100%; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">Thanh toán bằng số dư</button>
+                        <?php elseif (count($_SESSION['cart']) > 0 && !$hasEnoughBalance): ?>
+                            <button type="button" class="btn-buy" style="width: 100%; opacity: 0.5; cursor: not-allowed;" title="Vui lòng nạp thêm tiền" disabled>Số dư không đủ thanh toán</button>
                         <?php else: ?>
                             <button type="button" class="btn-buy" style="width: 100%; opacity: 0.5;" disabled>Giỏ hàng trống</button>
                         <?php endif; ?>
@@ -239,7 +278,7 @@ require_once __DIR__ . '/includes/navbar.php';
                 <?php else: ?>
                     <div style="margin-top: 24px; text-align: center;">
                         <a href="login.php" class="btn-buy" style="text-decoration: none; display: block;">Đăng nhập để mua acc</a>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">Đăng nhập thành viên để thanh toán.</p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">Đăng nhập thành viên để thanh toán tự động.</p>
                     </div>
                 <?php endif; ?>
                 
@@ -248,6 +287,6 @@ require_once __DIR__ . '/includes/navbar.php';
                 </a>
             </aside>
         </div>
-    </div>
+    </main>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

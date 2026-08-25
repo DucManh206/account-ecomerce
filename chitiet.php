@@ -42,7 +42,7 @@ require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/navbar.php';
 ?>
 
-    <div class="container" style="min-height: 70vh;">
+    <div id="main-content" class="container" style="min-height: 70vh;">
         <?= render_flash() ?>
 
         <?php if (!$acc): ?>
@@ -80,7 +80,7 @@ require_once __DIR__ . '/includes/navbar.php';
                         <p style="color: var(--text-gray); font-size: 0.95rem; line-height: 1.6;">
                             1. Vui lòng đổi mật khẩu sau khi mua để tự bảo mật tài khoản.<br>
                             2. Đối với tài khoản dùng chung, vui lòng không đổi mật khẩu hoặc can thiệp cài đặt chung.<br>
-                            3. Mọi vấn đề phát sinh vui lòng liên hệ Nhóm 5 để được hỗ trợ bảo hành.
+                            3. Mọi vấn đề phát sinh vui lòng liên hệ bộ phận hỗ trợ khách hàng để được xử lý nhanh chóng.
                         </p>
                     </div>
                 </main>
@@ -96,9 +96,9 @@ require_once __DIR__ . '/includes/navbar.php';
                                     Xem giỏ hàng
                                 </a>
                             <?php else: ?>
-                                <a href="javascript:void(0)" onclick="addToCart(<?= $acc['id'] ?>, this)" class="btn-buy" id="btn-buy-detail" style="display: block; text-decoration: none; text-align: center;">
+                                <button type="button" onclick="addToCart(<?= $acc['id'] ?>, this)" class="btn-buy" id="btn-buy-detail">
                                     Thêm vào giỏ
-                                </a>
+                                </button>
                             <?php endif; ?>
                         <?php else: ?>
                             <button class="btn-buy" disabled>Tài khoản đã bán</button>

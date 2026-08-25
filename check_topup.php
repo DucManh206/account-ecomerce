@@ -1,244 +1,237 @@
 <?php
-require_once __DIR__ . '/admin/config/db.php';
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/csrf.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (!is_logged_in()) {
-    echo json_encode(['status' => 'error', 'message' => 'Bạn chưa đăng nhập.']);
+function topup_json(array $payload, int $statusCode = 200): void
+{
+    http_response_code($statusCode);
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
-$userId = $_SESSION['user_id'];
-$requestId = isset($_GET['request_id']) ? intval($_GET['request_id']) : 0;
+function normalize_payment_memo(string $memo): string
+{
+    return strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $memo));
+}
 
+function complete_topup(
+    PDO $pdo,
+    array $request,
+    string $sourceType,
+    ?array $sepayTransaction = null
+): array {
+    $requestId = (int) $request['id'];
+    $userId = (int) $request['user_id'];
+    $amount = (float) $request['amount'];
+
+    $pdo->beginTransaction();
+    try {
+        $lockStmt = $pdo->prepare('SELECT status, amount FROM topup_requests WHERE id = ? AND user_id = ? FOR UPDATE');
+        $lockStmt->execute([$requestId, $userId]);
+        $lockedRequest = $lockStmt->fetch();
+
+        if (!$lockedRequest) {
+            throw new RuntimeException('Yêu cầu nạp tiền không còn tồn tại.');
+        }
+        if ($lockedRequest['status'] === 'completed') {
+            $pdo->rollBack();
+            $balanceStmt = $pdo->prepare('SELECT balance FROM users WHERE id = ?');
+            $balanceStmt->execute([$userId]);
+            return [
+                'already_completed' => true,
+                'balance_after' => (float) ($balanceStmt->fetchColumn() ?: 0),
+            ];
+        }
+        if ($lockedRequest['status'] !== 'pending') {
+            throw new RuntimeException('Yêu cầu nạp tiền không còn ở trạng thái chờ xử lý.');
+        }
+
+        $userStmt = $pdo->prepare('SELECT balance FROM users WHERE id = ? FOR UPDATE');
+        $userStmt->execute([$userId]);
+        $currentBalance = $userStmt->fetchColumn();
+        if ($currentBalance === false) {
+            throw new RuntimeException('Không tìm thấy tài khoản nhận tiền.');
+        }
+
+        $ledgerSourceType = 'topup_request';
+        $ledgerSourceId = $requestId;
+        if ($sourceType === 'sepay' && $sepayTransaction) {
+            $insertSepay = $pdo->prepare(
+                'INSERT INTO sepay_transactions
+                    (sepay_transaction_id, user_id, amount, transaction_date, content)
+                 VALUES (?, ?, ?, ?, ?)'
+            );
+            $insertSepay->execute([
+                $sepayTransaction['id'],
+                $userId,
+                $amount,
+                $sepayTransaction['transaction_date'] ?: date('Y-m-d H:i:s'),
+                $sepayTransaction['content'],
+            ]);
+            $ledgerSourceType = 'sepay';
+            $ledgerSourceId = (int) $pdo->lastInsertId();
+        }
+
+        $balanceAfter = (float) $currentBalance + $amount;
+        $updateUser = $pdo->prepare('UPDATE users SET balance = ? WHERE id = ?');
+        $updateUser->execute([$balanceAfter, $userId]);
+
+        $updateRequest = $pdo->prepare("UPDATE topup_requests SET status = 'completed' WHERE id = ?");
+        $updateRequest->execute([$requestId]);
+
+        record_balance_transaction(
+            $pdo,
+            $userId,
+            'deposit',
+            $amount,
+            $balanceAfter,
+            $ledgerSourceType,
+            $ledgerSourceId,
+            $sourceType === 'sepay' ? 'Nạp tiền qua SePay' : 'Nạp tiền ở chế độ kiểm thử'
+        );
+
+        $pdo->commit();
+        return ['already_completed' => false, 'balance_after' => $balanceAfter];
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    topup_json(['status' => 'error', 'message' => 'Phương thức không được hỗ trợ.'], 405);
+}
+verify_csrf(true);
+
+if (!is_logged_in()) {
+    topup_json(['status' => 'error', 'message' => 'Bạn cần đăng nhập để kiểm tra giao dịch.'], 401);
+}
+
+$userId = (int) $_SESSION['user_id'];
+$requestId = (int) ($_POST['request_id'] ?? 0);
 if ($requestId <= 0) {
-    echo json_encode(['status' => 'error', 'message' => 'Mã yêu cầu nạp tiền không hợp lệ.']);
-    exit;
+    topup_json(['status' => 'error', 'message' => 'Mã yêu cầu nạp tiền không hợp lệ.']);
 }
 
 try {
-    // Lấy yêu cầu nạp tiền từ CSDL
-    $stmt = $pdo->prepare("SELECT * FROM topup_requests WHERE id = ? AND user_id = ?");
+    $stmt = $pdo->prepare('SELECT * FROM topup_requests WHERE id = ? AND user_id = ?');
     $stmt->execute([$requestId, $userId]);
     $request = $stmt->fetch();
-
     if (!$request) {
-        echo json_encode(['status' => 'error', 'message' => 'Không tìm thấy yêu cầu nạp tiền tương ứng.']);
-        exit;
+        topup_json(['status' => 'error', 'message' => 'Không tìm thấy yêu cầu nạp tiền tương ứng.'], 404);
     }
 
-    $amount = floatval($request['amount']);
-
-    // 1. Kiểm tra trạng thái hiện tại
+    $amount = (float) $request['amount'];
     if ($request['status'] === 'completed') {
-        echo json_encode([
+        topup_json([
             'status' => 'success',
-            'message' => 'Nạp tiền thành công! Đã cộng ' . number_format($amount, 0, ',', '.') . 'đ vào tài khoản.',
-            'amount' => $amount
+            'message' => 'Yêu cầu đã được ghi nhận. Số dư đã cộng ' . number_format($amount, 0, ',', '.') . 'đ.',
+            'amount' => $amount,
         ]);
-        exit;
+    }
+    if (in_array($request['status'], ['expired', 'rejected', 'cancelled'], true)) {
+        topup_json([
+            'status' => $request['status'] === 'expired' ? 'expired' : 'error',
+            'message' => $request['status'] === 'expired'
+                ? 'Yêu cầu nạp tiền đã hết hạn.'
+                : 'Yêu cầu nạp tiền đã bị từ chối hoặc hủy.',
+        ]);
     }
 
-    if ($request['status'] === 'expired') {
-        echo json_encode([
-            'status' => 'expired',
-            'message' => 'Giao dịch này đã hết thời gian (4 phút) và đã bị huỷ.'
-        ]);
-        exit;
+    $expiryMinutes = app_setting_int('topup_expiry_minutes', 15, 5, 60);
+    if (time() - strtotime($request['created_at']) > ($expiryMinutes * 60)) {
+        $expireStmt = $pdo->prepare("UPDATE topup_requests SET status = 'expired' WHERE id = ? AND status = 'pending'");
+        $expireStmt->execute([$requestId]);
+        topup_json(['status' => 'expired', 'message' => 'Yêu cầu nạp tiền đã quá thời gian xử lý.']);
     }
 
-    // Kiểm tra nếu yêu cầu đã quá hạn 4 phút (240 giây)
-    $createdAtTimestamp = strtotime($request['created_at']);
-    $elapsed = time() - $createdAtTimestamp;
-
-    if ($elapsed > 240) {
-        // Cập nhật trạng thái thành expired
-        $stmtUpdate = $pdo->prepare("UPDATE topup_requests SET status = 'expired' WHERE id = ?");
-        $stmtUpdate->execute([$requestId]);
-        echo json_encode([
-            'status' => 'expired',
-            'message' => 'Giao dịch đã quá thời gian 4 phút và đã bị huỷ tự động.'
-        ]);
-        exit;
-    }
-
-    // logic check giao dịch
-    $expectedPrefix = defined('SEPAY_MEMO_PREFIX') ? SEPAY_MEMO_PREFIX : 'NAP';
-    $expectedMemo = $request['memo'];
-
-    // Chạy thử (khi tắt SePay hoặc chưa cấu hình token)
-    if (!defined('SEPAY_ENABLED') || !SEPAY_ENABLED || !defined('SEPAY_API_TOKEN') || SEPAY_API_TOKEN === 'YOUR_SEPAY_API_TOKEN') {
-        $mockTxId = 'MOCK_TX_' . $requestId . '_' . time();
-        
-        try {
-            $pdo->beginTransaction();
-            
-            // Khóa dòng yêu cầu nạp tiền để chống cộng tiền 2 lần khi bấm nhiều lần đồng thời
-            $stmtLock = $pdo->prepare("SELECT status, amount FROM topup_requests WHERE id = ? AND user_id = ? FOR UPDATE");
-            $stmtLock->execute([$requestId, $userId]);
-            $lockedReq = $stmtLock->fetch();
-
-            if (!$lockedReq || $lockedReq['status'] === 'completed') {
-                $pdo->rollBack();
-                echo json_encode([
-                    'status' => 'success',
-                    'message' => 'Yêu cầu nạp tiền này đã được xử lý hoàn tất trước đó.',
-                    'amount' => $amount
-                ]);
-                exit;
-            }
-            
-            // Cập nhật trạng thái yêu cầu
-            $stmtReq = $pdo->prepare("UPDATE topup_requests SET status = 'completed' WHERE id = ?");
-            $stmtReq->execute([$requestId]);
-
-            // Thêm vào bảng sepay_transactions
-            $stmtInsert = $pdo->prepare("INSERT INTO sepay_transactions (sepay_transaction_id, user_id, amount, transaction_date, content) VALUES (?, ?, ?, NOW(), ?)");
-            $stmtInsert->execute([$mockTxId, $userId, $amount, $expectedMemo]);
-            
-            // Cộng số dư tài khoản
-            $stmtUpdate = $pdo->prepare("UPDATE users SET balance = balance + ? WHERE id = ?");
-            $stmtUpdate->execute([$amount, $userId]);
-            
-            $pdo->commit();
-
-            // Cập nhật số dư trong session
-            $stmtBal = $pdo->prepare("SELECT balance FROM users WHERE id = ?");
-            $stmtBal->execute([$userId]);
-            $_SESSION['user_balance'] = $stmtBal->fetchColumn();
-            
-            echo json_encode([
-                'status' => 'success',
-                'message' => 'Nạp tiền thành công! Đã cộng ' . number_format($amount, 0, ',', '.') . 'đ vào tài khoản (Chế độ chạy thử).',
-                'amount' => $amount
-            ]);
-            exit;
-        } catch (Exception $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-            echo json_encode(['status' => 'error', 'message' => 'Lỗi xử lý giao dịch giả lập: ' . $e->getMessage()]);
-            exit;
+    if (!SEPAY_ENABLED || SEPAY_API_TOKEN === 'YOUR_SEPAY_API_TOKEN' || SEPAY_API_TOKEN === 'SEPAY_TOKEN_O_DAY') {
+        if (!SEPAY_MOCK_MODE) {
+            topup_json([
+                'status' => 'error',
+                'message' => 'Cổng thanh toán đang tạm dừng. Vui lòng liên hệ hỗ trợ hoặc thử lại sau.',
+            ], 503);
         }
+
+        $result = complete_topup($pdo, $request, 'mock');
+        $_SESSION['user_balance'] = $result['balance_after'];
+        topup_json([
+            'status' => 'success',
+            'message' => 'Đã cộng ' . number_format($amount, 0, ',', '.') . 'đ ở chế độ kiểm thử.',
+            'amount' => $amount,
+        ]);
     }
 
-    // Thực tế qua cổng SePay API
-    $url = 'https://my.sepay.vn/userapi/transactions/list?limit=50';
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-        'Authorization: Bearer ' . SEPAY_API_TOKEN
+    $ch = curl_init('https://my.sepay.vn/userapi/transactions/list?limit=50');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . SEPAY_API_TOKEN,
+        ],
+        CURLOPT_CONNECTTIMEOUT => 5,
+        CURLOPT_TIMEOUT => 15,
     ]);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
     $response = curl_exec($ch);
+    $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch);
     curl_close($ch);
 
-    if ($response === false) {
-        echo json_encode(['status' => 'error', 'message' => 'Không thể kết nối đến cổng SePay: ' . $curlError]);
-        exit;
+    if ($response === false || $httpCode >= 400) {
+        error_log('SePay connection failed: ' . $curlError . ' HTTP ' . $httpCode);
+        topup_json(['status' => 'error', 'message' => 'Chưa thể đồng bộ giao dịch ngân hàng. Vui lòng thử lại sau.'], 502);
     }
 
-    $resData = json_decode($response, true);
-    if (!isset($resData['status']) || intval($resData['status']) !== 200 || !isset($resData['transactions'])) {
-        $errMsg = $resData['error'] ?? 'Token không hợp lệ hoặc lỗi API từ SePay.';
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi kết nối cổng SePay: ' . $errMsg]);
-        exit;
+    $responseData = json_decode($response, true);
+    if (!is_array($responseData) || (int) ($responseData['status'] ?? 0) !== 200 || !isset($responseData['transactions'])) {
+        topup_json(['status' => 'error', 'message' => 'Cấu hình kết nối SePay chưa hợp lệ.'], 502);
     }
 
-    $success = false;
-    $creditedAmount = 0;
+    $expectedMemo = normalize_payment_memo($request['memo']);
+    $createdAt = strtotime($request['created_at']);
 
-    foreach ($resData['transactions'] as $tx) {
-        $txContent = trim($tx['transaction_content'] ?? '');
-        $txAmount = floatval($tx['amount_in'] ?? 0);
-        $sepayTxId = $tx['id'] ?? '';
-        $txDateStr = $tx['transaction_date'] ?? '';
+    foreach ($responseData['transactions'] as $transaction) {
+        $transactionId = trim((string) ($transaction['id'] ?? ''));
+        $content = trim((string) ($transaction['transaction_content'] ?? ''));
+        $transactionAmount = (float) ($transaction['amount_in'] ?? 0);
+        $transactionDate = (string) ($transaction['transaction_date'] ?? '');
+        $transactionTime = strtotime($transactionDate) ?: 0;
 
-        // Kiểm tra nội dung chuyển khoản khớp mẫu "NAP <userId>" hoặc "NAP<userId>" 
-        $pattern = '/\b' . preg_quote($expectedPrefix, '/') . '\s*' . $userId . '\b/i';
-        if (preg_match($pattern, $txContent)) {
-            
-            // Giao dịch phải được thực hiện từ khi tạo yêu cầu nạp tiền trở đi
-            $txTimestamp = strtotime($txDateStr);
-            // Thêm 30s buffer trong trường hợp giờ máy chủ lệch nhẹ
-            if ($txTimestamp >= ($createdAtTimestamp - 30)) {
-                
-                // Kiểm tra xem giao dịch này đã được ghi nhận trong CSDL chưa
-                $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM sepay_transactions WHERE sepay_transaction_id = ?");
-                $stmtCheck->execute([$sepayTxId]);
-                $isProcessed = $stmtCheck->fetchColumn() > 0;
-
-                if (!$isProcessed) {
-                    try {
-                        $pdo->beginTransaction();
-
-                        // Khóa dòng yêu cầu nạp tiền kiểm tra lại
-                        $stmtLock = $pdo->prepare("SELECT status FROM topup_requests WHERE id = ? FOR UPDATE");
-                        $stmtLock->execute([$requestId]);
-                        $reqStatus = $stmtLock->fetchColumn();
-
-                        if ($reqStatus === 'completed') {
-                            $pdo->rollBack();
-                            $success = true;
-                            $creditedAmount = $txAmount;
-                            break;
-                        }
-
-                        // Cập nhật trạng thái yêu cầu thành completed
-                        $stmtReq = $pdo->prepare("UPDATE topup_requests SET status = 'completed' WHERE id = ?");
-                        $stmtReq->execute([$requestId]);
-
-                        // Lưu giao dịch để tránh trùng lặp
-                        $stmtInsert = $pdo->prepare("INSERT INTO sepay_transactions (sepay_transaction_id, user_id, amount, transaction_date, content) VALUES (?, ?, ?, ?, ?)");
-                        $stmtInsert->execute([
-                            $sepayTxId,
-                            $userId,
-                            $txAmount,
-                            $txDateStr ?: date('Y-m-d H:i:s'),
-                            $txContent
-                        ]);
-
-                        // Cộng số dư của user
-                        $stmtUpdate = $pdo->prepare("UPDATE users SET balance = balance + ? WHERE id = ?");
-                        $stmtUpdate->execute([$txAmount, $userId]);
-
-                        $pdo->commit();
-
-                        // Cập nhật số dư trong session
-                        $stmtBal = $pdo->prepare("SELECT balance FROM users WHERE id = ?");
-                        $stmtBal->execute([$userId]);
-                        $_SESSION['user_balance'] = $stmtBal->fetchColumn();
-                        
-                        $success = true;
-                        $creditedAmount = $txAmount;
-                        break; // Dừng vòng lặp sau khi xử lý thành công giao dịch đầu tiên
-                    } catch (Exception $e) {
-                        if ($pdo->inTransaction()) {
-                            $pdo->rollBack();
-                        }
-                        echo json_encode(['status' => 'error', 'message' => 'Lỗi cập nhật CSDL: ' . $e->getMessage()]);
-                        exit;
-                    }
-                }
-            }
+        if ($transactionId === '' || normalize_payment_memo($content) !== $expectedMemo) {
+            continue;
         }
-    }
+        if (abs($transactionAmount - $amount) >= 1 || $transactionTime < ($createdAt - 30)) {
+            continue;
+        }
 
-    if ($success) {
-        echo json_encode([
+        $duplicateStmt = $pdo->prepare('SELECT COUNT(*) FROM sepay_transactions WHERE sepay_transaction_id = ?');
+        $duplicateStmt->execute([$transactionId]);
+        if ((int) $duplicateStmt->fetchColumn() > 0) {
+            continue;
+        }
+
+        $result = complete_topup($pdo, $request, 'sepay', [
+            'id' => $transactionId,
+            'transaction_date' => $transactionDate,
+            'content' => $content,
+        ]);
+        $_SESSION['user_balance'] = $result['balance_after'];
+        topup_json([
             'status' => 'success',
-            'message' => 'Đã nhận được thanh toán! Tài khoản của bạn đã được cộng thêm ' . number_format($creditedAmount, 0, ',', '.') . 'đ.',
-            'amount' => $creditedAmount
-        ]);
-    } else {
-        echo json_encode([
-            'status' => 'pending',
-            'message' => 'Hệ thống chưa tìm thấy giao dịch chuyển khoản phù hợp. Vui lòng đợi trong giây lát hoặc kiểm tra lại thông tin chuyển khoản.'
+            'message' => 'Đã nhận thanh toán và cộng ' . number_format($amount, 0, ',', '.') . 'đ vào số dư.',
+            'amount' => $amount,
         ]);
     }
 
-} catch (Exception $e) {
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi hệ thống: ' . $e->getMessage()]);
+    topup_json([
+        'status' => 'pending',
+        'message' => 'Chưa thấy giao dịch khớp chính xác số tiền và nội dung chuyển khoản.',
+    ]);
+} catch (Throwable $e) {
+    error_log('check_topup: ' . $e->getMessage());
+    topup_json(['status' => 'error', 'message' => 'Không thể kiểm tra giao dịch lúc này.'], 500);
 }

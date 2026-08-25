@@ -28,12 +28,90 @@ function getFilteredAccounts($pdo, $statusFilter = 'all') {
     return $stmt->fetchAll();
 }
 
-function getAccountCounts($pdo) {
-    $total = $pdo->query("SELECT COUNT(*) FROM accounts")->fetchColumn();
-    $available = $pdo->query("SELECT COUNT(*) FROM accounts WHERE status = 'available'")->fetchColumn();
-    $sold = $pdo->query("SELECT COUNT(*) FROM accounts WHERE status = 'sold'")->fetchColumn();
-    $hidden = $pdo->query("SELECT COUNT(*) FROM accounts WHERE hidden = 1")->fetchColumn();
-    return ['total' => $total, 'available' => $available, 'sold' => $sold, 'hidden' => $hidden];
+function getManagedAccounts(PDO $pdo, array $filters, int $limit, int $offset): array
+{
+    $where = [];
+    $params = [];
+    if (($filters['status'] ?? 'all') !== 'all') {
+        $where[] = 'a.status = ?';
+        $params[] = $filters['status'];
+    }
+    if (($filters['visibility'] ?? 'all') === 'visible') {
+        $where[] = 'a.hidden = 0';
+    } elseif (($filters['visibility'] ?? 'all') === 'hidden') {
+        $where[] = 'a.hidden = 1';
+    }
+    if (!empty($filters['category'])) {
+        $where[] = 'a.category_id = ?';
+        $params[] = (int) $filters['category'];
+    }
+    $health = $filters['health'] ?? 'all';
+    if ($health === 'missing_details') {
+        $where[] = "a.status = 'available' AND TRIM(COALESCE(a.account_detail, '')) = ''";
+    } elseif ($health === 'missing_image') {
+        $where[] = "TRIM(COALESCE(a.image, '')) = ''";
+    } elseif ($health === 'unclassified') {
+        $where[] = 'a.category_id IS NULL';
+    }
+    if (($filters['search'] ?? '') !== '') {
+        $searchParts = ['a.name LIKE ?', 'a.description LIKE ?', 'c.name LIKE ?'];
+        $term = '%' . $filters['search'] . '%';
+        array_push($params, $term, $term, $term);
+        if (ctype_digit($filters['search'])) {
+            $searchParts[] = 'a.id = ?';
+            $params[] = (int) $filters['search'];
+        }
+        $where[] = '(' . implode(' OR ', $searchParts) . ')';
+    }
+    $whereSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+    $fromSql =
+        ' FROM accounts a
+          LEFT JOIN categories c ON c.id = a.category_id
+          LEFT JOIN (SELECT account_id, MAX(id) AS order_id FROM orders GROUP BY account_id) o ON o.account_id = a.id';
+
+    $sortOptions = [
+        'newest' => 'COALESCE(a.updated_at, a.created_at) DESC, a.id DESC',
+        'oldest' => 'a.created_at ASC, a.id ASC',
+        'price_desc' => 'a.price DESC, a.id DESC',
+        'price_asc' => 'a.price ASC, a.id DESC',
+        'name' => 'a.name ASC, a.id DESC',
+    ];
+    $orderSql = $sortOptions[$filters['sort'] ?? 'newest'] ?? $sortOptions['newest'];
+
+    $countStmt = $pdo->prepare('SELECT COUNT(*)' . $fromSql . $whereSql);
+    $countStmt->execute($params);
+    $total = (int) $countStmt->fetchColumn();
+
+    $stmt = $pdo->prepare(
+        'SELECT a.*, c.name AS category_name, o.order_id' . $fromSql .
+        $whereSql . ' ORDER BY ' . $orderSql . ' LIMIT ' . $limit . ' OFFSET ' . $offset
+    );
+    $stmt->execute($params);
+    return ['rows' => $stmt->fetchAll(), 'total' => $total];
+}
+
+function getAccountCounts(PDO $pdo): array
+{
+    $row = $pdo->query(
+        "SELECT COUNT(*) AS total,
+                COALESCE(SUM(status = 'available'), 0) AS available,
+                COALESCE(SUM(status = 'sold'), 0) AS sold,
+                COALESCE(SUM(hidden = 1), 0) AS hidden,
+                COALESCE(SUM(status = 'available' AND TRIM(COALESCE(account_detail, '')) = ''), 0) AS missing_details,
+                COALESCE(SUM(status = 'available' AND hidden = 0), 0) AS visible_available,
+                COALESCE(SUM(CASE WHEN status = 'available' THEN price ELSE 0 END), 0) AS inventory_value
+         FROM accounts"
+    )->fetch();
+
+    return [
+        'total' => (int) ($row['total'] ?? 0),
+        'available' => (int) ($row['available'] ?? 0),
+        'sold' => (int) ($row['sold'] ?? 0),
+        'hidden' => (int) ($row['hidden'] ?? 0),
+        'missing_details' => (int) ($row['missing_details'] ?? 0),
+        'visible_available' => (int) ($row['visible_available'] ?? 0),
+        'inventory_value' => (float) ($row['inventory_value'] ?? 0),
+    ];
 }
 
 function toggleHidden($pdo, $id) {

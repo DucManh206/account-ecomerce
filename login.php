@@ -25,7 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$username]);
         $user = $stmt->fetch();
 
-        if ($user && (password_verify($password, $user['password']) || $user['password'] === md5($password))) {
+        if ($user && !(bool) ($user['is_active'] ?? 1)) {
+            set_flash('error', 'Tài khoản đang bị tạm khóa. Vui lòng liên hệ hỗ trợ.');
+        } elseif ($user && (password_verify($password, $user['password']) || $user['password'] === md5($password))) {
             // Tự động nâng cấp hash mật khẩu lên Bcrypt an toàn nếu đang dùng MD5 hoặc hash lỗi thời
             if ($user['password'] === md5($password) || password_needs_rehash($user['password'], PASSWORD_BCRYPT)) {
                 $newHash = password_hash($password, PASSWORD_BCRYPT);
@@ -50,12 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pageTitle = 'Đăng nhập thành viên - Account Shop';
+$pageTitle = 'Đăng nhập - ' . SITE_NAME;
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/navbar.php';
 ?>
 
-    <div class="container" style="min-height: 70vh;">
+    <main id="main-content" class="container" style="min-height: 70vh;">
         <div style="max-width: 450px; margin: 60px auto; background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 40px; box-shadow: 0 10px 30px rgba(139, 92, 246, 0.1);">
             <div style="text-align: center; margin-bottom: 24px;">
                 <h2 style="font-size: 2rem; color: var(--text-white); font-weight: 800;">Đăng nhập</h2>
@@ -89,7 +91,7 @@ require_once __DIR__ . '/includes/navbar.php';
                 Chưa có tài khoản? <a href="register.php" style="color: var(--primary); font-weight: 600; text-decoration: none;">Đăng ký thành viên</a>
             </div>
         </div>
-    </div>
+    </main>
 
     <script>
         document.getElementById('show-password').addEventListener('change', function() {

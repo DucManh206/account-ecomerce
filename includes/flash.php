@@ -23,13 +23,38 @@ function render_flash() {
     // Hiển thị thông báo success nếu có
     $success = get_flash('success');
     if ($success) {
-        $output .= '<div class="frontend-alert" style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid var(--success, #10b981); color: #a7f3d0; margin-top: 20px; margin-bottom: 20px;">' . htmlspecialchars($success) . '</div>';
+        $output .= '
+        <div class="custom-alert custom-alert-success" role="alert">
+            <div class="alert-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <div class="alert-content">
+                <strong>Thành công:</strong> ' . htmlspecialchars($success) . '
+            </div>
+            <button type="button" class="alert-close" onclick="this.parentElement.remove();" title="Đóng">&times;</button>
+        </div>';
     }
     
     // Hiển thị thông báo error nếu có
     $error = get_flash('error');
     if ($error) {
-        $output .= '<div class="frontend-alert frontend-alert-error" style="margin-top: 20px; margin-bottom: 20px;">' . htmlspecialchars($error) . '</div>';
+        $output .= '
+        <div class="custom-alert custom-alert-error" role="alert">
+            <div class="alert-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            </div>
+            <div class="alert-content">
+                <strong>Lỗi:</strong> ' . htmlspecialchars($error) . '
+            </div>
+            <button type="button" class="alert-close" onclick="this.parentElement.remove();" title="Đóng">&times;</button>
+        </div>';
     }
     
     return $output;

@@ -4,9 +4,21 @@ $categories = getCategories($pdo);
 $error = '';
 $success = '';
 
-// Handle AJAX Save Template
-if (isset($_GET['action']) && $_GET['action'] === 'save_template') {
+// Quản lý mẫu qua POST có CSRF.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['template_action'])) {
+    verify_csrf(true);
     header('Content-Type: application/json');
+    $templateAction = $_POST['template_action'];
+    if ($templateAction === 'delete') {
+        $templateId = (int) ($_POST['id'] ?? 0);
+        $result = $templateId > 0 && deleteTemplate($pdo, $templateId);
+        if ($result) {
+            record_admin_activity($pdo, 'template_deleted', 'template', $templateId, 'Xóa mẫu nhập kho');
+        }
+        echo json_encode(['success' => (bool) $result], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     $data = [
         'name' => trim($_POST['name'] ?? ''),
         'price' => trim($_POST['price'] ?? 0),
@@ -14,20 +26,15 @@ if (isset($_GET['action']) && $_GET['action'] === 'save_template') {
         'image' => trim($_POST['image'] ?? ''),
         'description' => trim($_POST['description'] ?? '')
     ];
-    if ($data['name'] === '') {
-        echo json_encode(['success' => false, 'error' => 'Ten mau khong duoc de trong']);
+    if ($templateAction !== 'save' || $data['name'] === '') {
+        echo json_encode(['success' => false, 'error' => 'Tên mẫu không được để trống.'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     $res = addTemplate($pdo, $data);
-    echo json_encode(['success' => (bool)$res]);
-    exit;
-}
-
-// Handle AJAX Delete Template
-if (isset($_GET['action']) && $_GET['action'] === 'delete_template' && isset($_GET['id'])) {
-    header('Content-Type: application/json');
-    $res = deleteTemplate($pdo, (int)$_GET['id']);
-    echo json_encode(['success' => (bool)$res]);
+    if ($res) {
+        record_admin_activity($pdo, 'template_created', 'template', (int) $pdo->lastInsertId(), 'Tạo mẫu nhập kho: ' . $data['name']);
+    }
+    echo json_encode(['success' => (bool)$res], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -35,6 +42,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete_template' && isset($_G
 $customTemplates = getTemplates($pdo);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     // 1. Xu ly anh upload hoac URL
     $imagePath = trim($_POST['image'] ?? '');
     
@@ -101,9 +109,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $lines = explode("\n", $bulkText);
                     $addedCount = 0;
                     
-                    foreach ($lines as $line) {
-                        $line = trim($line);
-                        if (empty($line)) continue;
+                    try {
+                        $pdo->beginTransaction();
+                        foreach ($lines as $line) {
+                            $line = trim($line);
+                            if (empty($line)) continue;
                         
                         // Parse theo separator
                         $parts = explode($separator, $line);
@@ -120,12 +130,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $accData = $commonData;
                         $accData['account_detail'] = $detail;
                         
-                        addAccount($pdo, $accData);
-                        $addedCount++;
+                            addAccount($pdo, $accData);
+                            $addedCount++;
+                        }
+                        if ($addedCount > 0) {
+                            record_admin_activity($pdo, 'inventory_imported', 'account', null, 'Nhập kho hàng loạt', ['count' => $addedCount, 'name' => $commonData['name']]);
+                        }
+                        $pdo->commit();
+                    } catch (Throwable $e) {
+                        if ($pdo->inTransaction()) $pdo->rollBack();
+                        error_log('bulk inventory import: ' . $e->getMessage());
+                        $error = 'Không thể nhập kho hàng loạt lúc này.';
                     }
                     
                     if ($addedCount > 0) {
-                        header('Location: list.php?success=' . urlencode('Da nhap hang loat thanh cong ' . $addedCount . ' tai khoan.'));
+                        require_once __DIR__ . '/../../../includes/flash.php';
+                        set_flash('success', 'Đã nhập kho ' . $addedCount . ' tài khoản.');
+                        header('Location: list.php');
                         exit;
                     } else {
                         $error = 'Khong co tai khoan hop le nao duoc nhap.';
@@ -138,7 +159,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Vui long nhap thong tin dang nhap tai khoan.';
                 } else {
                     addAccount($pdo, $commonData);
-                    header('Location: list.php?success=' . urlencode('Them tai khoan thanh cong.'));
+                    record_admin_activity($pdo, 'account_created', 'account', (int) $pdo->lastInsertId(), 'Thêm sản phẩm: ' . $commonData['name']);
+                    require_once __DIR__ . '/../../../includes/flash.php';
+                    set_flash('success', 'Thêm tài khoản thành công.');
+                    header('Location: list.php');
                     exit;
                 }
             }
@@ -323,6 +347,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             
             <form method="POST" enctype="multipart/form-data" class="form-card" id="productForm">
+                <?= csrf_field() ?>
                 <input type="hidden" name="import_mode" id="import_mode" value="single">
 
                 <div class="form-row">
@@ -592,38 +617,53 @@ function saveAsTemplate() {
     const image = document.getElementById('image').value.trim();
     
     if (!name) {
-        alert('Vui long dien ten san pham de lam ten mau.');
+        showTemplateFeedback('Vui lòng điền tên sản phẩm trước khi lưu mẫu.', true);
         return;
     }
     
     const formData = new FormData();
+    formData.append('template_action', 'save');
+    formData.append('csrf_token', <?= json_encode(csrf_token()) ?>);
     formData.append('name', name);
     formData.append('price', price);
     formData.append('category_id', category_id);
     formData.append('description', description);
     formData.append('image', image);
     
-    fetch('add.php?action=save_template', {
+    fetch('add.php', {
         method: 'POST',
         body: formData
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            alert('Luu mau thanh cong! Dang tai lai danh sach mau...');
+            showTemplateFeedback('Đã lưu mẫu. Đang tải lại danh sách...', false);
             window.location.reload();
         } else {
-            alert('Loi: ' + (data.error || 'Khong the luu mau.'));
+            showTemplateFeedback(data.error || 'Không thể lưu mẫu.', true);
         }
     })
-    .catch(() => alert('Loi ket noi server!'));
+    .catch(() => showTemplateFeedback('Không thể kết nối máy chủ.', true));
+}
+
+function showTemplateFeedback(message, isError) {
+    let feedback = document.getElementById('templateFeedback');
+    if (!feedback) {
+        feedback = document.createElement('div');
+        feedback.id = 'templateFeedback';
+        feedback.setAttribute('role', 'status');
+        document.querySelector('.content-body').prepend(feedback);
+    }
+    feedback.className = 'alert ' + (isError ? 'alert-error' : 'alert-success');
+    feedback.textContent = message;
+    feedback.scrollIntoView({behavior: 'smooth', block: 'nearest'});
 }
 
 function deleteCustomTemplate(id, event) {
     event.stopPropagation();
     if (!confirm('Ban co chac chan muon xoa mau thiet lap nay?')) return;
     
-    fetch('add.php?action=delete_template&id=' + id)
+    fetch('add.php', {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'}, body: new URLSearchParams({template_action: 'delete', id: String(id), csrf_token: <?= json_encode(csrf_token()) ?>})})
     .then(r => r.json())
     .then(data => {
         if (data.success) {
@@ -642,10 +682,10 @@ function deleteCustomTemplate(id, event) {
                 container.appendChild(msg);
             }
         } else {
-            alert('Khong the xoa mau thiet lap.');
+            showTemplateFeedback('Không thể xóa mẫu thiết lập.', true);
         }
     })
-    .catch(() => alert('Loi ket noi server!'));
+    .catch(() => showTemplateFeedback('Không thể kết nối máy chủ.', true));
 }
 </script>
 </body>

@@ -1,20 +1,24 @@
 <?php
 require_once __DIR__ . '/users.php';
+require_once __DIR__ . '/../../../includes/flash.php';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $data = [
         'username' => trim($_POST['username'] ?? ''),
         'password' => trim($_POST['password'] ?? ''),
         'fullname' => trim($_POST['fullname'] ?? ''),
-        'role' => trim($_POST['role'] ?? 'user'),
-        'balance' => intval($_POST['balance'] ?? 0)
+        'role' => in_array($_POST['role'] ?? '', ['user', 'admin'], true) ? $_POST['role'] : 'user',
+        'balance' => max(0, (int) ($_POST['balance'] ?? 0))
     ];
 
     if ($data['username'] === '' || $data['password'] === '' || $data['fullname'] === '') {
         $error = 'Vui lòng điền đầy đủ các trường thông tin bắt buộc.';
-    } elseif (strlen($data['password']) < 6) {
-        $error = 'Mật khẩu phải từ 6 ký tự trở lên.';
+    } elseif (!preg_match('/^[A-Za-z0-9_.-]{3,50}$/', $data['username'])) {
+        $error = 'Tên đăng nhập cần 3-50 ký tự và chỉ gồm chữ, số, dấu chấm, gạch ngang hoặc gạch dưới.';
+    } elseif (strlen($data['password']) < 8) {
+        $error = 'Mật khẩu phải từ 8 ký tự trở lên.';
     } else {
         // Kiểm tra xem tên đăng nhập đã được sử dụng chưa
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
@@ -24,10 +28,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($exists) {
             $error = 'Tên đăng nhập này đã tồn tại trong hệ thống.';
         } else {
-            if (addUser($pdo, $data)) {
-                header('Location: list.php?success=' . urlencode('Thêm thành viên thành công.'));
+            try {
+                $pdo->beginTransaction();
+                addUser($pdo, $data);
+                $newUserId = (int) $pdo->lastInsertId();
+                if ($data['balance'] > 0) {
+                    record_balance_transaction($pdo, $newUserId, 'adjustment', $data['balance'], $data['balance'], 'opening_balance', null, 'Số dư khởi tạo bởi admin', (int) $_SESSION['admin_user_id']);
+                }
+                record_admin_activity($pdo, 'user_created', 'user', $newUserId, 'Tạo thành viên @' . $data['username'], ['role' => $data['role'], 'opening_balance' => $data['balance']]);
+                $pdo->commit();
+                set_flash('success', 'Thêm thành viên thành công.');
+                header('Location: list.php');
                 exit;
-            } else {
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                error_log('add user: ' . $e->getMessage());
                 $error = 'Có lỗi xảy ra khi thêm thành viên.';
             }
         }
@@ -58,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             
             <form method="POST" class="form-card">
+                <?= csrf_field() ?>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="username">Tên đăng nhập (Bắt buộc)</label>

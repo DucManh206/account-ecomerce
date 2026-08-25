@@ -1,7 +1,10 @@
 CREATE DATABASE IF NOT EXISTS account_shop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE account_shop;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Drop existing tables in dependency order
+DROP TABLE IF EXISTS admin_activity_logs;
+DROP TABLE IF EXISTS balance_transactions;
 DROP TABLE IF EXISTS sepay_transactions;
 DROP TABLE IF EXISTS topup_requests;
 DROP TABLE IF EXISTS orders;
@@ -18,6 +21,7 @@ CREATE TABLE users (
   password VARCHAR(255) NOT NULL,
   fullname VARCHAR(100) NOT NULL,
   role ENUM('admin', 'user') DEFAULT 'user',
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
   balance DECIMAL(15,0) NOT NULL DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -127,7 +131,10 @@ CREATE TABLE IF NOT EXISTS topup_requests (
   user_id INT NOT NULL,
   amount DECIMAL(15,0) NOT NULL,
   memo VARCHAR(100) NOT NULL,
-  status ENUM('pending', 'completed', 'expired') DEFAULT 'pending',
+  status ENUM('pending', 'completed', 'expired', 'rejected', 'cancelled') DEFAULT 'pending',
+  reviewed_by INT DEFAULT NULL,
+  reviewed_at DATETIME DEFAULT NULL,
+  admin_note VARCHAR(255) DEFAULT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -140,12 +147,73 @@ CREATE TABLE IF NOT EXISTS settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO settings (setting_key, setting_value) VALUES
-('sepay_enabled', '1'),
-('sepay_api_token', 'SEPAY_TOKEN_O_DAY'),
+('sepay_enabled', '0'),
+('sepay_api_token', ''),
 ('sepay_bank_code', 'MBBank'),
-('sepay_bank_num', '0398687777'),
-('sepay_bank_name', 'NGUYEN VAN A'),
-('sepay_memo_prefix', 'NAP');
+('sepay_bank_num', ''),
+('sepay_bank_name', ''),
+('sepay_memo_prefix', 'NAP'),
+('allow_mock_topup', '0'),
+('site_name', 'AccountShop - Hệ thống tài khoản Premium'),
+('site_short_name', 'AccountShop'),
+('site_tagline', 'Tài khoản số, giao ngay sau thanh toán'),
+('storefront_heading', 'Mua tài khoản Premium tự động'),
+('storefront_description', 'Chọn sản phẩm phù hợp, thanh toán bằng số dư và nhận thông tin đăng nhập ngay trong tài khoản.'),
+('storefront_notice', ''),
+('support_contact', ''),
+('storefront_page_size', '12'),
+('admin_page_size', '20'),
+('low_stock_threshold', '3'),
+('min_topup_amount', '10000'),
+('max_topup_amount', '100000000'),
+('topup_presets', '20000,50000,100000,200000,500000,1000000'),
+('topup_expiry_minutes', '15'),
+('schema_version', '4');
+
+-- Sổ biến động số dư: mọi khoản nạp, mua hàng và điều chỉnh thủ công đều có dấu vết.
+CREATE TABLE IF NOT EXISTS balance_transactions (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  transaction_type VARCHAR(30) NOT NULL,
+  amount DECIMAL(15,0) NOT NULL,
+  balance_after DECIMAL(15,0) DEFAULT NULL,
+  source_type VARCHAR(40) DEFAULT NULL,
+  source_id BIGINT DEFAULT NULL,
+  description VARCHAR(255) NOT NULL,
+  created_by INT DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_balance_source (source_type, source_id, transaction_type),
+  KEY idx_balance_user_created (user_id, created_at),
+  KEY idx_balance_type_created (transaction_type, created_at),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO balance_transactions
+  (user_id, transaction_type, amount, source_type, source_id, description, created_at)
+SELECT user_id, 'purchase', -price, 'order', id, CONCAT('Thanh toán đơn hàng #', id), created_at
+FROM orders;
+
+INSERT IGNORE INTO balance_transactions
+  (user_id, transaction_type, amount, source_type, source_id, description, created_at)
+SELECT user_id, 'deposit', amount, 'sepay', id, CONCAT('Nạp tiền qua SePay #', sepay_transaction_id), transaction_date
+FROM sepay_transactions;
+
+-- Nhật ký thao tác quan trọng trong khu vực quản trị.
+CREATE TABLE IF NOT EXISTS admin_activity_logs (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  admin_id INT DEFAULT NULL,
+  action VARCHAR(60) NOT NULL,
+  entity_type VARCHAR(50) NOT NULL,
+  entity_id BIGINT DEFAULT NULL,
+  description VARCHAR(255) NOT NULL,
+  metadata_json JSON DEFAULT NULL,
+  ip_address VARCHAR(45) DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_admin_activity_created (created_at),
+  KEY idx_admin_activity_entity (entity_type, entity_id),
+  FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng templates (mẫu cấu hình nhanh tài khoản)
 CREATE TABLE IF NOT EXISTS templates (

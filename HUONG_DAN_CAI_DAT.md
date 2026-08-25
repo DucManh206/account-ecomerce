@@ -24,14 +24,7 @@ Giải nén và copy toàn bộ thư mục dự án `account-ecomerce` vào thư
 5. Chọn tệp tin `database.sql` trong thư mục gốc của dự án và nhấn **Nhập** (Import) để hoàn thành.
 
 ### Bước 3: Cấu hình kết nối CSDL
-Mở tệp tin `admin/config/db.php` và điều chỉnh thông số kết nối MySQL phù hợp với máy của bạn:
-```php
-$host = 'localhost';
-$dbname = 'account_shop';
-$username = 'web'; // Tài khoản MySQL (mặc định XAMPP thường là 'root')
-$password = '123'; // Mật khẩu MySQL (mặc định XAMPP thường để trống '')
-```
-*(Nếu dùng XAMPP mặc định, đổi `$username = 'root';` và `$password = '';`)*
+Ứng dụng đọc cấu hình từ các biến môi trường `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` và `DB_PASS`. Với XAMPP mặc định, có thể dùng tài khoản `root` không mật khẩu; trên môi trường thật phải tạo tài khoản MySQL riêng và đặt biến môi trường tương ứng. Không lưu mật khẩu thật trong mã nguồn.
 
 ### Bước 4: Chạy thử hệ thống
 * Giao diện mua hàng dành cho khách hàng: `http://localhost/account-ecomerce/index.php`
@@ -40,20 +33,24 @@ $password = '123'; // Mật khẩu MySQL (mặc định XAMPP thường để tr
 
 ---
 
-## 3. Hoặc chạy Cơ sở dữ liệu bằng Docker (Nhanh & Tự động 100%)
+## 3. Hoặc chạy Toàn Bộ Dự Án bằng Docker (Full-Stack Tự Động 100%)
 
-Nếu máy tính đã cài đặt **Docker**, bạn không cần cài MySQL hay import database thủ công:
+Nếu máy tính đã cài đặt **Docker**:
 
-1. Mở Terminal/PowerShell tại thư mục dự án và chạy lệnh:
+1. Sao chép `.env.example` thành `.env`, sau đó đổi toàn bộ mật khẩu mẫu trong `.env`.
+2. Mở Terminal/PowerShell tại thư mục dự án và chạy lệnh:
    ```bash
-   docker compose up -d
+   docker compose up -d --build
    ```
-2. Docker sẽ tự động:
-   - Khởi tạo MySQL 8.0 trên cổng `3306` (Tài khoản: `web` / Mật khẩu: `123`, DB: `account_shop`).
-   - Tự động nạp toàn bộ cấu trúc & dữ liệu từ file `database.sql`.
-   - Khởi động giao diện quản trị phpMyAdmin tại: `http://localhost:8080` (Đăng nhập: `web` / `123` hoặc `root` / `123`).
+3. Docker sẽ tự động xây dựng và khởi chạy 3 dịch vụ:
+   * 🌐 **Ứng dụng Web PHP 8.2 + Apache**: `http://localhost:8000/index.php`
+   * 🔐 **Trang đăng nhập Quản trị & Thành viên**: `http://localhost:8000/login.php`
+   * 🗄️ **Cơ sở dữ liệu MySQL 8.0**: Cổng `3306` (Tự động nạp dữ liệu từ `database.sql`)
+   * 📊 **Giao diện Quản lý Database phpMyAdmin**: `http://localhost:8080` (dùng `DB_USER` và `DB_PASSWORD` trong `.env`)
 
-3. Dừng Docker khi không dùng:
+4. Khi sửa đổi code ở máy tính của bạn, web trong Docker sẽ tự động cập nhật ngay lập tức (nhờ cơ chế Live Volume Mount).
+
+5. Dừng hệ thống khi không sử dụng:
    ```bash
    docker compose down
    ```

@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
 
-define('SITE_NAME', 'Account Shop - Nhóm 5');
+define('DEFAULT_SITE_NAME', 'AccountShop - Hệ thống tài khoản Premium');
 
 // Tự động nhận diện thư mục gốc của dự án
 if (isset($_SERVER['DOCUMENT_ROOT'])) {
@@ -23,14 +23,24 @@ if (isset($_SERVER['DOCUMENT_ROOT'])) {
     define('BASE_PATH', '/');
 }
 
-define('BASE_URL', 'http://localhost' . (BASE_PATH !== '/' ? rtrim(BASE_PATH, '/') : ''));
+$httpHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+define('BASE_URL', $protocol . '://' . $httpHost . (BASE_PATH !== '/' ? rtrim(BASE_PATH, '/') : ''));
 
 if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 
 date_default_timezone_set('Asia/Ho_Chi_Minh');
 
+$isDebug = filter_var(getenv('APP_DEBUG') ?: '0', FILTER_VALIDATE_BOOL);
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', $isDebug ? '1' : '0');
 ?>

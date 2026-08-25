@@ -23,12 +23,14 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true &
 <header class="navbar">
     <div class="container navbar-content">
         <a href="<?= BASE_PATH ?>index.php" class="logo">
-            AccountShop
+            <?= htmlspecialchars(SITE_SHORT_NAME) ?>
+            <span><?= htmlspecialchars((string) app_setting('site_tagline', 'Tài khoản số giao tự động')) ?></span>
         </a>
-        
-        <div class="nav-links">
+
+        <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="primaryNavigation"><span></span><span></span><span></span><span class="sr-only">Mở menu</span></button>
+        <nav class="nav-links" id="primaryNavigation" aria-label="Điều hướng chính">
             <?php if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true): ?>
-                <a href="<?= BASE_PATH ?>admin/dashboard.php" class="btn-nav" style="border-color: #f59e0b; color: #f59e0b !important;">Quản trị viên</a>
+                <a href="<?= BASE_PATH ?>admin/dashboard.php" class="admin-entry">Quản trị</a>
             <?php endif; ?>
             
             <a href="<?= BASE_PATH ?>index.php" class="nav-link <?= $isHomeActive ?>">Trang chủ</a>
@@ -41,16 +43,19 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true &
             
             <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
                 <a href="<?= BASE_PATH ?>profile.php" class="balance-indicator">
-                    Số dư: <?= number_format($navBalance, 0, ',', '.') ?>đ
+                    <span>Số dư</span><?= number_format($navBalance, 0, ',', '.') ?>đ
                 </a>
-                <a href="<?= BASE_PATH ?>profile.php" class="nav-link <?= $isProfileActive ?>" style="color: var(--text-white); font-weight: 600;">
-                    Hi, <?= htmlspecialchars($_SESSION['user_fullname'] ?? 'Khách') ?>
+                <a href="<?= BASE_PATH ?>profile.php" class="nav-link nav-account <?= $isProfileActive ?>">
+                    <?= htmlspecialchars($_SESSION['user_fullname'] ?? 'Tài khoản') ?>
                 </a>
-                <a href="<?= BASE_PATH ?>logout.php" class="btn-nav" style="background: var(--danger);">Đăng xuất</a>
+                <form method="POST" action="<?= BASE_PATH ?>logout.php" class="nav-logout-form">
+                    <?= csrf_field() ?>
+                    <button type="submit" class="nav-logout-button">Đăng xuất</button>
+                </form>
             <?php else: ?>
                 <a href="<?= BASE_PATH ?>login.php" class="nav-link">Đăng nhập</a>
                 <a href="<?= BASE_PATH ?>register.php" class="btn-nav">Đăng ký</a>
             <?php endif; ?>
-        </div>
+        </nav>
     </div>
 </header>

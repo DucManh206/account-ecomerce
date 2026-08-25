@@ -20,8 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_flash('error', 'Vui lòng nhập đầy đủ thông tin.');
     } elseif ($password !== $confirm_password) {
         set_flash('error', 'Mật khẩu xác nhận không khớp.');
-    } elseif (strlen($password) < 6) {
-        set_flash('error', 'Mật khẩu phải từ 6 ký tự trở lên.');
+    } elseif (strlen($password) < 8) {
+        set_flash('error', 'Mật khẩu phải từ 8 ký tự trở lên.');
     } else {
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
         $stmt->execute([$username]);
@@ -49,7 +49,7 @@ require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/navbar.php';
 ?>
 
-    <div class="container" style="min-height: 70vh;">
+    <main id="main-content" class="container" style="min-height: 70vh;">
         <div style="max-width: 450px; margin: 50px auto; background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 40px; box-shadow: 0 10px 30px rgba(139, 92, 246, 0.1);">
             <div style="text-align: center; margin-bottom: 24px;">
                 <h2 style="font-size: 2rem; color: var(--text-white); font-weight: 800;">Tạo tài khoản</h2>
@@ -73,7 +73,7 @@ require_once __DIR__ . '/includes/navbar.php';
 
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
                     <label for="password" style="font-weight: 600; font-size: 0.9rem; color: var(--text-white);">Mật khẩu</label>
-                    <input type="password" id="password" name="password" placeholder="Tối thiểu 6 ký tự" required style="padding: 12px 16px; background-color: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-white); font-family: inherit; font-size: 0.95rem; outline: none;">
+                    <input type="password" id="password" name="password" placeholder="Tối thiểu 8 ký tự" minlength="8" required style="padding: 12px 16px; background-color: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-white); font-family: inherit; font-size: 0.95rem; outline: none;">
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
@@ -88,6 +88,6 @@ require_once __DIR__ . '/includes/navbar.php';
                 Đã có tài khoản? <a href="login.php" style="color: var(--primary); font-weight: 600; text-decoration: none;">Đăng nhập ngay</a>
             </div>
         </div>
-    </div>
+    </main>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

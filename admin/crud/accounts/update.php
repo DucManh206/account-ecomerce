@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/accounts.php';
+require_once __DIR__ . '/../../../includes/flash.php';
 
 $id = $_GET['id'] ?? '';
 if (empty($id)) {
@@ -17,6 +18,7 @@ $categories = getCategories($pdo);
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     // Convert datetime-local format 'Y-m-d\TH:i' to MySQL standard format 'Y-m-d H:i:s'
     $createdAtInput = trim($_POST['created_at'] ?? '');
     $dbCreatedAt = !empty($createdAtInput) ? date('Y-m-d H:i:s', strtotime($createdAtInput)) : date('Y-m-d H:i:s');
@@ -28,15 +30,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'category_id' => trim($_POST['category_id'] ?? ''),
         'image' => trim($_POST['image'] ?? ''),
         'account_detail' => trim($_POST['account_detail'] ?? ''),
-        'status' => $_POST['status'] ?? 'available',
+        'status' => in_array($_POST['status'] ?? '', ['available', 'sold'], true) ? $_POST['status'] : 'available',
         'created_at' => $dbCreatedAt
     ];
 
-    if ($data['name'] === '' || $data['price'] === '') {
+    $orderCheck = $pdo->prepare('SELECT COUNT(*) FROM orders WHERE account_id = ?');
+    $orderCheck->execute([(int) $id]);
+    $hasOrder = (int) $orderCheck->fetchColumn() > 0;
+
+    if ($data['name'] === '' || !is_numeric($data['price']) || (float) $data['price'] < 0) {
         $error = 'Vui lòng nhập tên tài khoản và giá bán.';
+    } elseif ($hasOrder && $data['status'] === 'available') {
+        $error = 'Sản phẩm đã có đơn hàng nên không thể chuyển lại trạng thái đang bán.';
     } else {
         if (updateAccount($pdo, $id, $data)) {
-            header('Location: list.php?success=' . urlencode('Cập nhật tài khoản thành công.'));
+            record_admin_activity($pdo, 'account_updated', 'account', (int) $id, 'Cập nhật sản phẩm: ' . $data['name'], ['status' => $data['status'], 'price' => (float) $data['price']]);
+            set_flash('success', 'Cập nhật tài khoản thành công.');
+            header('Location: list.php');
             exit;
         } else {
             $error = 'Có lỗi xảy ra khi cập nhật tài khoản.';
@@ -68,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             
             <form method="POST" class="form-card">
+                <?= csrf_field() ?>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="name">Tên tài khoản</label>

@@ -1,47 +1,63 @@
 <?php
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../auth.php';
-
-$success = '';
-$error = '';
-
-// Xử lý cập nhật cấu hình
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $fields = [
-        'sepay_enabled',
-        'sepay_api_token',
-        'sepay_bank_code',
-        'sepay_bank_num',
-        'sepay_bank_name',
-        'sepay_memo_prefix',
-    ];
-
-    // Checkbox gửi về '1' khi checked, không gửi gì khi unchecked
-    if (!isset($_POST['sepay_enabled'])) {
-        $_POST['sepay_enabled'] = '0';
-    }
-
-    try {
-        $stmt = $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
-        foreach ($fields as $key) {
-            $val = trim($_POST[$key] ?? '');
-            $stmt->execute([$key, $val]);
-        }
-        $success = 'Đã lưu cấu hình thanh toán thành công.';
-    } catch (Exception $e) {
-        $error = 'Lỗi khi lưu cấu hình: ' . $e->getMessage();
-    }
-}
+require_once __DIR__ . '/../../../includes/flash.php';
 
 // Đọc giá trị hiện tại
-$currentSettings = [];
-try {
-    $rows = $pdo->query("SELECT setting_key, setting_value FROM settings")->fetchAll();
-    foreach ($rows as $r) {
-        $currentSettings[$r['setting_key']] = $r['setting_value'];
+$currentSettings = $settingsMap;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
+    $values = [
+        'sepay_enabled' => isset($_POST['sepay_enabled']) ? '1' : '0',
+        'allow_mock_topup' => isset($_POST['allow_mock_topup']) ? '1' : '0',
+        'sepay_bank_code' => trim($_POST['sepay_bank_code'] ?? ''),
+        'sepay_bank_num' => preg_replace('/\s+/', '', trim($_POST['sepay_bank_num'] ?? '')),
+        'sepay_bank_name' => trim($_POST['sepay_bank_name'] ?? ''),
+        'sepay_memo_prefix' => strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $_POST['sepay_memo_prefix'] ?? 'NAP')),
+    ];
+    $newToken = trim($_POST['sepay_api_token'] ?? '');
+    $values['sepay_api_token'] = $newToken !== ''
+        ? $newToken
+        : ($currentSettings['sepay_api_token'] ?? '');
+
+    $errors = [];
+    if ($values['sepay_enabled'] === '1' && in_array($values['sepay_api_token'], ['', 'YOUR_SEPAY_API_TOKEN', 'SEPAY_TOKEN_O_DAY'], true)) {
+        $errors[] = 'Cần nhập API token hợp lệ trước khi bật SePay.';
     }
-} catch (Exception $e) {
-    $currentSettings = [];
+    if ($values['sepay_enabled'] === '1' && ($values['sepay_bank_code'] === '' || $values['sepay_bank_num'] === '' || $values['sepay_bank_name'] === '')) {
+        $errors[] = 'Thông tin tài khoản ngân hàng chưa đầy đủ.';
+    }
+    if ($values['sepay_memo_prefix'] === '') {
+        $errors[] = 'Tiền tố nội dung chuyển khoản không hợp lệ.';
+    }
+
+    if ($errors) {
+        set_flash('error', implode(' ', $errors));
+    } else {
+        try {
+            $pdo->beginTransaction();
+            save_app_settings($pdo, $values);
+            record_admin_activity(
+                $pdo,
+                'payment_settings_updated',
+                'settings',
+                null,
+                'Cập nhật kết nối SePay và chế độ kiểm thử',
+                ['sepay_enabled' => $values['sepay_enabled'], 'mock_enabled' => $values['allow_mock_topup']]
+            );
+            $pdo->commit();
+            set_flash('success', 'Đã lưu cấu hình thanh toán.');
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            error_log('save payment settings: ' . $e->getMessage());
+            set_flash('error', 'Không thể lưu cấu hình thanh toán lúc này.');
+        }
+    }
+    header('Location: topup.php');
+    exit;
 }
 
 $s = function($key, $default = '') use ($currentSettings) {
@@ -175,14 +191,10 @@ $s = function($key, $default = '') use ($currentSettings) {
         </header>
         
         <div class="content-body">
-            <?php if ($success): ?>
-                <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
-            <?php endif; ?>
-            <?php if ($error): ?>
-                <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
-            <?php endif; ?>
+            <?= render_flash() ?>
             
             <form method="POST" class="form-card">
+                <?= csrf_field() ?>
                 <?php $isEnabled = ($currentSettings['sepay_enabled'] ?? '1') === '1'; ?>
                 <div class="toggle-card">
                     <div class="toggle-info">
@@ -193,11 +205,10 @@ $s = function($key, $default = '') use ($currentSettings) {
                             </span>
                         </div>
                         <div class="toggle-desc">
-                            Khi <strong>tắt</strong>, hệ thống sẽ chuyển sang chế độ <strong>Mock Test</strong> — giả lập nạp tiền mà không kết nối API ngân hàng thật.
+                            Khi <strong>tắt</strong>, hệ thống ngừng đối soát tự động. Chế độ kiểm thử chỉ hoạt động khi công tắc riêng bên dưới được bật.
                         </div>
                     </div>
                     <label class="switch">
-                        <input type="hidden" name="sepay_enabled" value="0">
                         <input type="checkbox" name="sepay_enabled" value="1" id="sepay_toggle" <?= $isEnabled ? 'checked' : '' ?> onchange="toggleSepayFields()">
                         <span class="slider"></span>
                     </label>
@@ -206,8 +217,8 @@ $s = function($key, $default = '') use ($currentSettings) {
                 <div class="sepay-fields <?= !$isEnabled ? 'disabled' : '' ?>" id="sepay_fields_wrapper">
                 <div class="form-group">
                     <label for="sepay_api_token">SePay API Token</label>
-                    <input type="text" id="sepay_api_token" name="sepay_api_token" value="<?= $s('sepay_api_token', 'YOUR_SEPAY_API_TOKEN') ?>">
-                    <div class="settings-hint">Token xác thực lấy từ trang quản lý tại sepay.vn. Khi SePay tắt, token sẽ không được sử dụng.</div>
+                    <input type="password" id="sepay_api_token" name="sepay_api_token" value="" autocomplete="new-password" placeholder="Để trống nếu không đổi token hiện tại">
+                    <div class="settings-hint">Token hiện tại không được hiển thị lại. Chỉ nhập khi muốn thay đổi.</div>
                 </div>
 
                 <div class="form-row">
@@ -231,11 +242,23 @@ $s = function($key, $default = '') use ($currentSettings) {
                     <div class="form-group">
                         <label for="sepay_memo_prefix">Tiền tố nội dung chuyển khoản</label>
                         <input type="text" id="sepay_memo_prefix" name="sepay_memo_prefix" value="<?= $s('sepay_memo_prefix', 'NAP') ?>" required placeholder="NAP">
-                        <div class="settings-hint">Nội dung chuyển khoản sẽ là: <code>[Tiền tố] [User ID]</code>, ví dụ: NAP 5</div>
+                        <div class="settings-hint">Mỗi yêu cầu có mã riêng theo mẫu <code>[Tiền tố] [User ID] R[Request ID]</code>, ví dụ: NAP 5 R128.</div>
                     </div>
                 </div>
                 
                 </div><!-- /.sepay-fields -->
+
+                <?php $mockEnabled = ($currentSettings['allow_mock_topup'] ?? '0') === '1'; ?>
+                <div class="toggle-card warning-toggle">
+                    <div class="toggle-info">
+                        <div class="toggle-label">Cho phép nạp tiền kiểm thử</div>
+                        <div class="toggle-desc">Chỉ dùng ở môi trường phát triển. Khi bật và SePay chưa hoạt động, người dùng có thể tự cộng số dư thử nghiệm.</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" name="allow_mock_topup" value="1" <?= $mockEnabled ? 'checked' : '' ?>>
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
                 <button type="submit" class="btn btn-primary" style="margin-top: 12px;">Lưu cấu hình</button>
             </form>
