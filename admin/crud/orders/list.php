@@ -94,7 +94,7 @@ $last30Days = date('Y-m-d', strtotime('-29 days'));
                             <tr>
                                 <td><strong>#<?= $order['id'] ?></strong></td>
                                 <td><strong><?= htmlspecialchars($order['user_fullname'] ?? 'Tài khoản đã xóa') ?></strong><span class="table-subtext">@<?= htmlspecialchars($order['username'] ?? 'không còn dữ liệu') ?></span></td>
-                                <td><?= htmlspecialchars($order['account_name'] ?? 'Sản phẩm không còn dữ liệu') ?></td>
+                                <td><?= htmlspecialchars(order_product_name($order)) ?></td>
                                 <td class="money-positive"><?= number_format($order['price'], 0, ',', '.') ?>đ</td>
                                 <td><?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></td>
                                 <td class="actions">

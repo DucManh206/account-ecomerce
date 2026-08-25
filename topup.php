@@ -488,9 +488,13 @@ require_once __DIR__ . '/includes/navbar.php';
                     
                     document.getElementById('polling_spinner').style.display = 'none';
                     document.getElementById('polling_status').className = 'polling-status expired';
-                    document.getElementById('polling_text').innerText = "Giao dịch đã hết thời gian (15 phút) và đã tự động hủy.";
+                    document.getElementById('polling_text').innerText = "Giao dịch đã hết thời gian (" + <?= (int) $expiryMinutes ?> + " phút) và đã tự động hủy.";
                     
-                    fetch(`check_topup.php?request_id=${currentRequestId}`).catch(err => console.error(err));
+                    fetch('check_topup.php', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'},
+                        body: new URLSearchParams({request_id: String(currentRequestId), csrf_token: csrfToken})
+                    }).catch(err => console.error(err));
                     return;
                 }
 

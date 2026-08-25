@@ -165,12 +165,12 @@ require_once __DIR__ . '/includes/navbar.php';
                 <div class="catalog-results">
                     <div class="accounts-grid">
                         <?php foreach ($accounts as $account):
-                            $image = !empty($account['image']) ? $account['image'] : 'assets/images/default-product.png';
-                            $inCart = in_array((int) $account['id'], array_map('intval', $_SESSION['cart'] ?? []), true);
+                            $image = product_image_url($account['image'] ?? '');
+                            $inCart = cart_contains((int) $account['id']);
                         ?>
                             <article class="account-card <?= $account['status'] !== 'available' ? 'is-sold' : '' ?>">
                                 <a href="chitiet.php?id=<?= $account['id'] ?>" class="card-image-wrapper" aria-label="Xem <?= htmlspecialchars($account['name']) ?>">
-                                    <img src="<?= htmlspecialchars($image) ?>" alt="<?= htmlspecialchars($account['name']) ?>" loading="lazy" onerror="this.src='assets/images/default-product.png'; this.onerror=null;">
+                                    <img src="<?= htmlspecialchars($image) ?>" alt="<?= htmlspecialchars($account['name']) ?>" loading="lazy" onerror="this.src='<?= htmlspecialchars(default_product_image()) ?>'; this.onerror=null;">
                                     <span class="card-badge"><?= htmlspecialchars($account['category_name'] ?? 'Chưa phân loại') ?></span>
                                     <span class="card-status <?= $account['status'] === 'available' ? 'status-available' : 'status-sold' ?>"><?= $account['status'] === 'available' ? 'Sẵn sàng' : 'Đã bán' ?></span>
                                 </a>

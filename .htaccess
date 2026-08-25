@@ -1,0 +1,5 @@
+Options -Indexes
+
+<FilesMatch "^(\.env.*|database\.sql|docker-compose\.yml|Dockerfile)$">
+    Require all denied
+</FilesMatch>

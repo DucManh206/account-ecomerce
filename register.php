@@ -18,6 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($fullname) || empty($username) || empty($password) || empty($confirm_password)) {
         set_flash('error', 'Vui lòng nhập đầy đủ thông tin.');
+    } elseif (!is_valid_username($username)) {
+        set_flash('error', 'Tên đăng nhập cần 3-50 ký tự và chỉ gồm chữ, số, dấu chấm, gạch ngang hoặc gạch dưới.');
+    } elseif (mb_strlen($fullname) < 2 || mb_strlen($fullname) > 100) {
+        set_flash('error', 'Họ tên cần từ 2 đến 100 ký tự.');
     } elseif ($password !== $confirm_password) {
         set_flash('error', 'Mật khẩu xác nhận không khớp.');
     } elseif (strlen($password) < 8) {
@@ -68,7 +72,7 @@ require_once __DIR__ . '/includes/navbar.php';
 
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
                     <label for="username" style="font-weight: 600; font-size: 0.9rem; color: var(--text-white);">Tên đăng nhập</label>
-                    <input type="text" id="username" name="username" placeholder="Nhập username" required value="<?= isset($_POST['username']) ? htmlspecialchars($_POST['username']) : '' ?>" style="padding: 12px 16px; background-color: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-white); font-family: inherit; font-size: 0.95rem; outline: none;">
+                    <input type="text" id="username" name="username" placeholder="Chữ, số, dấu chấm hoặc gạch dưới" required minlength="3" maxlength="50" pattern="[A-Za-z0-9_.-]{3,50}" value="<?= isset($_POST['username']) ? htmlspecialchars($_POST['username']) : '' ?>" style="padding: 12px 16px; background-color: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-white); font-family: inherit; font-size: 0.95rem; outline: none;">
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">

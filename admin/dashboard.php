@@ -95,7 +95,7 @@ $maxChartRevenue = max(array_merge([1], array_column($chart, 'revenue')));
 $chartStep = count($chart) > 31 ? 7 : (count($chart) > 14 ? 3 : 1);
 
 $recentOrders = $pdo->query(
-    'SELECT o.*, u.username, a.name AS account_name
+    'SELECT o.*, u.username, COALESCE(o.product_name, a.name) AS account_name
      FROM orders o
      LEFT JOIN users u ON u.id = o.user_id
      LEFT JOIN accounts a ON a.id = o.account_id
