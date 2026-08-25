@@ -40,7 +40,27 @@ $password = '123'; // Mật khẩu MySQL (mặc định XAMPP thường để tr
 
 ---
 
-## 3. Tài khoản đăng nhập chạy thử
+## 3. Hoặc chạy Cơ sở dữ liệu bằng Docker (Nhanh & Tự động 100%)
+
+Nếu máy tính đã cài đặt **Docker**, bạn không cần cài MySQL hay import database thủ công:
+
+1. Mở Terminal/PowerShell tại thư mục dự án và chạy lệnh:
+   ```bash
+   docker compose up -d
+   ```
+2. Docker sẽ tự động:
+   - Khởi tạo MySQL 8.0 trên cổng `3306` (Tài khoản: `web` / Mật khẩu: `123`, DB: `account_shop`).
+   - Tự động nạp toàn bộ cấu trúc & dữ liệu từ file `database.sql`.
+   - Khởi động giao diện quản trị phpMyAdmin tại: `http://localhost:8080` (Đăng nhập: `web` / `123` hoặc `root` / `123`).
+
+3. Dừng Docker khi không dùng:
+   ```bash
+   docker compose down
+   ```
+
+---
+
+## 4. Tài khoản đăng nhập chạy thử
 
 Sau khi đã nạp thành công database, bạn có thể dùng các tài khoản sau để test:
 

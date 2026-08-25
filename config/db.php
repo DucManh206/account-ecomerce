@@ -2,13 +2,14 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/auth_helper.php';
 
-$host = 'localhost';
-$dbname = 'account_shop';
-$username = 'web';
-$password = '123';
+$host = getenv('DB_HOST') ?: 'localhost';
+$port = getenv('DB_PORT') ?: '3306';
+$dbname = getenv('DB_NAME') ?: 'account_shop';
+$username = getenv('DB_USER') ?: 'web';
+$password = getenv('DB_PASS') !== false ? getenv('DB_PASS') : '123';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $pdo = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 

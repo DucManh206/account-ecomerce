@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # MySQL Database Container
+  db:
+    image: mysql:8.0
+    container_name: account_shop_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: '123'
+      MYSQL_DATABASE: 'account_shop'
+      MYSQL_USER: 'web'
+      MYSQL_PASSWORD: '123'
+    ports:
+      - "3306:3306"
+    volumes:
+      # Tự động nạp dữ liệu từ database.sql khi khởi động lần đầu
+      - ./database.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      # Lưu trữ dữ liệu lâu dài (không mất khi tắt container)
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  # Quản lý Database qua giao diện web phpMyAdmin (Tùy chọn)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: account_shop_pma
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 64M
+    depends_on:
+      - db
+
+volumes:
+  mysql_data:
